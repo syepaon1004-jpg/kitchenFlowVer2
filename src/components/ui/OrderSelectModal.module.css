@@ -1,0 +1,63 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: #1a1a2e;
+  border: 1px solid #444;
+  border-radius: 8px;
+  padding: 20px;
+  min-width: 260px;
+  max-width: 360px;
+}
+
+.title {
+  margin: 0 0 16px;
+  font-size: 16px;
+  color: #eee;
+  text-align: center;
+}
+
+.orderList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.orderButton {
+  background: rgba(33, 150, 243, 0.15);
+  border: 1px solid rgba(33, 150, 243, 0.4);
+  border-radius: 6px;
+  padding: 10px 16px;
+  color: #ddd;
+  font-size: 14px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.orderButton:hover {
+  background: rgba(33, 150, 243, 0.3);
+  border-color: rgba(33, 150, 243, 0.7);
+}
+
+.cancelButton {
+  margin-top: 12px;
+  width: 100%;
+  background: transparent;
+  border: 1px solid #555;
+  border-radius: 6px;
+  padding: 8px;
+  color: #888;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.cancelButton:hover {
+  background: rgba(255, 255, 255, 0.05);
+}

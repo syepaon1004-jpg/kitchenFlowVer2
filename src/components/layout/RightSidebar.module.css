@@ -1,0 +1,149 @@
+.rightSidebarWrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.toggleButton {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: translate(-100%, -50%);
+  z-index: 25;
+  pointer-events: auto;
+  background: #16213e;
+  border: 1px solid #333;
+  border-right: none;
+  border-radius: 6px 0 0 6px;
+  color: #aaa;
+  padding: 12px 4px;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.toggleButton:hover {
+  color: #fff;
+  background: #1a2744;
+}
+
+.rightSidebar {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  transform: translateX(100%);
+  transition: transform 0.25s ease;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.open {
+  transform: translateX(0);
+  pointer-events: auto;
+}
+
+.sidebarContent {
+  width: 100%;
+  height: 100%;
+  background: #16213e;
+  border-left: 1px solid #333;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.header {
+  padding: 8px 12px;
+  font-size: 12px;
+  color: #888;
+  border-bottom: 1px solid #333;
+  text-align: center;
+}
+
+.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  color: #555;
+  font-size: 12px;
+  padding: 12px;
+  text-align: center;
+}
+
+.containerList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+}
+
+.containerCard {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid #333;
+  border-radius: 6px;
+  padding: 8px;
+  text-align: center;
+}
+
+.containerImage {
+  width: 100%;
+  height: auto;
+  max-height: 80px;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto;
+}
+
+.containerPlaceholder {
+  color: #aaa;
+  font-size: 12px;
+  padding: 12px 0;
+}
+
+.orderLabel {
+  margin-top: 4px;
+  font-size: 11px;
+  color: #FF9800;
+  text-align: center;
+}
+
+.complete {
+  border-color: #4CAF50;
+}
+
+.completeBadge {
+  margin-top: 4px;
+  font-size: 10px;
+  color: #4CAF50;
+  text-align: center;
+  font-weight: bold;
+}
+
+.serveButton {
+  margin-top: 6px;
+  width: 100%;
+  background: rgba(76, 175, 80, 0.2);
+  border: 1px solid rgba(76, 175, 80, 0.5);
+  border-radius: 4px;
+  padding: 6px;
+  color: #4CAF50;
+  font-size: 12px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.serveButton:hover {
+  background: rgba(76, 175, 80, 0.35);
+}
+
+.mixDoneBadge {
+  margin-top: 6px;
+  font-size: 11px;
+  color: #7b1fa2;
+  text-align: center;
+  font-weight: bold;
+}

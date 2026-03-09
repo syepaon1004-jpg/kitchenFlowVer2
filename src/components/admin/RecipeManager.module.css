@@ -1,0 +1,411 @@
+.container {
+  padding: 24px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.container h2 {
+  font-size: 18px;
+  margin-bottom: 16px;
+  color: #333;
+}
+
+/* ── 2-column layout ── */
+.layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+/* ── Left: Recipe list ── */
+.recipeList {
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: #fafafa;
+  padding: 12px;
+}
+
+.recipeList h3 {
+  font-size: 14px;
+  margin-bottom: 8px;
+  color: #333;
+}
+
+.recipeItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: #fff;
+  font-size: 13px;
+  cursor: pointer;
+  margin-bottom: 4px;
+  text-align: left;
+}
+
+.recipeItem:hover {
+  background: #f0f4ff;
+}
+
+.recipeItemActive {
+  border-color: #4a90d9;
+  background: #e8f0fe;
+}
+
+.recipeDeleteBtn {
+  font-size: 12px;
+  color: #999;
+  cursor: pointer;
+  padding: 0 4px;
+  flex-shrink: 0;
+}
+
+.recipeDeleteBtn:hover {
+  color: #d32f2f;
+}
+
+.addRecipeBtn {
+  width: 100%;
+  padding: 8px;
+  margin-top: 8px;
+  border: 1px dashed #ccc;
+  border-radius: 4px;
+  background: #fff;
+  font-size: 13px;
+  color: #4a90d9;
+  cursor: pointer;
+}
+
+.addRecipeBtn:hover {
+  background: #f0f4ff;
+  border-color: #4a90d9;
+}
+
+/* ── Right: Detail / Form ── */
+.detailPanel {
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 16px;
+  background: #fff;
+}
+
+.emptyDetail {
+  text-align: center;
+  color: #999;
+  padding: 48px 24px;
+  font-size: 13px;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.formField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.formField.full {
+  grid-column: 1 / -1;
+}
+
+.formField label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #555;
+}
+
+.formField input,
+.formField select,
+.formField textarea {
+  padding: 6px 8px;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  font-size: 13px;
+}
+
+.formField textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+/* ── Ingredients table ── */
+.ingredientSection {
+  margin-top: 16px;
+}
+
+.ingredientSection h4 {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #333;
+}
+
+.ingTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+
+.ingTable th,
+.ingTable td {
+  padding: 6px 6px;
+  border: 1px solid #ddd;
+  text-align: left;
+}
+
+.ingTable th {
+  background: #f0f0f0;
+  font-weight: 600;
+  font-size: 11px;
+  color: #555;
+  white-space: nowrap;
+}
+
+.ingTable select,
+.ingTable input {
+  width: 100%;
+  padding: 3px 4px;
+  border: 1px solid #ddd;
+  border-radius: 2px;
+  font-size: 12px;
+  box-sizing: border-box;
+}
+
+.ingTable input[type="number"] {
+  width: 70px;
+}
+
+.removeRowBtn {
+  padding: 2px 6px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  background: #fff;
+  font-size: 11px;
+  cursor: pointer;
+  color: #999;
+}
+
+.removeRowBtn:hover {
+  background: #fde8e8;
+  border-color: #d32f2f;
+  color: #d32f2f;
+}
+
+.addRowBtn {
+  padding: 6px 12px;
+  border: 1px dashed #ccc;
+  border-radius: 3px;
+  background: #fff;
+  font-size: 12px;
+  color: #4a90d9;
+  cursor: pointer;
+}
+
+.addRowBtn:hover {
+  background: #f0f4ff;
+  border-color: #4a90d9;
+}
+
+/* ── AI analysis ── */
+.aiSection {
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px dashed #ccc;
+  border-radius: 6px;
+  background: #f9f9f9;
+}
+
+.aiSection h4 {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: #333;
+}
+
+.aiHint {
+  font-size: 12px;
+  color: #777;
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+
+.aiTextarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 8px 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 13px;
+  line-height: 1.6;
+  resize: vertical;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.aiTextarea:focus {
+  outline: none;
+  border-color: #4a90d9;
+}
+
+.aiTextarea:disabled {
+  background: #f0f0f0;
+  color: #999;
+}
+
+.aiBtnRow {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+.aiBtn {
+  padding: 7px 18px;
+  border: 1px solid #4a90d9;
+  border-radius: 4px;
+  background: #4a90d9;
+  font-size: 13px;
+  color: #fff;
+  cursor: pointer;
+}
+
+.aiBtn:not(:disabled):hover {
+  background: #3a7bc8;
+}
+
+.aiBtn:disabled {
+  background: #b0c4de;
+  border-color: #b0c4de;
+  cursor: not-allowed;
+}
+
+/* ── Low confidence / unmatched AI row ── */
+.lowConfidenceRow {
+  background: #fff8f0;
+}
+
+.lowConfidenceRow td:first-child {
+  border-left: 3px solid #e65100;
+}
+
+/* ── Form actions ── */
+.formActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.saveBtn {
+  padding: 8px 20px;
+  border: none;
+  border-radius: 4px;
+  background: #4a90d9;
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.saveBtn:disabled {
+  background: #b0c4de;
+  cursor: not-allowed;
+}
+
+.saveBtn:not(:disabled):hover {
+  background: #3a7bc8;
+}
+
+.cancelBtn {
+  padding: 8px 20px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: #fff;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.cancelBtn:hover {
+  background: #f0f0f0;
+}
+
+/* ── Step images ── */
+.stepSection {
+  margin-top: 16px;
+}
+
+.stepSection h4 {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: #333;
+}
+
+.stepHint {
+  font-size: 12px;
+  color: #777;
+  margin-bottom: 10px;
+}
+
+.stepGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.stepCard {
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 10px;
+  background: #fafafa;
+  text-align: center;
+}
+
+.stepLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: #555;
+  margin-bottom: 6px;
+}
+
+.stepPreview {
+  width: 100%;
+  aspect-ratio: 1;
+  background: #f0f0f0;
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 6px;
+}
+
+.stepPreview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.stepPlaceholder {
+  color: #ccc;
+  font-size: 24px;
+}
+
+.stepFileInput {
+  width: 100%;
+  font-size: 11px;
+}
+
+/* ── Error ── */
+.error {
+  color: #d32f2f;
+  font-size: 13px;
+  margin-bottom: 8px;
+}

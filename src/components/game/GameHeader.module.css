@@ -1,0 +1,43 @@
+.header {
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  background: #0a0a1a;
+  border-bottom: 1px solid #333;
+  height: 40px;
+  gap: 8px;
+}
+
+.backButton {
+  background: none;
+  border: 1px solid #555;
+  color: #ccc;
+  border-radius: 4px;
+  padding: 4px 12px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.backButton:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.actionButton {
+  background: none;
+  border: 1px solid #555;
+  color: #ccc;
+  border-radius: 4px;
+  padding: 4px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.actionButton:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}

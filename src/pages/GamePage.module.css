@@ -1,0 +1,58 @@
+.gamePage {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  grid-template-columns: 1fr;
+  height: 100vh;
+  overflow: hidden;
+  background: #0a0a1a;
+}
+
+.gameArea {
+  position: relative;
+  overflow: hidden;
+}
+
+.mainViewport {
+  position: absolute;
+  inset: 0;
+}
+
+.billQueue {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 15;
+  max-width: 80%;
+  pointer-events: none;
+}
+
+.leftSidebar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 30%;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.rightSidebar {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 30%;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.handbar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 80px;
+  z-index: 10;
+  pointer-events: none;
+}

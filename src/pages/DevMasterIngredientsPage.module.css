@@ -1,0 +1,102 @@
+.container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.title {
+  font-size: 20px;
+  margin-bottom: 20px;
+}
+
+.addRow {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.input {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.btn {
+  padding: 6px 14px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: #fff;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.btn:hover {
+  background: #f0f0f0;
+}
+
+.btnPrimary {
+  background: #4a90d9;
+  color: #fff;
+  border-color: #4a90d9;
+}
+
+.btnPrimary:hover {
+  background: #3a7bc8;
+}
+
+.btnPrimary:disabled {
+  background: #b0c4de;
+  cursor: not-allowed;
+}
+
+.btnDanger {
+  color: #d32f2f;
+  border-color: #d32f2f;
+}
+
+.btnDanger:hover {
+  background: rgba(211, 47, 47, 0.08);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid #eee;
+  text-align: left;
+  font-size: 14px;
+}
+
+.table th {
+  background: #f8f8f8;
+  font-weight: 600;
+  font-size: 13px;
+  color: #666;
+}
+
+.actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.error {
+  color: #d32f2f;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.denied {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  font-size: 16px;
+  color: #999;
+}

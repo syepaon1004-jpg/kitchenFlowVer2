@@ -1,0 +1,94 @@
+.loadingScreen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  font-size: 16px;
+  color: #666;
+}
+
+.container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background: #f4f6f9;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 40px;
+  width: 360px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.title {
+  margin: 0 0 28px;
+  font-size: 22px;
+  font-weight: 700;
+  color: #333;
+  text-align: center;
+}
+
+.placeholder {
+  text-align: center;
+  color: #888;
+  font-size: 14px;
+  margin: 0 0 20px;
+}
+
+.recipeList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.recipeItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #333;
+  transition: background 0.15s;
+}
+
+.recipeItem:hover {
+  background: #f8f9fb;
+}
+
+.error {
+  color: #d32f2f;
+  font-size: 13px;
+  margin: 0 0 12px;
+  text-align: center;
+}
+
+.startButton {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 6px;
+  background: #4a90d9;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.startButton:hover:not(:disabled) {
+  background: #3a7bc8;
+}
+
+.startButton:disabled {
+  background: #b0c4de;
+  cursor: not-allowed;
+}

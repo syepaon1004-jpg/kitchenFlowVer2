@@ -1,0 +1,72 @@
+.viewport {
+  position: relative;
+  overflow: hidden;
+  background: #000;
+  height: 100%;
+}
+
+.inner {
+  position: relative;
+  display: inline-flex;
+
+  height: 100%;
+}
+
+.zoneImage {
+  height: 100%;
+  width: auto;
+  display: block;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.centerSlot {
+  position: relative;
+  flex-shrink: 0;
+  height: 100%;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #555;
+}
+
+.navBtn {
+  position: absolute;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 6px;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-size: 18px;
+  z-index: 5;
+}
+
+.navBtn:hover {
+  background: rgba(0, 0, 0, 0.8);
+}
+
+/* 현재 섹션 왼쪽 가장자리(0.2/1.4 ≈ 1/7), 세로 가운데 */
+.navLeft {
+  left: calc(100% / 7);
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* 현재 섹션 오른쪽 가장자리(1.2/1.4 ≈ 6/7), 세로 가운데 */
+.navRight {
+  left: calc(100% * 6 / 7);
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* 현재 섹션 하단 가운데 */
+.navBack {
+  left: 50%;
+  bottom: 96px;
+  transform: translateX(-50%);
+}

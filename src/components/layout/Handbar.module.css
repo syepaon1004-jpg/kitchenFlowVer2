@@ -1,0 +1,22 @@
+.handbar {
+  pointer-events: auto;
+  background: #1a1a2e;
+  color: #aaa;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+  font-size: 13px;
+  border-top: 1px solid #333;
+  height: 100%;
+}
+
+.ingredientChip {
+  background: rgba(76, 175, 80, 0.2);
+  border: 1px solid rgba(76, 175, 80, 0.5);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 12px;
+  color: #ccc;
+  white-space: nowrap;
+}
