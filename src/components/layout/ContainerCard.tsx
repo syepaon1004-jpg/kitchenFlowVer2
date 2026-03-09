@@ -7,7 +7,7 @@ import type {
   GameOrder,
   RecipeIngredient,
 } from '../../types/db';
-import styles from './RightSidebar.module.css';
+import styles from './ContainerCard.module.css';
 
 const MIX_INTERVAL = 100; // 100ms UI 게이지 갱신 간격
 
@@ -194,16 +194,16 @@ export default function ContainerCard({
       {orderLabel && <div className={styles.orderLabel}>{orderLabel}</div>}
       {instance.is_complete && <div className={styles.completeBadge}>완성</div>}
       {instance.is_dirty && (
-        <div style={{ fontSize: 10, color: '#795548', fontWeight: 'bold', marginTop: 2 }}>세척 필요</div>
+        <div className={styles.dirtyLabel}>세척 필요</div>
       )}
 
       {/* 그릇 안 재료 목록 */}
       {containerIngredients.length > 0 && (
-        <ul style={{ margin: '4px 0', padding: '0 4px', listStyle: 'none', fontSize: 10, color: '#aaa' }}>
+        <ul className={styles.ingredientList}>
           {containerIngredients.map((inst) => {
             const si = storeIngredientsMap.get(inst.ingredient_id);
             return (
-              <li key={inst.id} style={{ lineHeight: 1.4 }}>
+              <li key={inst.id} className={styles.ingredientItem}>
                 {si?.display_name ?? '재료'} {inst.quantity}{si?.unit ?? ''}
               </li>
             );
@@ -221,33 +221,20 @@ export default function ContainerCard({
             onPointerUp={stopMix}
             onPointerLeave={stopMix}
             disabled={!canMix}
+            className={styles.mixBtn}
             style={{
-              marginTop: 6,
-              width: '100%',
-              padding: '6px 0',
-              fontSize: 11,
               background: isMixing ? '#5c2d91' : canMix ? '#7b1fa2' : '#555',
-              color: '#fff',
-              border: 'none',
-              borderRadius: 4,
               cursor: canMix ? 'pointer' : 'not-allowed',
-              touchAction: 'none',
-              position: 'relative',
-              overflow: 'hidden',
             }}
           >
             <div
+              className={styles.progressBar}
               style={{
-                position: 'absolute',
-                left: 0,
-                top: 0,
-                height: '100%',
                 width: `${Math.min((mixProgress / (mixTargetSeconds * 1000)) * 100, 100)}%`,
-                background: 'rgba(255,255,255,0.3)',
                 transition: `width ${MIX_INTERVAL}ms linear`,
               }}
             />
-            <span style={{ position: 'relative' }}>
+            <span className={styles.progressLabel}>
               {isMixing
                 ? `섞는 중 ${Math.min(Math.round((mixProgress / (mixTargetSeconds * 1000)) * 100), 100)}%`
                 : '섞기 (꾹 누르기)'}

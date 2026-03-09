@@ -1,0 +1,101 @@
+:root {
+  /* ===== Layout ===== */
+  --game-header-height: 40px;
+  --handbar-height: 80px;
+  --nav-back-bottom: calc(var(--handbar-height) + 16px);
+
+  /* ===== Font Sizes ===== */
+  --font-2xs: 10px;
+  --font-xs: 11px;
+  --font-sm: 12px;
+  --font-base: 13px;
+  --font-md: 14px;
+  --font-lg: 16px;
+  --font-xl: 18px;
+
+  /* ===== Spacing ===== */
+  --spacing-2xs: 2px;
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 16px;
+
+  /* ===== Component-specific ===== */
+  --modal-max-width: 360px;
+  --modal-padding: 20px;
+  --container-image-max-height: 80px;
+  --quantity-input-width: 100px;
+  --toggle-button-padding-v: 12px;
+  --toggle-button-padding-h: 4px;
+  --drag-overlay-size: 60px;
+}
+
+/* ===== Tablet (≤1024px) ===== */
+@media (max-width: 1024px) {
+  :root {
+    /* Layout */
+    --game-header-height: 36px;
+    --handbar-height: 60px;
+    /* --nav-back-bottom: calc 자동 연동 — 재정의 불필요 */
+
+    /* Font Sizes */
+    --font-2xs: 9px;
+    --font-xs: 10px;
+    --font-sm: 11px;
+    --font-base: 12px;
+    --font-md: 13px;
+    --font-lg: 14px;
+    --font-xl: 16px;
+
+    /* Spacing */
+    --spacing-2xs: 2px;
+    --spacing-xs: 3px;
+    --spacing-sm: 6px;
+    --spacing-md: 10px;
+    --spacing-lg: 14px;
+
+    /* Component-specific */
+    --modal-max-width: 320px;
+    --modal-padding: 16px;
+    --container-image-max-height: 60px;
+    --quantity-input-width: 80px;
+    --toggle-button-padding-v: 10px;
+    --toggle-button-padding-h: 3px;
+    --drag-overlay-size: 48px;
+  }
+}
+
+/* ===== Mobile (≤768px) ===== */
+@media (max-width: 768px) {
+  :root {
+    /* Layout */
+    --game-header-height: 40px;
+    --handbar-height: 80px;
+    /* --nav-back-bottom: calc 자동 연동 — 재정의 불필요 */
+
+    /* Font Sizes */
+    --font-2xs: 10px;
+    --font-xs: 11px;
+    --font-sm: 12px;
+    --font-base: 13px;
+    --font-md: 14px;
+    --font-lg: 16px;
+  --font-xl: 18px;
+
+    /* Spacing */
+    --spacing-2xs: 2px;
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 12px;
+    --spacing-lg: 16px;
+
+    /* Component-specific */
+    --modal-max-width: 360px;
+    --modal-padding: 20px;
+    --container-image-max-height: 80px;
+    --quantity-input-width: 100px;
+    --toggle-button-padding-v: 12px;
+    --toggle-button-padding-h: 4px;
+    --drag-overlay-size: 60px;
+  }
+}

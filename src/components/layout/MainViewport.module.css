@@ -40,9 +40,9 @@
   color: #fff;
   border: 1px solid rgba(255, 255, 255, 0.25);
   border-radius: 6px;
-  padding: 10px 16px;
+  padding: 10px var(--spacing-lg);
   cursor: pointer;
-  font-size: 18px;
+  font-size: var(--font-xl);
   z-index: 5;
 }
 
@@ -67,6 +67,6 @@
 /* 현재 섹션 하단 가운데 */
 .navBack {
   left: 50%;
-  bottom: 96px;
+  bottom: var(--nav-back-bottom);
   transform: translateX(-50%);
 }

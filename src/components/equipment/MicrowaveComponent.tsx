@@ -4,6 +4,7 @@ import { useEquipmentStore } from '../../stores/equipmentStore';
 import { useGameStore } from '../../stores/gameStore';
 import type { GameEquipmentState, GameIngredientInstance } from '../../types/db';
 import type { DragMeta } from '../../types/game';
+import styles from './MicrowaveComponent.module.css';
 
 interface MwChipProps {
   inst: GameIngredientInstance;
@@ -30,17 +31,10 @@ function MwIngredientChip({ inst, isRunning, ingredientName, ingredientUnit, dra
       ref={setNodeRef}
       {...listeners}
       {...attributes}
+      className={styles.ingredientChip}
       style={{
-        fontSize: 10,
-        padding: '1px 4px',
-        background: 'rgba(255,255,255,0.15)',
-        borderRadius: 3,
         cursor: isRunning ? 'not-allowed' : isDragging ? 'grabbing' : 'grab',
         opacity: isDragging ? 0.5 : 1,
-        touchAction: 'none',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-        whiteSpace: 'nowrap',
       }}
     >
       {ingredientName} ({inst.quantity}{ingredientUnit})
@@ -97,58 +91,36 @@ export default function MicrowaveComponent({ equipmentState, skipDroppable = fal
   return (
     <div
       ref={skipDroppable ? undefined : setNodeRef}
+      className={styles.container}
       style={{
-        width: '100%',
-        height: '100%',
         background: isOver ? 'rgba(76,175,80,0.2)' : 'rgba(0,0,0,0.6)',
         border: `2px solid ${statusColor}`,
-        borderRadius: 6,
-        padding: 4,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 2,
-        fontSize: 11,
-        color: '#fff',
-        overflow: 'hidden',
       }}
     >
-      <div style={{ fontWeight: 'bold', display: 'flex', justifyContent: 'space-between' }}>
+      <div className={styles.titleRow}>
         <span>MW</span>
         <span style={{ color: statusColor }}>{equipmentState.mw_status}</span>
       </div>
 
       {isRunning ? (
-        <div style={{ fontSize: 16, fontWeight: 'bold', textAlign: 'center' }}>
+        <div className={styles.timerDisplay}>
           {equipmentState.mw_remaining_sec}s
         </div>
       ) : (
-        <div style={{ display: 'flex', gap: 2 }}>
+        <div className={styles.inputRow}>
           <input
             type="number"
             value={inputSec}
             onChange={(e) => setInputSec(Number(e.target.value))}
             min={1}
-            style={{
-              flex: 1,
-              width: '100%',
-              fontSize: 10,
-              padding: '1px 3px',
-              background: '#333',
-              color: '#fff',
-              border: '1px solid #666',
-              borderRadius: 3,
-            }}
+            className={styles.timeInput}
           />
           <button
             onClick={handleStart}
             disabled={mwIngredients.length === 0}
+            className={styles.startBtn}
             style={{
-              fontSize: 10,
-              padding: '1px 4px',
               background: mwIngredients.length > 0 ? '#ff9800' : '#555',
-              color: '#fff',
-              border: 'none',
-              borderRadius: 3,
               cursor: mwIngredients.length > 0 ? 'pointer' : 'not-allowed',
             }}
           >
@@ -160,22 +132,14 @@ export default function MicrowaveComponent({ equipmentState, skipDroppable = fal
       {isDone && (
         <button
           onClick={handleReset}
-          style={{
-            fontSize: 10,
-            padding: '1px 0',
-            background: '#4caf50',
-            color: '#fff',
-            border: 'none',
-            borderRadius: 3,
-            cursor: 'pointer',
-          }}
+          className={styles.resetBtn}
         >
           리셋
         </button>
       )}
 
       {mwIngredients.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <div className={styles.ingredientList}>
           {mwIngredients.map((inst) => {
             const si = storeIngredientsMap.get(inst.ingredient_id);
             return (

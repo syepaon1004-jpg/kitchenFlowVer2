@@ -52,7 +52,22 @@
   bottom: 0;
   left: 0;
   right: 0;
-  height: 80px;
+  height: var(--handbar-height);
   z-index: 10;
   pointer-events: none;
+}
+
+.dragImage {
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.dragLabel {
+  background: #333;
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: var(--font-base);
+  pointer-events: none;
+  transform: translateY(-4px);
 }

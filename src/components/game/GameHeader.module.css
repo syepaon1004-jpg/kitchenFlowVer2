@@ -1,21 +1,21 @@
 .header {
   display: flex;
   align-items: center;
-  padding: 0 12px;
+  padding: 0 var(--spacing-md);
   background: #0a0a1a;
   border-bottom: 1px solid #333;
-  height: 40px;
-  gap: 8px;
+  height: var(--game-header-height);
+  gap: var(--spacing-sm);
 }
 
 .backButton {
   background: none;
   border: 1px solid #555;
   color: #ccc;
-  border-radius: 4px;
-  padding: 4px 12px;
+  border-radius: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-md);
   cursor: pointer;
-  font-size: 13px;
+  font-size: var(--font-base);
 }
 
 .backButton:hover {
@@ -31,9 +31,9 @@
   background: none;
   border: 1px solid #555;
   color: #ccc;
-  border-radius: 4px;
-  padding: 4px 12px;
-  font-size: 13px;
+  border-radius: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-md);
+  font-size: var(--font-base);
   cursor: pointer;
 }
 

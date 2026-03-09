@@ -220,13 +220,34 @@ export default function HitboxEditor({
       const el = containerRef.current;
       if (!el) return;
 
+      // 원본 area 캡처 (스테일 클로저 방지)
+      const originalArea = areas.find((a) => a.id === areaId);
+      if (!originalArea) return;
+
       const onMove = (me: MouseEvent) => {
         const pos = getRelativeFromEvent(me, el);
         onAreasChange(
           areas.map((a) => {
             if (a.id !== areaId) return a;
-            // Initialize points from rect if null
-            const pts: HitboxPoint[] = a.points ? [...a.points.map((p) => [...p] as HitboxPoint)] : rectToPoints(a);
+
+            // overlay: opposite anchor 방식으로 rect 계산
+            if (originalArea.overlay_image_url) {
+              const corners = rectToPoints(originalArea);
+              const anchor = corners[(pointIndex + 2) % 4];
+              return {
+                ...a,
+                x: Math.min(pos.x, anchor[0]),
+                y: Math.min(pos.y, anchor[1]),
+                w: Math.abs(pos.x - anchor[0]),
+                h: Math.abs(pos.y - anchor[1]),
+                points: null,
+              };
+            }
+
+            // 비 overlay: 원본 기준으로 points 계산 (스테일 클로저 해소)
+            const pts: HitboxPoint[] = originalArea.points
+              ? [...originalArea.points.map((p) => [...p] as HitboxPoint)]
+              : rectToPoints(originalArea);
             pts[pointIndex] = [pos.x, pos.y];
             return { ...a, points: pts };
           }),
@@ -255,27 +276,41 @@ export default function HitboxEditor({
       if (!el) return;
 
       const startPos = getRelativeFromEvent(e, el);
+      // 원본 area 캡처 (스테일 클로저 방지)
+      const originalArea = areas.find((a) => a.id === areaId);
+      if (!originalArea) return;
 
       const onMove = (me: MouseEvent) => {
         const currentPos = getRelativeFromEvent(me, el);
-        const dx = currentPos.x - startPos.x;
-        const dy = currentPos.y - startPos.y;
-        startPos.x = currentPos.x;
-        startPos.y = currentPos.y;
+        // startPos 업데이트 안 함 — 원본 기준 total delta
+        const totalDx = currentPos.x - startPos.x;
+        const totalDy = currentPos.y - startPos.y;
 
         onAreasChange(
           areas.map((a) => {
             if (a.id !== areaId) return a;
-            if (a.points) {
-              const newPoints = a.points.map(
-                ([px, py]) => [clamp(px + dx), clamp(py + dy)] as HitboxPoint,
+
+            // overlay: 원본 x/y + total delta
+            if (originalArea.overlay_image_url) {
+              return {
+                ...a,
+                x: clamp(originalArea.x + totalDx),
+                y: clamp(originalArea.y + totalDy),
+                points: null,
+              };
+            }
+
+            // 비 overlay: 원본 기준 total delta
+            if (originalArea.points) {
+              const newPoints = originalArea.points.map(
+                ([px, py]) => [clamp(px + totalDx), clamp(py + totalDy)] as HitboxPoint,
               );
               return { ...a, points: newPoints };
             }
             return {
               ...a,
-              x: clamp(a.x + dx),
-              y: clamp(a.y + dy),
+              x: clamp(originalArea.x + totalDx),
+              y: clamp(originalArea.y + totalDy),
             };
           }),
         );
@@ -411,19 +446,19 @@ export default function HitboxEditor({
                       width={area.w * vbW}
                       height={area.h * vbH}
                       preserveAspectRatio="none"
-                      style={{ cursor: 'move', pointerEvents: 'all' }}
-                      onClick={(e) => handleHitboxClick(e, area)}
-                      onMouseDown={(e) => handleBodyMouseDown(e, area.id)}
+                      style={{ pointerEvents: 'none' }}
                     />
                     <rect
                       x={area.x * vbW}
                       y={area.y * vbH}
                       width={area.w * vbW}
                       height={area.h * vbH}
-                      fill="none"
+                      fill="transparent"
                       stroke={strokeColor}
                       strokeWidth={2}
-                      style={{ pointerEvents: 'none' }}
+                      style={{ cursor: 'move', pointerEvents: 'all' }}
+                      onClick={(e) => handleHitboxClick(e, area)}
+                      onMouseDown={(e) => handleBodyMouseDown(e, area.id)}
                     />
                   </>
                 ) : (

@@ -1,0 +1,33 @@
+.container {
+  width: 100%;
+  height: 100%;
+  border-radius: 6px;
+  padding: var(--spacing-xs);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2xs);
+  font-size: var(--font-xs);
+  color: #fff;
+  touch-action: none;
+  overflow: hidden;
+}
+
+.titleRow {
+  font-weight: bold;
+  display: flex;
+  justify-content: space-between;
+}
+
+.toggleBtn {
+  padding: var(--spacing-2xs) 0;
+  font-size: var(--font-2xs);
+  color: #fff;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.ingredientCount {
+  font-size: var(--font-2xs);
+  opacity: 0.8;
+}

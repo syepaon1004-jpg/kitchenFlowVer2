@@ -1,0 +1,113 @@
+/* RightSidebar.module.css에서 이동한 기존 클래스 */
+.containerCard {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid #333;
+  border-radius: 6px;
+  padding: 8px;
+  text-align: center;
+}
+
+.containerImage {
+  width: 100%;
+  height: auto;
+  max-height: 80px;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto;
+}
+
+.containerPlaceholder {
+  color: #aaa;
+  font-size: var(--font-sm);
+  padding: var(--spacing-md) 0;
+}
+
+.orderLabel {
+  margin-top: var(--spacing-xs);
+  font-size: var(--font-xs);
+  color: #FF9800;
+  text-align: center;
+}
+
+.complete {
+  border-color: #4CAF50;
+}
+
+.completeBadge {
+  margin-top: var(--spacing-xs);
+  font-size: var(--font-2xs);
+  color: #4CAF50;
+  text-align: center;
+  font-weight: bold;
+}
+
+.serveButton {
+  margin-top: 6px;
+  width: 100%;
+  background: rgba(76, 175, 80, 0.2);
+  border: 1px solid rgba(76, 175, 80, 0.5);
+  border-radius: 4px;
+  padding: 6px;
+  color: #4CAF50;
+  font-size: var(--font-sm);
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.serveButton:hover {
+  background: rgba(76, 175, 80, 0.35);
+}
+
+.mixDoneBadge {
+  margin-top: 6px;
+  font-size: var(--font-xs);
+  color: #7b1fa2;
+  text-align: center;
+  font-weight: bold;
+}
+
+/* === 인라인 스타일 치환용 신규 클래스 === */
+
+.dirtyLabel {
+  font-size: var(--font-2xs);
+  color: #795548;
+  font-weight: bold;
+  margin-top: var(--spacing-2xs);
+}
+
+.ingredientList {
+  margin: var(--spacing-xs) 0;
+  padding: 0 var(--spacing-xs);
+  list-style: none;
+  font-size: var(--font-2xs);
+  color: #aaa;
+}
+
+.ingredientItem {
+  line-height: 1.4;
+}
+
+.mixBtn {
+  margin-top: 6px;
+  width: 100%;
+  padding: 6px 0;
+  font-size: var(--font-xs);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  touch-action: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.progressBar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.progressLabel {
+  position: relative;
+}

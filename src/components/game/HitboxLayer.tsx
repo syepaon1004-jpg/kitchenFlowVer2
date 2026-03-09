@@ -91,32 +91,41 @@ function EquipmentOverlayWrapper({
 
   return (
     <div
-      ref={setNodeRef}
       style={{
         position: 'absolute',
         left: `${area.x * 100}%`,
         top: `${area.y * 100}%`,
         width: `${area.w * 100}%`,
         height: `${area.h * 100}%`,
-        border: isOver ? '2px solid #4caf50' : undefined,
+        overflow: 'visible',
       }}
     >
-      {/* 이미지가 히트박스 역할 */}
-      <svg
-        viewBox="0 0 1000 1000"
-        preserveAspectRatio="none"
+      {/* Droppable = 이미지 영역만 */}
+      <div
+        ref={setNodeRef}
         style={{
-          position: 'absolute',
-          inset: 0,
+          position: 'relative',
           width: '100%',
           height: '100%',
-          pointerEvents: 'none',
+          border: isOver ? '2px solid #4caf50' : undefined,
         }}
       >
-        <HitboxItem area={area} fillParent />
-      </svg>
-      {/* 버튼은 이미지 하단 내부에 오버레이 */}
-      <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', background: 'rgba(0,0,0,0.7)', borderRadius: '0 0 6px 6px' }}>
+        <svg
+          viewBox="0 0 1000 1000"
+          preserveAspectRatio="none"
+          style={{
+            position: 'absolute',
+            inset: 0,
+            width: '100%',
+            height: '100%',
+            pointerEvents: 'none',
+          }}
+        >
+          <HitboxItem area={area} fillParent />
+        </svg>
+      </div>
+      {/* 버튼은 히트박스 영역 바깥(아래)에 렌더링 */}
+      <div style={{ width: '100%', background: 'rgba(0,0,0,0.7)', borderRadius: '0 0 6px 6px' }}>
         <EquipComp equipmentState={equipState} skipDroppable />
       </div>
     </div>

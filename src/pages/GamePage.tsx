@@ -28,6 +28,7 @@ import Handbar from '../components/layout/Handbar';
 import GameHeader from '../components/game/GameHeader';
 import OrderSelectModal from '../components/ui/OrderSelectModal';
 import QuantityInputModal from '../components/ui/QuantityInputModal';
+import '../styles/gameVariables.css';
 import styles from './GamePage.module.css';
 
 /** equipment- 접두사에서 equipmentStateId를 추출하는 헬퍼 */
@@ -723,26 +724,15 @@ const GamePage = () => {
             <img
               src={dragImageUrl}
               alt="drag"
+              className={styles.dragImage}
               style={{
                 width: dragImageSize?.width ?? 48,
                 height: dragImageSize?.height ?? 48,
-                objectFit: 'contain',
-                pointerEvents: 'none',
                 transform: `translateY(-${(dragImageSize?.height ?? 48) * 0.1}px)`,
               }}
             />
           ) : activeDragLabel ? (
-            <div
-              style={{
-                background: '#333',
-                color: '#fff',
-                padding: '6px 12px',
-                borderRadius: 4,
-                fontSize: 13,
-                pointerEvents: 'none',
-                transform: 'translateY(-4px)',
-              }}
-            >
+            <div className={styles.dragLabel}>
               {activeDragLabel}
             </div>
           ) : null}

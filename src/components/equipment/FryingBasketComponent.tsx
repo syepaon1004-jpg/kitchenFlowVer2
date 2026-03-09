@@ -3,6 +3,7 @@ import { useDroppable, useDraggable } from '@dnd-kit/core';
 import { useEquipmentStore } from '../../stores/equipmentStore';
 import { useGameStore } from '../../stores/gameStore';
 import type { GameEquipmentState } from '../../types/db';
+import styles from './FryingBasketComponent.module.css';
 
 interface Props {
   equipmentState: GameEquipmentState;
@@ -52,24 +53,14 @@ export default function FryingBasketComponent({ equipmentState, skipDroppable = 
       }}
       {...listeners}
       {...attributes}
+      className={styles.container}
       style={{
-        width: '100%',
-        height: '100%',
         background: isOver ? 'rgba(76,175,80,0.2)' : 'rgba(0,0,0,0.6)',
         border: `2px solid ${isDown ? '#ff9800' : '#4caf50'}`,
-        borderRadius: 6,
-        padding: 4,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 2,
-        fontSize: 11,
-        color: '#fff',
         cursor: basketIngredients.length > 0 ? 'grab' : 'default',
-        touchAction: 'none',
-        overflow: 'hidden',
       }}
     >
-      <div style={{ fontWeight: 'bold', display: 'flex', justifyContent: 'space-between' }}>
+      <div className={styles.titleRow}>
         <span>튀김채</span>
         <span style={{ color: isDown ? '#ff9800' : '#4caf50' }}>
           {isDown ? 'DOWN' : 'UP'}
@@ -82,21 +73,16 @@ export default function FryingBasketComponent({ equipmentState, skipDroppable = 
           toggleBasket();
         }}
         onPointerDown={(e) => e.stopPropagation()}
+        className={styles.toggleBtn}
         style={{
-          padding: '2px 0',
-          fontSize: 10,
           background: isDown ? '#4caf50' : '#ff9800',
-          color: '#fff',
-          border: 'none',
-          borderRadius: 3,
-          cursor: 'pointer',
         }}
       >
         {isDown ? '올리기' : '내리기'}
       </button>
 
       {basketIngredients.length > 0 && (
-        <div style={{ fontSize: 10, opacity: 0.8 }}>
+        <div className={styles.ingredientCount}>
           재료: {basketIngredients.length}개
         </div>
       )}

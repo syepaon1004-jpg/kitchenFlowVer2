@@ -3,6 +3,7 @@ import { useDroppable, useDraggable } from '@dnd-kit/core';
 import { useEquipmentStore } from '../../stores/equipmentStore';
 import { useGameStore } from '../../stores/gameStore';
 import type { GameEquipmentState } from '../../types/db';
+import styles from './WokComponent.module.css';
 
 interface Props {
   equipmentState: GameEquipmentState;
@@ -161,24 +162,13 @@ export default function WokComponent({ equipmentState, atSink = false, skipDropp
       }}
       {...listeners}
       {...attributes}
+      className={styles.container}
       style={{
-        width: '100%',
-        height: '100%',
         background: isOver ? 'rgba(76,175,80,0.2)' : 'rgba(0,0,0,0.6)',
         border: `2px solid ${atSink ? '#03a9f4' : statusColor}`,
-        borderRadius: 6,
-        padding: 4,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 2,
-        fontSize: 11,
-        color: '#fff',
-        cursor: 'grab',
-        touchAction: 'none',
-        overflow: 'hidden',
       }}
     >
-      <div style={{ fontWeight: 'bold', display: 'flex', justifyContent: 'space-between' }}>
+      <div className={styles.titleRow}>
         <span>Wok{atSink ? ' (싱크)' : ''}</span>
         <span style={{ color: statusColor }}>
           {equipmentState.wok_status}
@@ -189,7 +179,7 @@ export default function WokComponent({ equipmentState, atSink = false, skipDropp
         <>
           <div>{equipmentState.wok_temp ?? 0}°C</div>
 
-          <div style={{ display: 'flex', gap: 2 }}>
+          <div className={styles.burnerRow}>
             {([0, 1, 2, 3] as const).map((lvl) => (
               <button
                 key={lvl}
@@ -198,16 +188,10 @@ export default function WokComponent({ equipmentState, atSink = false, skipDropp
                   handleBurnerChange(lvl);
                 }}
                 onPointerDown={(e) => e.stopPropagation()}
+                className={styles.burnerBtn}
                 style={{
-                  flex: 1,
-                  padding: '1px 0',
-                  fontSize: 10,
                   fontWeight: equipmentState.burner_level === lvl ? 'bold' : 'normal',
                   background: equipmentState.burner_level === lvl ? '#ff5722' : '#555',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: 3,
-                  cursor: 'pointer',
                 }}
               >
                 {lvl}
@@ -220,43 +204,32 @@ export default function WokComponent({ equipmentState, atSink = false, skipDropp
             onPointerUp={stopStir}
             onPointerLeave={stopStir}
             disabled={!equipmentState.burner_level || equipmentState.wok_status !== 'clean' || hasWaterInWok}
+            className={styles.actionBtn}
             style={{
-              padding: '4px 0',
-              fontSize: 10,
               background: isStirring ? '#e65100' : (!equipmentState.burner_level || equipmentState.wok_status !== 'clean' || hasWaterInWok) ? '#555' : '#ff9800',
-              color: '#fff',
-              border: 'none',
-              borderRadius: 3,
               cursor: (!equipmentState.burner_level || equipmentState.wok_status !== 'clean' || hasWaterInWok) ? 'not-allowed' : 'pointer',
-              touchAction: 'none',
-              position: 'relative',
-              overflow: 'hidden',
             }}
           >
             <div
+              className={styles.progressBar}
               style={{
-                position: 'absolute',
-                left: 0,
-                top: 0,
-                height: '100%',
                 width: `${(stirProgress / STIR_DURATION) * 100}%`,
-                background: 'rgba(255,255,255,0.3)',
                 transition: `width ${STIR_INTERVAL}ms linear`,
               }}
             />
-            <span style={{ position: 'relative' }}>
+            <span className={styles.progressLabel}>
               {isStirring ? `볶는 중 ${Math.round((stirProgress / STIR_DURATION) * 100)}%` : '볶기 (꾹 누르기)'}
             </span>
           </button>
 
           {wokIngredients.length > 0 && (
-            <div style={{ fontSize: 10, opacity: 0.8 }}>
+            <div className={styles.ingredientCount}>
               재료: {wokIngredients.length}개
             </div>
           )}
 
           {hasWaterInWok && equipmentState.wok_temp === 100 && (
-            <div style={{ fontSize: 10, color: '#2196f3', textAlign: 'center', fontWeight: 'bold' }}>
+            <div className={styles.boilingStatus}>
               끓는 중
             </div>
           )}
@@ -264,35 +237,25 @@ export default function WokComponent({ equipmentState, atSink = false, skipDropp
       )}
 
       {needsWash && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <div className={styles.washSection}>
           <button
             onPointerDown={startWash}
             onPointerUp={stopWash}
             onPointerLeave={stopWash}
+            className={styles.actionBtn}
             style={{
-              padding: '4px 0',
-              fontSize: 10,
               background: washProgress > 0 ? '#1976d2' : '#03a9f4',
-              color: '#fff',
-              border: 'none',
-              borderRadius: 3,
               cursor: 'pointer',
-              position: 'relative',
-              overflow: 'hidden',
             }}
           >
             <div
+              className={styles.progressBar}
               style={{
-                position: 'absolute',
-                left: 0,
-                top: 0,
-                height: '100%',
                 width: `${washPercent}%`,
-                background: 'rgba(255,255,255,0.3)',
                 transition: `width ${WASH_INTERVAL}ms linear`,
               }}
             />
-            <span style={{ position: 'relative' }}>
+            <span className={styles.progressLabel}>
               {washProgress > 0 ? `세척중 ${Math.round(washPercent)}%` : '세척 (꾹 누르기)'}
             </span>
           </button>
@@ -300,7 +263,7 @@ export default function WokComponent({ equipmentState, atSink = false, skipDropp
       )}
 
       {atSink && equipmentState.wok_status === 'clean' && (
-        <div style={{ fontSize: 10, color: '#4caf50' }}>
+        <div className={styles.cleanStatus}>
           세척 완료 — 원래 자리로 드래그
         </div>
       )}

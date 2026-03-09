@@ -1,5 +1,6 @@
 import { useDroppable } from '@dnd-kit/core';
 import type { GameEquipmentState } from '../../types/db';
+import styles from './SinkComponent.module.css';
 
 interface Props {
   equipmentState: GameEquipmentState;
@@ -16,19 +17,10 @@ export default function SinkComponent({ equipmentState, skipDroppable = false }:
   return (
     <div
       ref={skipDroppable ? undefined : setNodeRef}
+      className={styles.container}
       style={{
-        width: '100%',
-        height: '100%',
         background: isOver ? 'rgba(3,169,244,0.3)' : 'rgba(0,0,0,0.6)',
         border: `2px solid ${isOver ? '#03a9f4' : '#607d8b'}`,
-        borderRadius: 6,
-        padding: 4,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontSize: 11,
-        color: '#fff',
-        fontWeight: 'bold',
       }}
     >
       싱크대
