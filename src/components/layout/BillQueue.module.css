@@ -1,32 +1,51 @@
 .billQueue {
   pointer-events: auto;
-  background: #1a1a2e;
-  color: #aaa;
+  background: var(--game-card-bg);
+  color: var(--game-text-primary);
   display: flex;
   align-items: center;
-  padding: 0 var(--spacing-md);
+  padding: 6px 10px;
   font-size: var(--font-base);
-  border-bottom: 1px solid #333;
+  border: 1px solid var(--game-border);
+  border-radius: 12px;
+  box-shadow: var(--game-shadow-md);
+  backdrop-filter: blur(10px);
   gap: var(--spacing-sm);
   overflow-x: auto;
 }
 
 .empty {
-  color: #555;
+  color: var(--game-text-tertiary);
 }
 
 .orderChip {
-  background: rgba(255, 152, 0, 0.15);
-  border: 1px solid rgba(255, 152, 0, 0.3);
+  background: #f8f8f8;
+  border: 1px solid var(--game-border);
   border-radius: var(--spacing-xs);
-  padding: var(--spacing-xs) 10px;
+  padding: var(--spacing-xs) 10px var(--spacing-xs) 22px;
   white-space: nowrap;
   font-size: var(--font-sm);
-  color: #FF9800;
+  color: var(--game-text-primary);
+  position: relative;
+}
+
+.orderChip::before {
+  content: '';
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #bbb;
 }
 
 .inProgress {
-  background: rgba(33, 150, 243, 0.15);
-  border-color: rgba(33, 150, 243, 0.4);
-  color: #2196F3;
+  background: var(--color-accent-light);
+  border-color: var(--color-accent);
+}
+
+.inProgress::before {
+  background: var(--color-info);
 }

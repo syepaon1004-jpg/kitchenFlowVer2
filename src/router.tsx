@@ -6,6 +6,7 @@ import JoinPage from './pages/JoinPage';
 import AvatarSelectPage from './pages/AvatarSelectPage';
 import GameSetupPage from './pages/GameSetupPage';
 import GamePage from './pages/GamePage';
+import FeedPage from './pages/FeedPage';
 import AdminPage from './pages/AdminPage';
 import DevMasterIngredientsPage from './pages/DevMasterIngredientsPage';
 
@@ -33,6 +34,7 @@ export const router = createBrowserRouter([
     children: [
       { path: '/game/setup', element: <GameSetupPage /> },
       { path: '/game', element: <GamePage /> },
+      { path: '/feed', element: <FeedPage /> },
     ],
   },
   {

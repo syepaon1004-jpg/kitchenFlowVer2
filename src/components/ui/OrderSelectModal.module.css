@@ -1,7 +1,8 @@
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(2px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -9,18 +10,19 @@
 }
 
 .modal {
-  background: #1a1a2e;
-  border: 1px solid #444;
-  border-radius: 8px;
+  background: var(--game-card-bg);
+  border: none;
+  border-radius: 14px;
   padding: var(--modal-padding);
   min-width: 260px;
   max-width: var(--modal-max-width);
+  box-shadow: var(--game-shadow-lg);
 }
 
 .title {
   margin: 0 0 var(--spacing-lg);
   font-size: var(--font-lg);
-  color: #eee;
+  color: var(--game-text-primary);
   text-align: center;
 }
 
@@ -31,33 +33,38 @@
 }
 
 .orderButton {
-  background: rgba(33, 150, 243, 0.15);
-  border: 1px solid rgba(33, 150, 243, 0.4);
-  border-radius: 6px;
+  background: var(--color-primary);
+  border: none;
+  border-radius: 8px;
   padding: 10px var(--spacing-lg);
-  color: #ddd;
+  color: #fff;
   font-size: var(--font-md);
   cursor: pointer;
   text-align: left;
 }
 
 .orderButton:hover {
-  background: rgba(33, 150, 243, 0.3);
-  border-color: rgba(33, 150, 243, 0.7);
+  background: var(--color-primary-hover);
+}
+
+.emptyMessage {
+  color: var(--game-text-tertiary);
+  text-align: center;
+  padding: var(--spacing-lg);
 }
 
 .cancelButton {
   margin-top: var(--spacing-md);
   width: 100%;
   background: transparent;
-  border: 1px solid #555;
+  border: 1px solid var(--game-border);
   border-radius: 6px;
   padding: var(--spacing-sm);
-  color: #888;
+  color: var(--game-text-tertiary);
   font-size: var(--font-base);
   cursor: pointer;
 }
 
 .cancelButton:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(0, 0, 0, 0.04);
 }

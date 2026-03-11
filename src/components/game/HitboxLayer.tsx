@@ -4,6 +4,8 @@ import type { AreaDefinition, GameEquipmentState, EquipmentType } from '../../ty
 import { supabase } from '../../lib/supabase';
 import { useUiStore } from '../../stores/uiStore';
 import { useEquipmentStore } from '../../stores/equipmentStore';
+import { useGameStore } from '../../stores/gameStore';
+import { useScoringStore } from '../../stores/scoringStore';
 import HitboxItem from './HitboxItem';
 import DraggableHitbox from './DraggableHitbox';
 import BasketGroup from './BasketGroup';
@@ -137,6 +139,8 @@ export default function HitboxLayer({ zoneId, imageWidth, imageHeight }: Props) 
   const vbH = imageHeight ?? 1000;
   const [areas, setAreas] = useState<AreaDefinition[]>([]);
   const setLeftSidebarZone = useUiStore((s) => s.setLeftSidebarZone);
+  const sessionId = useGameStore((s) => s.sessionId);
+  const addActionLog = useScoringStore((s) => s.addActionLog);
   const equipments = useEquipmentStore((s) => s.equipments);
   const wokAtSink = useEquipmentStore((s) => s.wok_at_sink);
 
@@ -217,9 +221,18 @@ export default function HitboxLayer({ zoneId, imageWidth, imageHeight }: Props) 
       {navigateAreas.map((area) => (
         <div
           key={`nav-${area.id}`}
-          onClick={() =>
-            area.navigate_zone_id && setLeftSidebarZone(area.navigate_zone_id)
-          }
+          onClick={() => {
+            if (!area.navigate_zone_id) return;
+            setLeftSidebarZone(area.navigate_zone_id);
+            if (sessionId) {
+              addActionLog({
+                session_id: sessionId,
+                action_type: 'navigate_open',
+                timestamp_ms: Date.now(),
+                metadata: { zone_id: area.navigate_zone_id, zone_label: area.label },
+              });
+            }
+          }}
           style={{
             position: 'absolute',
             left: `${area.x * 100}%`,

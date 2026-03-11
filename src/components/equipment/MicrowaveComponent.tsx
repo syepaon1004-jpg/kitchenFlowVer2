@@ -86,14 +86,14 @@ export default function MicrowaveComponent({ equipmentState, skipDroppable = fal
     });
   };
 
-  const statusColor = isRunning ? '#ff9800' : isDone ? '#4caf50' : '#9e9e9e';
+  const statusColor = isRunning ? 'var(--color-warning)' : isDone ? 'var(--color-success)' : '#9e9e9e';
 
   return (
     <div
       ref={skipDroppable ? undefined : setNodeRef}
       className={styles.container}
       style={{
-        background: isOver ? 'rgba(76,175,80,0.2)' : 'rgba(0,0,0,0.6)',
+        background: isOver ? 'rgba(76,175,80,0.15)' : 'var(--equip-bg)',
         border: `2px solid ${statusColor}`,
       }}
     >
@@ -120,7 +120,8 @@ export default function MicrowaveComponent({ equipmentState, skipDroppable = fal
             disabled={mwIngredients.length === 0}
             className={styles.startBtn}
             style={{
-              background: mwIngredients.length > 0 ? '#ff9800' : '#555',
+              background: mwIngredients.length > 0 ? 'var(--color-warning)' : '#555',
+              color: mwIngredients.length > 0 ? '#fff' : 'var(--equip-text)',
               cursor: mwIngredients.length > 0 ? 'pointer' : 'not-allowed',
             }}
           >

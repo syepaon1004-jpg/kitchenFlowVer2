@@ -44,7 +44,7 @@ export default function Handbar() {
     <div
       ref={setNodeRef}
       className={styles.handbar}
-      style={isOver ? { outline: '2px solid #4CAF50', outlineOffset: '-2px' } : undefined}
+      style={isOver ? { outline: '2px solid var(--color-success)', outlineOffset: '-2px' } : undefined}
     >
       {handIngredients.length === 0 ? (
         <span>재료를 여기에 드롭하세요</span>

@@ -1,22 +1,26 @@
 .handbar {
   pointer-events: auto;
-  background: #1a1a2e;
-  color: #aaa;
+  background: var(--game-card-bg);
+  color: var(--game-text-secondary);
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: var(--spacing-sm);
-  padding: 0 var(--spacing-lg);
+  padding: 10px 14px;
   font-size: var(--font-base);
-  border-top: 1px solid #333;
-  height: 100%;
+  min-height: var(--handbar-min-height);
+  border-radius: 12px;
+  box-shadow: var(--game-shadow-md);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--game-border);
 }
 
 .ingredientChip {
-  background: rgba(76, 175, 80, 0.2);
-  border: 1px solid rgba(76, 175, 80, 0.5);
+  background: var(--color-primary-light);
+  border: 1px solid var(--game-border);
   border-radius: var(--spacing-xs);
   padding: var(--spacing-xs) var(--spacing-sm);
   font-size: var(--font-sm);
-  color: #ccc;
+  color: var(--game-text-primary);
   white-space: nowrap;
 }

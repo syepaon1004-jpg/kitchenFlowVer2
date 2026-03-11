@@ -36,18 +36,25 @@
 
 .navBtn {
   position: absolute;
-  background: rgba(0, 0, 0, 0.55);
-  color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  border-radius: 6px;
-  padding: 10px var(--spacing-lg);
+  width: var(--game-nav-size);
+  height: var(--game-nav-size);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: var(--game-nav-bg);
+  color: var(--game-nav-text);
+  border: 1px solid var(--game-border);
+  border-radius: 50%;
   cursor: pointer;
   font-size: var(--font-xl);
   z-index: 5;
+  box-shadow: var(--game-shadow-md);
+  backdrop-filter: blur(8px);
 }
 
 .navBtn:hover {
-  background: rgba(0, 0, 0, 0.8);
+  background: var(--game-nav-bg-hover);
 }
 
 /* 현재 섹션 왼쪽 가장자리(0.2/1.4 ≈ 1/7), 세로 가운데 */
@@ -69,4 +76,8 @@
   left: 50%;
   bottom: var(--nav-back-bottom);
   transform: translateX(-50%);
+  width: auto;
+  height: auto;
+  border-radius: 12px;
+  padding: 10px var(--spacing-lg);
 }

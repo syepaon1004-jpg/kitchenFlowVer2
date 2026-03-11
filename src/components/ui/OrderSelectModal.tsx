@@ -33,7 +33,7 @@ export default function OrderSelectModal({ getRecipeName }: Props) {
         <h3 className={styles.title}>주문 선택</h3>
         <div className={styles.orderList}>
           {selectableOrders.length === 0 ? (
-            <div style={{ color: '#888', textAlign: 'center', padding: 16 }}>
+            <div className={styles.emptyMessage}>
               대기 중인 주문이 없습니다
             </div>
           ) : (

@@ -1,0 +1,256 @@
+/* ── 페이지 전체 ── */
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: #f4f6f9;
+}
+
+/* ── 헤더 ── */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  background: #fff;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.backButton {
+  background: none;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 13px;
+  color: #555;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.backButton:hover {
+  background: #f4f6f9;
+}
+
+.headerTitle {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: #333;
+  flex: 1;
+}
+
+.storeName {
+  font-size: 13px;
+  color: #888;
+}
+
+/* ── 콘텐츠 영역 ── */
+.content {
+  flex: 1;
+  width: 100%;
+  max-width: 660px;
+  margin: 0 auto;
+  padding: 20px 16px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── 로딩/빈 상태 ── */
+.loading {
+  text-align: center;
+  color: #888;
+  font-size: 14px;
+  padding: 60px 0;
+}
+
+.empty {
+  text-align: center;
+  color: #888;
+  font-size: 14px;
+  padding: 20px 0;
+}
+
+/* ── 섹션 공통 ── */
+.section {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: #fafbfc;
+  border-bottom: 1px solid #eee;
+}
+
+.sectionTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.sectionBody {
+  padding: 12px 14px;
+}
+
+/* ── 토글 버튼 ── */
+.toggleGroup {
+  display: flex;
+  gap: 4px;
+}
+
+.toggleBtn {
+  background: none;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-size: 12px;
+  color: #888;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.toggleBtnActive {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: #fff;
+}
+
+/* ── 점수 바 차트 ── */
+.chartList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.chartRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.chartLabel {
+  width: 72px;
+  text-align: right;
+  color: #888;
+  flex-shrink: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chartBarWrap {
+  flex: 1;
+  height: 18px;
+  background: #f0f0f0;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.chartBar {
+  height: 100%;
+  background: var(--color-primary);
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+.chartValue {
+  width: 40px;
+  text-align: right;
+  color: #555;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+/* ── 약한 메뉴 리스트 ── */
+.menuList {
+  display: flex;
+  flex-direction: column;
+}
+
+.menuItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 13px;
+}
+
+.menuItem:last-child {
+  border-bottom: none;
+}
+
+.menuName {
+  color: #333;
+}
+
+.menuCount {
+  color: #e53935;
+  font-weight: 500;
+  font-size: 12px;
+}
+
+/* ── 숙달된 메뉴 태그 ── */
+.tagList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tag {
+  background: #e8f5e9;
+  color: #2e7d32;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 12px;
+}
+
+/* ── 카테고리별 성과 ── */
+.categoryList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.categoryRow {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.categoryInfo {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+}
+
+.categoryName {
+  color: #333;
+  font-weight: 500;
+}
+
+.categoryRate {
+  color: #555;
+}
+
+.categoryBarWrap {
+  height: 12px;
+  background: #f0f0f0;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.categoryBar {
+  height: 100%;
+  background: #4caf50;
+  border-radius: 3px;
+  transition: width 0.3s;
+}

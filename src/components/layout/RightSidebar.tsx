@@ -1,9 +1,11 @@
 import { useMemo, useCallback, useRef, useEffect } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { useGameStore } from '../../stores/gameStore';
+import { useScoringStore } from '../../stores/scoringStore';
 import { useUiStore } from '../../stores/uiStore';
+import { SCORE_CONFIG } from '../../lib/scoring/constants';
 import ContainerCard from './ContainerCard';
-import type { Container, GameContainerInstance, RecipeStep, RecipeIngredient } from '../../types/db';
+import type { Container, GameContainerInstance, RecipeStep, RecipeIngredient, ScoreEventType } from '../../types/db';
 import styles from './RightSidebar.module.css';
 
 interface Props {
@@ -18,8 +20,12 @@ export default function RightSidebar({ containersMap, getRecipeName, recipeSteps
   const containerInstances = useGameStore((s) => s.containerInstances);
   const ingredientInstances = useGameStore((s) => s.ingredientInstances);
   const orders = useGameStore((s) => s.orders);
+  const sessionId = useGameStore((s) => s.sessionId);
   const markContainerServed = useGameStore((s) => s.markContainerServed);
   const updateOrderStatus = useGameStore((s) => s.updateOrderStatus);
+  const addScoreEvent = useScoringStore((s) => s.addScoreEvent);
+  const addActionLog = useScoringStore((s) => s.addActionLog);
+  const addRecipeResult = useScoringStore((s) => s.addRecipeResult);
 
   const rightSidebarOpen = useUiStore((s) => s.rightSidebarOpen);
   const setRightSidebarOpen = useUiStore((s) => s.setRightSidebarOpen);
@@ -64,8 +70,60 @@ export default function RightSidebar({ containersMap, getRecipeName, recipeSteps
         markContainerServed(c.id);
       }
       updateOrderStatus(orderId, 'completed');
+
+      // 서빙 시간 계산
+      const order = orders.find((o) => o.id === orderId);
+      if (!order || !sessionId) return;
+
+      const createdAtMs = new Date(order.created_at).getTime();
+      const serveTimeMs = Date.now() - createdAtMs;
+
+      // 서빙 시간 기준 점수 이벤트
+      let eventType: ScoreEventType | null = null;
+      let points = 0;
+      if (serveTimeMs <= SCORE_CONFIG.FAST_SERVE_THRESHOLD) {
+        eventType = 'fast_serve';
+        points = SCORE_CONFIG.FAST_SERVE;
+      } else if (serveTimeMs > SCORE_CONFIG.VERY_SLOW_SERVE_THRESHOLD) {
+        eventType = 'very_slow_serve';
+        points = SCORE_CONFIG.VERY_SLOW_SERVE;
+      } else if (serveTimeMs > SCORE_CONFIG.SLOW_SERVE_THRESHOLD) {
+        eventType = 'slow_serve';
+        points = SCORE_CONFIG.SLOW_SERVE;
+      }
+      if (eventType) {
+        addScoreEvent({
+          session_id: sessionId,
+          event_type: eventType,
+          points,
+          timestamp_ms: Date.now(),
+          metadata: { order_id: orderId, serve_time_ms: serveTimeMs },
+        });
+      }
+
+      // serve 액션 로그
+      addActionLog({
+        session_id: sessionId,
+        action_type: 'serve',
+        timestamp_ms: Date.now(),
+        metadata: { order_id: orderId, serve_time_ms: serveTimeMs },
+      });
+
+      // recipeResult 기록
+      const errorCount = useScoringStore.getState().recipeErrors.filter(
+        (e) => e.order_id === orderId,
+      ).length;
+      addRecipeResult({
+        session_id: sessionId,
+        order_id: orderId,
+        recipe_id: order.recipe_id,
+        is_success: true,
+        error_count: errorCount,
+        serve_time_ms: serveTimeMs,
+        created_at: new Date().toISOString(),
+      });
     },
-    [containerInstances, markContainerServed, updateOrderStatus],
+    [containerInstances, markContainerServed, updateOrderStatus, orders, sessionId, addScoreEvent, addActionLog, addRecipeResult],
   );
 
   // 주문 라벨 맵
@@ -146,7 +204,7 @@ export default function RightSidebar({ containersMap, getRecipeName, recipeSteps
         </button>
         <div
           className={styles.sidebarContent}
-          style={isOver ? { outline: '2px solid #2196F3', outlineOffset: '-2px' } : undefined}
+          style={isOver ? { outline: '2px solid var(--color-primary)', outlineOffset: '-2px' } : undefined}
         >
           <div className={styles.header}>그릇</div>
           {visibleContainers.length === 0 ? (

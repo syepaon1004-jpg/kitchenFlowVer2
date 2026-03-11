@@ -45,17 +45,18 @@ export default function GameHeader() {
   };
 
   return (
-    <header className={styles.header}>
-      <button className={styles.backButton} onClick={() => navigate(-1)}>
-        ← 돌아가기
+    <div className={styles.header}>
+      <button className={styles.floatingBtn} onClick={() => navigate(-1)}>
+        🏠
       </button>
-      <div className={styles.spacer} />
-      <button className={styles.actionButton} onClick={handleLogout}>
-        로그아웃
-      </button>
-      <button className={styles.actionButton} onClick={handleQuit}>
-        중단
-      </button>
-    </header>
+      <div className={styles.rightGroup}>
+        <button className={styles.floatingBtn} onClick={handleLogout}>
+          로그아웃
+        </button>
+        <button className={styles.floatingBtn} onClick={handleQuit}>
+          중단
+        </button>
+      </div>
+    </div>
   );
 }

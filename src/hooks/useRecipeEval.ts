@@ -2,6 +2,7 @@ import { useRef, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { evaluateContainer } from '../lib/recipe/evaluate';
 import { useGameStore } from '../stores/gameStore';
+import { useScoringStore } from '../stores/scoringStore';
 import type { Recipe, RecipeIngredient } from '../types/db';
 
 interface RecipeCache {
@@ -67,6 +68,34 @@ export function useRecipeEval(storeId: string) {
     );
 
     const result = evaluateContainer(inContainer, recipeIngredients, recipe, ci.container_id);
+
+    // errors가 있으면 scoringStore에 기록 (중복 방지)
+    if (result.errors.length > 0) {
+      const { addRecipeError, recipeErrors } = useScoringStore.getState();
+      const sessionId = useGameStore.getState().sessionId;
+
+      for (const error of result.errors) {
+        // 중복 판별: order_id + error_type + ingredient_id 조합
+        const isDuplicate = recipeErrors.some(
+          (existing) =>
+            existing.order_id === ci.assigned_order_id &&
+            existing.error_type === error.type &&
+            (error.ingredient_id
+              ? existing.details.ingredient_id === error.ingredient_id
+              : true),
+        );
+        if (!isDuplicate) {
+          addRecipeError({
+            session_id: sessionId!,
+            order_id: ci.assigned_order_id!,
+            recipe_id: order.recipe_id,
+            error_type: error.type,
+            details: { ...error.details, ingredient_id: error.ingredient_id },
+            timestamp_ms: Date.now(),
+          });
+        }
+      }
+    }
 
     if (result.isComplete) {
       markContainerComplete(containerInstanceId);

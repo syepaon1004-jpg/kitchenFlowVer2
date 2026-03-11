@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useDroppable, useDraggable } from '@dnd-kit/core';
 import { useEquipmentStore } from '../../stores/equipmentStore';
 import { useGameStore } from '../../stores/gameStore';
+import { useScoringStore } from '../../stores/scoringStore';
 import type { GameEquipmentState } from '../../types/db';
 import styles from './FryingBasketComponent.module.css';
 
@@ -13,6 +14,8 @@ interface Props {
 export default function FryingBasketComponent({ equipmentState, skipDroppable = false }: Props) {
   const updateEquipment = useEquipmentStore((s) => s.updateEquipment);
   const ingredientInstances = useGameStore((s) => s.ingredientInstances);
+  const sessionId = useGameStore((s) => s.sessionId);
+  const addActionLog = useScoringStore((s) => s.addActionLog);
 
   const basketIngredients = useMemo(
     () =>
@@ -41,6 +44,14 @@ export default function FryingBasketComponent({ equipmentState, skipDroppable = 
   const toggleBasket = () => {
     const newStatus = equipmentState.basket_status === 'up' ? 'down' : 'up';
     updateEquipment(equipmentState.id, { basket_status: newStatus });
+    if (sessionId) {
+      addActionLog({
+        session_id: sessionId,
+        action_type: newStatus === 'down' ? 'basket_down' : 'basket_up',
+        timestamp_ms: Date.now(),
+        metadata: { equipment_id: equipmentState.id },
+      });
+    }
   };
 
   const isDown = equipmentState.basket_status === 'down';
@@ -55,14 +66,14 @@ export default function FryingBasketComponent({ equipmentState, skipDroppable = 
       {...attributes}
       className={styles.container}
       style={{
-        background: isOver ? 'rgba(76,175,80,0.2)' : 'rgba(0,0,0,0.6)',
-        border: `2px solid ${isDown ? '#ff9800' : '#4caf50'}`,
+        background: isOver ? 'rgba(76,175,80,0.15)' : 'var(--equip-bg)',
+        border: `2px solid ${isDown ? 'var(--color-warning)' : 'var(--color-success)'}`,
         cursor: basketIngredients.length > 0 ? 'grab' : 'default',
       }}
     >
       <div className={styles.titleRow}>
         <span>튀김채</span>
-        <span style={{ color: isDown ? '#ff9800' : '#4caf50' }}>
+        <span style={{ color: isDown ? 'var(--color-warning)' : 'var(--color-success)' }}>
           {isDown ? 'DOWN' : 'UP'}
         </span>
       </div>
@@ -75,7 +86,7 @@ export default function FryingBasketComponent({ equipmentState, skipDroppable = 
         onPointerDown={(e) => e.stopPropagation()}
         className={styles.toggleBtn}
         style={{
-          background: isDown ? '#4caf50' : '#ff9800',
+          background: isDown ? 'var(--color-success)' : 'var(--color-warning)',
         }}
       >
         {isDown ? '올리기' : '내리기'}

@@ -37,7 +37,7 @@
 }
 
 .logoutButton:hover {
-  color: #d32f2f;
+  color: var(--color-error);
 }
 
 .title {
@@ -75,9 +75,44 @@
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 
-.avatarCard:hover {
-  border-color: #4a90d9;
+.avatarCard:hover:not(:disabled) {
+  border-color: var(--color-primary);
   box-shadow: 0 2px 8px rgba(74, 144, 217, 0.2);
+}
+
+/* 내 아바타 강조 */
+.avatarCardMine {
+  border-color: var(--color-primary);
+  background: #f0f6ff;
+}
+
+/* 사용 중 (다른 사람) */
+.avatarCardTaken {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.mineBadge {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 8px;
+  background: var(--color-primary);
+  color: #fff;
+  font-weight: 600;
+}
+
+.takenBadge {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 8px;
+  background: #eee;
+  color: #999;
+  font-weight: 500;
+}
+
+.selectingText {
+  font-size: 11px;
+  color: var(--color-primary);
 }
 
 .avatarCircle {
@@ -130,7 +165,7 @@
 }
 
 .addAvatarCard:hover {
-  border-color: #4a90d9;
+  border-color: var(--color-primary);
   box-shadow: 0 2px 8px rgba(74, 144, 217, 0.2);
 }
 
@@ -163,7 +198,7 @@
 
 /* Error */
 .error {
-  color: #d32f2f;
+  color: var(--color-error);
   font-size: 13px;
   padding: 8px 10px;
   background: #fdecea;
@@ -206,7 +241,7 @@
 }
 
 .input:focus {
-  border-color: #4a90d9;
+  border-color: var(--color-primary);
 }
 
 .select {
@@ -220,7 +255,7 @@
 }
 
 .select:focus {
-  border-color: #4a90d9;
+  border-color: var(--color-primary);
 }
 
 .formActions {
@@ -231,7 +266,7 @@
 .submitButton {
   flex: 1;
   padding: 10px;
-  background: #4a90d9;
+  background: var(--color-primary);
   color: #fff;
   border: none;
   border-radius: 4px;
@@ -242,7 +277,7 @@
 }
 
 .submitButton:hover {
-  background: #3a7bc8;
+  background: var(--color-primary-hover);
 }
 
 .submitButton:disabled {
@@ -309,7 +344,7 @@
 
 .modalButtonPrimary {
   padding: 12px;
-  background: #4a90d9;
+  background: var(--color-primary);
   color: #fff;
   border: none;
   border-radius: 4px;
@@ -320,7 +355,7 @@
 }
 
 .modalButtonPrimary:hover {
-  background: #3a7bc8;
+  background: var(--color-primary-hover);
 }
 
 .modalButtonSecondary {

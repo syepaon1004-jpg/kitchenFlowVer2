@@ -1,8 +1,7 @@
-/* RightSidebar.module.css에서 이동한 기존 클래스 */
 .containerCard {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid #333;
-  border-radius: 6px;
+  background: #ffffff;
+  border: 1px solid var(--game-border);
+  border-radius: 8px;
   padding: 8px;
   text-align: center;
 }
@@ -17,7 +16,7 @@
 }
 
 .containerPlaceholder {
-  color: #aaa;
+  color: var(--game-text-tertiary);
   font-size: var(--font-sm);
   padding: var(--spacing-md) 0;
 }
@@ -25,18 +24,18 @@
 .orderLabel {
   margin-top: var(--spacing-xs);
   font-size: var(--font-xs);
-  color: #FF9800;
+  color: var(--color-warning);
   text-align: center;
 }
 
 .complete {
-  border-color: #4CAF50;
+  border-color: var(--color-success);
 }
 
 .completeBadge {
   margin-top: var(--spacing-xs);
   font-size: var(--font-2xs);
-  color: #4CAF50;
+  color: var(--color-success);
   text-align: center;
   font-weight: bold;
 }
@@ -44,35 +43,39 @@
 .serveButton {
   margin-top: 6px;
   width: 100%;
-  background: rgba(76, 175, 80, 0.2);
-  border: 1px solid rgba(76, 175, 80, 0.5);
+  background: var(--color-success);
+  border: none;
   border-radius: 4px;
   padding: 6px;
-  color: #4CAF50;
+  color: #fff;
   font-size: var(--font-sm);
   cursor: pointer;
   font-weight: bold;
 }
 
 .serveButton:hover {
-  background: rgba(76, 175, 80, 0.35);
+  background: var(--color-success);
+  filter: brightness(1.1);
 }
 
 .mixDoneBadge {
   margin-top: 6px;
   font-size: var(--font-xs);
-  color: #7b1fa2;
+  color: var(--color-mix);
   text-align: center;
   font-weight: bold;
 }
 
-/* === 인라인 스타일 치환용 신규 클래스 === */
-
 .dirtyLabel {
   font-size: var(--font-2xs);
-  color: #795548;
+  color: var(--color-dirty);
   font-weight: bold;
   margin-top: var(--spacing-2xs);
+}
+
+.dirtyState {
+  border: 2px solid var(--color-dirty);
+  opacity: 0.7;
 }
 
 .ingredientList {
@@ -80,7 +83,7 @@
   padding: 0 var(--spacing-xs);
   list-style: none;
   font-size: var(--font-2xs);
-  color: #aaa;
+  color: var(--game-text-secondary);
 }
 
 .ingredientItem {
@@ -110,4 +113,21 @@
 
 .progressLabel {
   position: relative;
+}
+
+.hasError {
+  border-color: var(--color-error);
+}
+
+.errorBadge {
+  margin-top: var(--spacing-xs);
+  font-size: var(--font-2xs);
+  color: var(--color-error);
+  text-align: center;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.errorBadge:hover {
+  text-decoration: underline;
 }

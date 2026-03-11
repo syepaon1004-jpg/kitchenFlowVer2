@@ -19,8 +19,8 @@ export default function SinkComponent({ equipmentState, skipDroppable = false }:
       ref={skipDroppable ? undefined : setNodeRef}
       className={styles.container}
       style={{
-        background: isOver ? 'rgba(3,169,244,0.3)' : 'rgba(0,0,0,0.6)',
-        border: `2px solid ${isOver ? '#03a9f4' : '#607d8b'}`,
+        background: isOver ? 'rgba(3,169,244,0.2)' : 'var(--equip-bg)',
+        border: `2px solid ${isOver ? 'var(--color-sink)' : '#607d8b'}`,
       }}
     >
       싱크대

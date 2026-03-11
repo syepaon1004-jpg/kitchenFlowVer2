@@ -1,15 +1,21 @@
 import { useEffect, useRef } from 'react';
 import { useEquipmentStore } from '../stores/equipmentStore';
 import { useGameStore } from '../stores/gameStore';
+import { useScoringStore } from '../stores/scoringStore';
 
 export function useGameTick() {
   const equipments = useEquipmentStore((s) => s.equipments);
   const tickWok = useEquipmentStore((s) => s.tickWok);
   const tickBasket = useEquipmentStore((s) => s.tickBasket);
   const tickMicrowave = useEquipmentStore((s) => s.tickMicrowave);
+  const stirring_equipment_ids = useEquipmentStore((s) => s.stirring_equipment_ids);
 
   const containerInstances = useGameStore((s) => s.containerInstances);
   const tickMix = useGameStore((s) => s.tickMix);
+  const sessionId = useGameStore((s) => s.sessionId);
+
+  const addActionLog = useScoringStore((s) => s.addActionLog);
+  const checkIdlePenalty = useScoringStore((s) => s.checkIdlePenalty);
 
   // staleRef 패턴: equipments는 매 렌더마다 갱신, tick 함수는 stable
   const equipmentsRef = useRef(equipments);
@@ -17,6 +23,12 @@ export function useGameTick() {
 
   const containerInstancesRef = useRef(containerInstances);
   containerInstancesRef.current = containerInstances;
+
+  const sessionIdRef = useRef(sessionId);
+  sessionIdRef.current = sessionId;
+
+  const stirringRef = useRef(stirring_equipment_ids);
+  stirringRef.current = stirring_equipment_ids;
 
   useEffect(() => {
     const intervalId = setInterval(() => {
@@ -39,6 +51,21 @@ export function useGameTick() {
       for (const ci of containerInstancesRef.current) {
         tickMix(ci.id);
       }
+
+      // 볶기 중인 웍이 있으면 매초 stir 로그 기록 (idle 방지)
+      if (sessionIdRef.current && stirringRef.current.size > 0) {
+        for (const equipId of stirringRef.current) {
+          addActionLog({
+            session_id: sessionIdRef.current,
+            action_type: 'stir',
+            timestamp_ms: Date.now(),
+            metadata: { equipment_id: equipId },
+          });
+        }
+      }
+
+      // 공백 감지
+      checkIdlePenalty(Date.now());
     }, 1000);
 
     return () => clearInterval(intervalId);

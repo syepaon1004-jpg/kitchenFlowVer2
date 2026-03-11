@@ -52,8 +52,8 @@
 }
 
 .recipeItemActive {
-  border-color: #4a90d9;
-  background: #e8f0fe;
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
 }
 
 .recipeDeleteBtn {
@@ -65,7 +65,7 @@
 }
 
 .recipeDeleteBtn:hover {
-  color: #d32f2f;
+  color: var(--color-error);
 }
 
 .addRecipeBtn {
@@ -76,13 +76,13 @@
   border-radius: 4px;
   background: #fff;
   font-size: 13px;
-  color: #4a90d9;
+  color: var(--color-primary);
   cursor: pointer;
 }
 
 .addRecipeBtn:hover {
   background: #f0f4ff;
-  border-color: #4a90d9;
+  border-color: var(--color-primary);
 }
 
 /* ── Right: Detail / Form ── */
@@ -197,8 +197,8 @@
 
 .removeRowBtn:hover {
   background: #fde8e8;
-  border-color: #d32f2f;
-  color: #d32f2f;
+  border-color: var(--color-error);
+  color: var(--color-error);
 }
 
 .addRowBtn {
@@ -207,13 +207,13 @@
   border-radius: 3px;
   background: #fff;
   font-size: 12px;
-  color: #4a90d9;
+  color: var(--color-primary);
   cursor: pointer;
 }
 
 .addRowBtn:hover {
   background: #f0f4ff;
-  border-color: #4a90d9;
+  border-color: var(--color-primary);
 }
 
 /* ── AI analysis ── */
@@ -254,7 +254,7 @@
 
 .aiTextarea:focus {
   outline: none;
-  border-color: #4a90d9;
+  border-color: var(--color-primary);
 }
 
 .aiTextarea:disabled {
@@ -270,16 +270,16 @@
 
 .aiBtn {
   padding: 7px 18px;
-  border: 1px solid #4a90d9;
+  border: 1px solid var(--color-primary);
   border-radius: 4px;
-  background: #4a90d9;
+  background: var(--color-primary);
   font-size: 13px;
   color: #fff;
   cursor: pointer;
 }
 
 .aiBtn:not(:disabled):hover {
-  background: #3a7bc8;
+  background: var(--color-primary-hover);
 }
 
 .aiBtn:disabled {
@@ -308,7 +308,7 @@
   padding: 8px 20px;
   border: none;
   border-radius: 4px;
-  background: #4a90d9;
+  background: var(--color-primary);
   color: #fff;
   font-size: 13px;
   cursor: pointer;
@@ -320,7 +320,7 @@
 }
 
 .saveBtn:not(:disabled):hover {
-  background: #3a7bc8;
+  background: var(--color-primary-hover);
 }
 
 .cancelBtn {
@@ -405,7 +405,7 @@
 
 /* ── Error ── */
 .error {
-  color: #d32f2f;
+  color: var(--color-error);
   font-size: 13px;
   margin-bottom: 8px;
 }

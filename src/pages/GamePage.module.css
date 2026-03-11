@@ -1,10 +1,10 @@
 .gamePage {
   display: grid;
-  grid-template-rows: auto 1fr;
+  grid-template-rows: 1fr;
   grid-template-columns: 1fr;
   height: 100vh;
   overflow: hidden;
-  background: #0a0a1a;
+  background: var(--game-area-bg);
 }
 
 .gameArea {
@@ -19,11 +19,10 @@
 
 .billQueue {
   position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 15;
-  max-width: 80%;
+  top: var(--spacing-sm);
+  left: var(--billqueue-left);
+  z-index: 25;
+  max-width: calc(100% - var(--billqueue-right-reserve));
   pointer-events: none;
 }
 
@@ -49,12 +48,11 @@
 
 .handbar {
   position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: var(--handbar-height);
+  bottom: var(--spacing-sm);
+  left: var(--handbar-left);
   z-index: 10;
   pointer-events: none;
+  max-width: var(--handbar-max-width);
 }
 
 .dragImage {

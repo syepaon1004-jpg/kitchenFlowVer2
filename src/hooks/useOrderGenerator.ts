@@ -9,11 +9,15 @@ export function useOrderGenerator() {
   const sessionId = useGameStore((s) => s.sessionId);
   const activeRecipeIds = useGameStore((s) => s.activeRecipeIds);
   const orders = useGameStore((s) => s.orders);
+  const totalOrderCount = useGameStore((s) => s.totalOrderCount);
   const addOrder = useGameStore((s) => s.addOrder);
 
   // refs로 최신 값 참조 (인터벌 클로저 stale 방지)
   const ordersRef = useRef(orders);
   ordersRef.current = orders;
+
+  const totalOrderCountRef = useRef(totalOrderCount);
+  totalOrderCountRef.current = totalOrderCount;
 
   const activeRecipeIdsRef = useRef(activeRecipeIds);
   activeRecipeIdsRef.current = activeRecipeIds;
@@ -26,8 +30,11 @@ export function useOrderGenerator() {
       const currentRecipeIds = activeRecipeIdsRef.current;
       if (currentRecipeIds.length === 0) return;
 
+      // 총 주문 수 도달 → 생성 중단
+      if (currentOrders.length >= totalOrderCountRef.current) return;
+
       const pendingCount = currentOrders.filter(
-        (o) => o.status !== 'completed',
+        (o) => o.status !== 'completed' && o.status !== 'failed',
       ).length;
       if (pendingCount >= MAX_PENDING_ORDERS) return;
 
@@ -41,6 +48,7 @@ export function useOrderGenerator() {
         order_sequence: currentOrders.length + 1,
         status: 'pending',
         created_at: new Date().toISOString(),
+        completed_at: null,
       };
 
       addOrder(newOrder);

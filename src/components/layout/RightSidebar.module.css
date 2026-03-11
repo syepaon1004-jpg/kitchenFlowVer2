@@ -11,20 +11,22 @@
   transform: translate(-100%, -50%);
   z-index: 25;
   pointer-events: auto;
-  background: #16213e;
-  border: 1px solid #333;
+  background: var(--game-card-bg);
+  border: 1px solid var(--game-border);
   border-right: none;
   border-radius: 6px 0 0 6px;
-  color: #aaa;
+  color: var(--game-text-secondary);
   padding: var(--toggle-button-padding-v) var(--toggle-button-padding-h);
   cursor: pointer;
   font-size: var(--font-md);
   line-height: 1;
+  box-shadow: var(--game-shadow-sm);
+  backdrop-filter: blur(8px);
 }
 
 .toggleButton:hover {
-  color: #fff;
-  background: #1a2744;
+  color: var(--game-text-primary);
+  background: var(--game-card-bg-hover);
 }
 
 .rightSidebar {
@@ -48,8 +50,12 @@
 .sidebarContent {
   width: 100%;
   height: 100%;
-  background: #16213e;
-  border-left: 1px solid #333;
+  background: var(--game-card-bg);
+  border: 1px solid var(--game-border);
+  border-right: none;
+  border-radius: 12px 0 0 12px;
+  box-shadow: var(--game-shadow-md);
+  backdrop-filter: blur(10px);
   display: flex;
   flex-direction: column;
   overflow-y: auto;
@@ -58,8 +64,8 @@
 .header {
   padding: var(--spacing-sm) var(--spacing-md);
   font-size: var(--font-sm);
-  color: #888;
-  border-bottom: 1px solid #333;
+  color: var(--game-text-secondary);
+  border-bottom: 1px solid var(--game-border);
   text-align: center;
 }
 
@@ -68,7 +74,7 @@
   align-items: center;
   justify-content: center;
   flex: 1;
-  color: #555;
+  color: var(--game-text-tertiary);
   font-size: var(--font-sm);
   padding: var(--spacing-md);
   text-align: center;

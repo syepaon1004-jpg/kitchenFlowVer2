@@ -11,7 +11,9 @@ interface GameState {
   storeIngredientsMap: Map<string, StoreIngredient>;
   waterIngredientIds: Set<string>;
   mixing_container_ids: Set<string>;
+  totalOrderCount: number;
 
+  setTotalOrderCount: (count: number) => void;
   addMixing: (id: string) => void;
   removeMixing: (id: string) => void;
   tickMix: (containerId: string) => void;
@@ -43,7 +45,9 @@ export const useGameStore = create<GameState>((set, get) => ({
   ingredientInstances: [],
   containerInstances: [],
   storeIngredientsMap: new Map(),
+  totalOrderCount: 10,
 
+  setTotalOrderCount: (count) => set({ totalOrderCount: count }),
   setSession: (sessionId, storeId) => set({ sessionId, storeId }),
   setActiveRecipeIds: (ids) => set({ activeRecipeIds: ids }),
   addOrder: (order) => set((s) => ({ orders: [...s.orders, order] })),
@@ -108,7 +112,16 @@ export const useGameStore = create<GameState>((set, get) => ({
   updateOrderStatus: (orderId, status) =>
     set((s) => ({
       orders: s.orders.map((o) =>
-        o.id === orderId ? { ...o, status } : o
+        o.id === orderId
+          ? {
+              ...o,
+              status,
+              completed_at:
+                status === 'completed' || status === 'failed'
+                  ? new Date().toISOString()
+                  : o.completed_at,
+            }
+          : o,
       ),
     })),
   setStoreIngredientsMap: (map) => set({ storeIngredientsMap: map }),
@@ -138,6 +151,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     storeIngredientsMap: new Map(),
     waterIngredientIds: new Set(),
     mixing_container_ids: new Set(),
+    totalOrderCount: 10,
   }),
   tickMix: (containerId) => {
     if (!get().mixing_container_ids.has(containerId)) return;

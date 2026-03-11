@@ -1,6 +1,10 @@
 import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { useDroppable, useDraggable } from '@dnd-kit/core';
 import { useGameStore } from '../../stores/gameStore';
+import { useScoringStore } from '../../stores/scoringStore';
+import { useShallow } from 'zustand/react/shallow';
+import { SCORE_CONFIG } from '../../lib/scoring/constants';
+import RecipeErrorPopup from '../game/RecipeErrorPopup';
 import type {
   Container,
   GameContainerInstance,
@@ -42,6 +46,17 @@ export default function ContainerCard({
   const addMixing = useGameStore((s) => s.addMixing);
   const removeMixing = useGameStore((s) => s.removeMixing);
   const isMixing = useGameStore((s) => s.mixing_container_ids.has(instance.id));
+
+  // 오류 구독: 해당 order_id의 오류만 필터
+  const orderErrors = useScoringStore(
+    useShallow(
+      (s) => s.recipeErrors.filter((e) => e.order_id === instance.assigned_order_id),
+    ),
+  );
+  const hasErrors = orderErrors.length > 0;
+
+  // 오류 팝업 표시 상태
+  const [showErrorPopup, setShowErrorPopup] = useState(false);
 
   // mix 진행률 (로컬 state — UI 게이지 전용)
   const [mixProgress, setMixProgress] = useState(0);
@@ -147,6 +162,71 @@ export default function ContainerCard({
     [canMix, instance.id, addMixing],
   );
 
+  // 버리기 실행
+  const handleDispose = useCallback(() => {
+    const { ingredientInstances: allIngs, moveIngredient, removeContainerInstance, updateOrderStatus } =
+      useGameStore.getState();
+    const { addScoreEvent, addActionLog } = useScoringStore.getState();
+    const sessionId = useGameStore.getState().sessionId;
+
+    // 1. 그릇 내 모든 재료 → location_type = 'disposed'
+    const containerIngs = allIngs.filter(
+      (i) => i.container_instance_id === instance.id && i.location_type === 'container',
+    );
+    for (const ing of containerIngs) {
+      moveIngredient(ing.id, { location_type: 'disposed' });
+    }
+
+    // 2. container_instance 삭제
+    removeContainerInstance(instance.id);
+
+    // 3. 해당 주문의 다른 그릇이 남아있는지 확인 → 없으면 failed
+    if (instance.assigned_order_id) {
+      const remaining = useGameStore.getState().containerInstances.filter(
+        (c) => c.assigned_order_id === instance.assigned_order_id,
+      );
+      if (remaining.length === 0) {
+        updateOrderStatus(instance.assigned_order_id, 'failed');
+      }
+    }
+
+    // 4. 감점: SCORE_DISPOSE (-2)
+    addScoreEvent({
+      session_id: sessionId!,
+      event_type: 'dispose',
+      points: SCORE_CONFIG.DISPOSE,
+      timestamp_ms: Date.now(),
+      metadata: { container_instance_id: instance.id, order_id: instance.assigned_order_id },
+    });
+
+    // 5. 액션 로그: dispose
+    addActionLog({
+      session_id: sessionId!,
+      action_type: 'dispose',
+      timestamp_ms: Date.now(),
+      metadata: { container_instance_id: instance.id, order_id: instance.assigned_order_id },
+    });
+
+    // 6. recipeResult 기록 (실패)
+    if (instance.assigned_order_id) {
+      const order = orders.find((o) => o.id === instance.assigned_order_id);
+      if (order) {
+        const { addRecipeResult } = useScoringStore.getState();
+        addRecipeResult({
+          session_id: sessionId!,
+          order_id: instance.assigned_order_id,
+          recipe_id: order.recipe_id,
+          is_success: false,
+          error_count: orderErrors.length,
+          serve_time_ms: null,
+          created_at: new Date().toISOString(),
+        });
+      }
+    }
+
+    setShowErrorPopup(false);
+  }, [instance.id, instance.assigned_order_id, orders, orderErrors.length]);
+
   // isMixDone이 true가 되면 자동 정지
   useEffect(() => {
     if (isMixDone && isMixing) {
@@ -172,11 +252,10 @@ export default function ContainerCard({
       }}
       {...listeners}
       {...attributes}
-      className={`${styles.containerCard} ${instance.is_complete ? styles.complete : ''}`}
+      className={`${styles.containerCard} ${instance.is_complete ? styles.complete : ''} ${hasErrors && !instance.is_complete ? styles.hasError : ''} ${instance.is_dirty ? styles.dirtyState : ''}`}
       style={{
-        ...(isOver ? { outline: '2px solid #FF9800', outlineOffset: '-2px' } : {}),
+        ...(isOver ? { outline: '2px solid var(--color-primary)', outlineOffset: '-2px' } : {}),
         ...((isMixDone || instance.is_dirty) ? { cursor: 'grab', touchAction: 'none' } : {}),
-        ...(instance.is_dirty ? { border: '2px solid #795548', opacity: 0.7 } : {}),
       }}
     >
       {imageUrl ? (
@@ -193,6 +272,19 @@ export default function ContainerCard({
       )}
       {orderLabel && <div className={styles.orderLabel}>{orderLabel}</div>}
       {instance.is_complete && <div className={styles.completeBadge}>완성</div>}
+      {!instance.is_complete && hasErrors && (
+        <div className={styles.errorBadge} onClick={() => setShowErrorPopup(true)}>
+          잘못 조리됨 ({orderErrors.length})
+        </div>
+      )}
+      {showErrorPopup && (
+        <RecipeErrorPopup
+          errors={orderErrors}
+          storeIngredientsMap={storeIngredientsMap}
+          onDispose={handleDispose}
+          onClose={() => setShowErrorPopup(false)}
+        />
+      )}
       {instance.is_dirty && (
         <div className={styles.dirtyLabel}>세척 필요</div>
       )}
@@ -223,7 +315,7 @@ export default function ContainerCard({
             disabled={!canMix}
             className={styles.mixBtn}
             style={{
-              background: isMixing ? '#5c2d91' : canMix ? '#7b1fa2' : '#555',
+              background: isMixing ? '#5c2d91' : canMix ? 'var(--color-mix)' : '#ccc',
               cursor: canMix ? 'pointer' : 'not-allowed',
             }}
           >

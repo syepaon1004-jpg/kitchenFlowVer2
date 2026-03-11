@@ -37,8 +37,8 @@
 }
 
 .tabButtonActive {
-  color: #4a90d9;
-  border-bottom-color: #4a90d9;
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
   font-weight: 600;
 }
 
@@ -99,17 +99,17 @@
 }
 
 .zoneDeleteBtn:hover {
-  color: #d32f2f;
+  color: var(--color-error);
   background: rgba(211, 47, 47, 0.1);
 }
 
 .zoneItem:hover {
-  background: #e8f0fe;
+  background: var(--color-primary-light);
 }
 
 .zoneItemActive {
   background: #d0e0ff;
-  border-color: #4a90d9;
+  border-color: var(--color-primary);
   font-weight: 600;
 }
 
@@ -127,8 +127,8 @@
 }
 
 .addZoneBtn:hover {
-  background: #e8f0fe;
-  border-color: #4a90d9;
+  background: var(--color-primary-light);
+  border-color: var(--color-primary);
 }
 
 .addZoneForm {
@@ -140,7 +140,7 @@
 }
 
 .addZoneError {
-  color: #d32f2f;
+  color: var(--color-error);
   font-size: 12px;
   margin-bottom: 6px;
 }
@@ -166,7 +166,7 @@
   padding: 6px;
   border: none;
   border-radius: 3px;
-  background: #4a90d9;
+  background: var(--color-primary);
   color: #fff;
   font-size: 13px;
   cursor: pointer;

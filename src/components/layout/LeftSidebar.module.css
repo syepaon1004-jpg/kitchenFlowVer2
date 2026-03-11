@@ -11,20 +11,22 @@
   transform: translate(100%, -50%);
   z-index: 25;
   pointer-events: auto;
-  background: #0f3460;
-  border: 1px solid #333;
+  background: var(--game-card-bg);
+  border: 1px solid var(--game-border);
   border-left: none;
   border-radius: 0 6px 6px 0;
-  color: #aaa;
+  color: var(--game-text-secondary);
   padding: var(--toggle-button-padding-v) var(--toggle-button-padding-h);
   cursor: pointer;
   font-size: var(--font-md);
   line-height: 1;
+  box-shadow: var(--game-shadow-sm);
+  backdrop-filter: blur(8px);
 }
 
 .toggleButton:hover {
-  color: #fff;
-  background: #1a4a7a;
+  color: var(--game-text-primary);
+  background: var(--game-card-bg-hover);
 }
 
 .sidebar {
@@ -46,8 +48,12 @@
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: #0f3460;
-  border-right: 1px solid #333;
+  background: var(--game-card-bg);
+  border: 1px solid var(--game-border);
+  border-left: none;
+  border-radius: 0 12px 12px 0;
+  box-shadow: var(--game-shadow-md);
+  backdrop-filter: blur(10px);
   display: flex;
   flex-direction: column;
 }
@@ -57,11 +63,11 @@
   align-items: center;
   justify-content: space-between;
   padding: var(--spacing-sm) var(--spacing-md);
-  border-bottom: 1px solid #1a4a7a;
+  border-bottom: 1px solid var(--game-border);
 }
 
 .headerTitle {
-  color: #e0e0e0;
+  color: var(--game-text-primary);
   font-size: var(--font-base);
   font-weight: 600;
 }
@@ -69,7 +75,7 @@
 .closeButton {
   background: none;
   border: none;
-  color: #888;
+  color: var(--game-text-tertiary);
   font-size: var(--font-lg);
   cursor: pointer;
   padding: var(--spacing-2xs) 6px;
@@ -78,8 +84,8 @@
 }
 
 .closeButton:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
+  background: rgba(0, 0, 0, 0.06);
+  color: var(--game-text-primary);
 }
 
 .empty {
@@ -87,7 +93,7 @@
   align-items: center;
   justify-content: center;
   height: 100%;
-  color: #555;
+  color: var(--game-text-tertiary);
   font-size: var(--font-base);
 }
 

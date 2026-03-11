@@ -9,9 +9,11 @@ import HitboxEditorPanel from '../components/admin/HitboxEditorPanel';
 import StoreIngredientsManager from '../components/admin/StoreIngredientsManager';
 import RecipeManager from '../components/admin/RecipeManager';
 import ContainersManager from '../components/admin/ContainersManager';
+import AdminHeader from '../components/admin/AdminHeader';
+import StaffManager from '../components/admin/StaffManager';
 import styles from './AdminPage.module.css';
 
-type AdminTab = 'hitbox' | 'ingredients' | 'containers' | 'recipe';
+type AdminTab = 'hitbox' | 'ingredients' | 'containers' | 'recipe' | 'staff';
 
 function getImageDimensions(file: File): Promise<{ w: number; h: number }> {
   return new Promise((resolve, reject) => {
@@ -28,6 +30,7 @@ function getImageDimensions(file: File): Promise<{ w: number; h: number }> {
 
 const AdminPage = () => {
   const selectedStore = useAuthStore((s) => s.selectedStore);
+  const selectedUser = useAuthStore((s) => s.selectedUser);
 
   // Tab state
   const [activeTab, setActiveTab] = useState<AdminTab>('hitbox');
@@ -202,6 +205,7 @@ const AdminPage = () => {
 
   return (
     <div className={styles.adminRoot}>
+      <AdminHeader />
       {/* Tab bar */}
       <div className={styles.tabBar}>
         <button
@@ -227,6 +231,12 @@ const AdminPage = () => {
           onClick={() => setActiveTab('recipe')}
         >
           레시피 관리
+        </button>
+        <button
+          className={`${styles.tabButton} ${activeTab === 'staff' ? styles.tabButtonActive : ''}`}
+          onClick={() => setActiveTab('staff')}
+        >
+          직원 관리
         </button>
       </div>
 
@@ -388,6 +398,16 @@ const AdminPage = () => {
             storeId={selectedStore.id}
             ingredients={ingredients}
             containers={containers}
+          />
+        </div>
+      )}
+
+      {/* Staff tab */}
+      {activeTab === 'staff' && selectedUser && (
+        <div className={styles.tabContent}>
+          <StaffManager
+            storeId={selectedStore.id}
+            currentUserId={selectedUser.id}
           />
         </div>
       )}

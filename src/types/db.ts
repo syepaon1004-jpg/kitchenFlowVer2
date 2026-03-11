@@ -17,6 +17,8 @@ export interface StoreUser {
   name: string;
   avatar_key: string;
   role: 'admin' | 'staff';
+  auth_user_id: string | null;
+  invited_email: string | null;
 }
 
 export interface SectionConfig {
@@ -85,6 +87,7 @@ export interface Recipe {
   store_id: string;
   name: string;
   target_container_id: string | null;
+  category: string | null;
 }
 
 export const ACTION_TYPES = ['stir', 'fry', 'microwave', 'boil', 'mix'] as const;
@@ -131,8 +134,9 @@ export interface GameOrder {
   session_id: string;
   recipe_id: string;
   order_sequence: number;
-  status: 'pending' | 'in_progress' | 'completed';
+  status: 'pending' | 'in_progress' | 'completed' | 'failed';
   created_at: string;
+  completed_at: string | null;
 }
 
 export type WokStatus = 'clean' | 'dirty' | 'burned' | 'overheating';
@@ -185,4 +189,73 @@ export interface GameContainerInstance {
   is_served: boolean;
   current_plate_order: number;
   is_dirty: boolean;
+}
+
+// ——— 점수/로그 계층 ———————————————————————————————
+
+// 액션 로그 타입
+export type ActionLogType =
+  | 'navigate_open' | 'drag_start' | 'drop_success'
+  | 'stir'
+  | 'basket_down' | 'basket_up'
+  | 'serve' | 'dispose' | 'wok_burned';
+
+export interface GameActionLog {
+  id: string;
+  session_id: string;
+  action_type: ActionLogType;
+  timestamp_ms: number;
+  metadata: Record<string, unknown>;
+}
+
+// 점수 이벤트 타입
+export type ScoreEventType =
+  | 'fast_serve' | 'slow_serve' | 'very_slow_serve'
+  | 'dispose' | 'wok_burned'
+  | 'short_idle' | 'long_idle'
+  | 'redundant_nav';
+
+export interface GameScoreEvent {
+  id: string;
+  session_id: string;
+  event_type: ScoreEventType;
+  points: number;
+  timestamp_ms: number;
+  metadata: Record<string, unknown>;
+}
+
+// 레시피 오류 타입
+export type RecipeErrorType =
+  | 'missing_ingredient' | 'unexpected_ingredient'
+  | 'quantity_error' | 'action_insufficient' | 'action_excessive'
+  | 'plate_order_mismatch' | 'wrong_container';
+
+export interface GameRecipeError {
+  id: string;
+  session_id: string;
+  order_id: string;
+  recipe_id: string;
+  error_type: RecipeErrorType;
+  details: Record<string, unknown>;
+  timestamp_ms: number;
+}
+
+// 레시피별 결과
+export interface GameRecipeResult {
+  id: string;
+  session_id: string;
+  order_id: string;
+  recipe_id: string;
+  is_success: boolean;
+  error_count: number;
+  serve_time_ms: number | null;
+  created_at: string;
+}
+
+// AI 피드백
+export interface GameAiFeedback {
+  id: string;
+  session_id: string;
+  feedback_text: string;
+  created_at: string;
 }

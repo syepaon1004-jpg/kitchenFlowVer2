@@ -1,43 +1,36 @@
 .header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
   display: flex;
-  align-items: center;
-  padding: 0 var(--spacing-md);
-  background: #0a0a1a;
-  border-bottom: 1px solid #333;
-  height: var(--game-header-height);
-  gap: var(--spacing-sm);
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: var(--spacing-sm);
+  z-index: 30;
+  pointer-events: none;
 }
 
-.backButton {
-  background: none;
-  border: 1px solid #555;
-  color: #ccc;
-  border-radius: var(--spacing-xs);
-  padding: var(--spacing-xs) var(--spacing-md);
-  cursor: pointer;
-  font-size: var(--font-base);
-}
-
-.backButton:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
-}
-
-.spacer {
-  flex: 1;
-}
-
-.actionButton {
-  background: none;
-  border: 1px solid #555;
-  color: #ccc;
-  border-radius: var(--spacing-xs);
+.floatingBtn {
+  pointer-events: auto;
+  background: var(--game-card-bg);
+  border: none;
+  border-radius: 10px;
+  box-shadow: var(--game-shadow-md);
+  backdrop-filter: blur(8px);
+  color: var(--game-text-primary);
   padding: var(--spacing-xs) var(--spacing-md);
   font-size: var(--font-base);
   cursor: pointer;
+  line-height: 1.4;
 }
 
-.actionButton:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
+.floatingBtn:hover {
+  background: var(--game-card-bg-hover);
+}
+
+.rightGroup {
+  display: flex;
+  gap: var(--spacing-xs);
+  pointer-events: auto;
 }

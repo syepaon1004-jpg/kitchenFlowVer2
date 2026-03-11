@@ -40,7 +40,7 @@
 }
 
 .countBtn:hover:not(:disabled) {
-  background: #e8f0fe;
+  background: var(--color-primary-light);
 }
 
 .countBtn:disabled {
@@ -58,7 +58,7 @@
 .saveBtn {
   margin-left: auto;
   padding: 5px 14px;
-  background: #4a90d9;
+  background: var(--color-primary);
   color: #fff;
   border: none;
   border-radius: 4px;
@@ -68,7 +68,7 @@
 }
 
 .saveBtn:hover:not(:disabled) {
-  background: #357abd;
+  background: var(--color-primary-hover);
 }
 
 .saveBtn:disabled {

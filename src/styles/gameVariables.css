@@ -3,6 +3,11 @@
   --game-header-height: 40px;
   --handbar-height: 80px;
   --nav-back-bottom: calc(var(--handbar-height) + 16px);
+  --billqueue-left: 52px;
+  --billqueue-right-reserve: 220px;
+  --handbar-max-width: 500px;
+  --handbar-left: calc(50% - 250px);
+  --handbar-min-height: 72px;
 
   /* ===== Font Sizes ===== */
   --font-2xs: 10px;
@@ -28,6 +33,52 @@
   --toggle-button-padding-v: 12px;
   --toggle-button-padding-h: 4px;
   --drag-overlay-size: 60px;
+
+  /* === 브랜드 컬러 === */
+  --color-primary: #4a90d9;
+  --color-primary-hover: #3a7bc8;
+  --color-primary-light: #e8f0fe;
+
+  /* === 상태 색상 === */
+  --color-success: #4CAF50;
+  --color-warning: #FF9800;
+  --color-error: #d32f2f;
+  --color-info: #4a90d9;
+  --color-fire: #ff5722;
+  --color-fire-active: #e65100;
+  --color-dirty: #795548;
+  --color-sink: #03a9f4;
+  --color-mix: #7b1fa2;
+
+  /* === 액센트 === */
+  --color-accent: #F5C518;
+  --color-accent-light: #FFF8E1;
+
+  /* === 인게임 오버레이 카드 === */
+  --game-card-bg: rgba(255, 255, 255, 0.93);
+  --game-card-bg-hover: rgba(255, 255, 255, 0.97);
+  --game-area-bg: #2a2a3a;
+  --game-text-primary: #333333;
+  --game-text-secondary: #666666;
+  --game-text-tertiary: #999999;
+  --game-border: rgba(0, 0, 0, 0.08);
+  --game-border-strong: rgba(0, 0, 0, 0.15);
+  --game-shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.1);
+  --game-shadow-md: 0 2px 12px rgba(0, 0, 0, 0.15);
+  --game-shadow-lg: 0 4px 20px rgba(0, 0, 0, 0.2);
+
+  /* === 네비게이션 버튼 === */
+  --game-nav-bg: rgba(255, 255, 255, 0.88);
+  --game-nav-bg-hover: rgba(255, 255, 255, 0.96);
+  --game-nav-text: #333333;
+  --game-nav-size: 48px;
+
+  /* === 장비 컴포넌트 === */
+  --equip-bg: rgba(0, 0, 0, 0.2);
+  --equip-text: #fff;
+  --equip-btn-radius: 6px;
+  --equip-input-bg: #333;
+  --equip-input-border: #666;
 }
 
 /* ===== Tablet (≤1024px) ===== */
@@ -37,6 +88,11 @@
     --game-header-height: 36px;
     --handbar-height: 60px;
     /* --nav-back-bottom: calc 자동 연동 — 재정의 불필요 */
+    --billqueue-left: 44px;
+    --billqueue-right-reserve: 180px;
+    --handbar-max-width: 420px;
+    --handbar-left: calc(50% - 210px);
+    --handbar-min-height: 64px;
 
     /* Font Sizes */
     --font-2xs: 9px;
@@ -62,6 +118,7 @@
     --toggle-button-padding-v: 10px;
     --toggle-button-padding-h: 3px;
     --drag-overlay-size: 48px;
+    --game-nav-size: 40px;
   }
 }
 
@@ -72,6 +129,11 @@
     --game-header-height: 40px;
     --handbar-height: 80px;
     /* --nav-back-bottom: calc 자동 연동 — 재정의 불필요 */
+    --billqueue-left: 52px;
+    --billqueue-right-reserve: 220px;
+    --handbar-max-width: 360px;
+    --handbar-left: calc(50% - 180px);
+    --handbar-min-height: 56px;
 
     /* Font Sizes */
     --font-2xs: 10px;
@@ -97,5 +159,6 @@
     --toggle-button-padding-v: 12px;
     --toggle-button-padding-h: 4px;
     --drag-overlay-size: 60px;
+    --game-nav-size: 44px;
   }
 }

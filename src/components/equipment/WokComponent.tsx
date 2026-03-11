@@ -144,12 +144,12 @@ export default function WokComponent({ equipmentState, atSink = false, skipDropp
 
   const statusColor =
     equipmentState.wok_status === 'burned'
-      ? '#d32f2f'
+      ? 'var(--color-error)'
       : equipmentState.wok_status === 'overheating'
-        ? '#ff9800'
+        ? 'var(--color-warning)'
         : equipmentState.wok_status === 'dirty'
-          ? '#795548'
-          : '#4caf50';
+          ? 'var(--color-dirty)'
+          : 'var(--color-success)';
 
   const needsWash = atSink && equipmentState.wok_status !== 'clean';
   const washPercent = (washProgress / WASH_DURATION) * 100;
@@ -164,8 +164,8 @@ export default function WokComponent({ equipmentState, atSink = false, skipDropp
       {...attributes}
       className={styles.container}
       style={{
-        background: isOver ? 'rgba(76,175,80,0.2)' : 'rgba(0,0,0,0.6)',
-        border: `2px solid ${atSink ? '#03a9f4' : statusColor}`,
+        background: isOver ? 'rgba(76,175,80,0.15)' : 'var(--equip-bg)',
+        border: `2px solid ${atSink ? 'var(--color-sink)' : statusColor}`,
       }}
     >
       <div className={styles.titleRow}>
@@ -191,7 +191,8 @@ export default function WokComponent({ equipmentState, atSink = false, skipDropp
                 className={styles.burnerBtn}
                 style={{
                   fontWeight: equipmentState.burner_level === lvl ? 'bold' : 'normal',
-                  background: equipmentState.burner_level === lvl ? '#ff5722' : '#555',
+                  background: equipmentState.burner_level === lvl ? 'var(--color-fire)' : '#555',
+                  color: equipmentState.burner_level === lvl ? '#fff' : 'var(--equip-text)',
                 }}
               >
                 {lvl}
@@ -206,7 +207,8 @@ export default function WokComponent({ equipmentState, atSink = false, skipDropp
             disabled={!equipmentState.burner_level || equipmentState.wok_status !== 'clean' || hasWaterInWok}
             className={styles.actionBtn}
             style={{
-              background: isStirring ? '#e65100' : (!equipmentState.burner_level || equipmentState.wok_status !== 'clean' || hasWaterInWok) ? '#555' : '#ff9800',
+              background: isStirring ? 'var(--color-fire-active)' : (!equipmentState.burner_level || equipmentState.wok_status !== 'clean' || hasWaterInWok) ? '#555' : 'var(--color-warning)',
+              color: isStirring || (equipmentState.burner_level && equipmentState.wok_status === 'clean' && !hasWaterInWok) ? '#fff' : 'var(--equip-text)',
               cursor: (!equipmentState.burner_level || equipmentState.wok_status !== 'clean' || hasWaterInWok) ? 'not-allowed' : 'pointer',
             }}
           >
@@ -218,7 +220,7 @@ export default function WokComponent({ equipmentState, atSink = false, skipDropp
               }}
             />
             <span className={styles.progressLabel}>
-              {isStirring ? `볶는 중 ${Math.round((stirProgress / STIR_DURATION) * 100)}%` : '볶기 (꾹 누르기)'}
+              {isStirring ? `볶는 중 ${Math.round(stirProgress / 1000)}초 / ${STIR_DURATION / 1000}초` : '볶기 (꾹 누르기)'}
             </span>
           </button>
 
@@ -244,7 +246,7 @@ export default function WokComponent({ equipmentState, atSink = false, skipDropp
             onPointerLeave={stopWash}
             className={styles.actionBtn}
             style={{
-              background: washProgress > 0 ? '#1976d2' : '#03a9f4',
+              background: washProgress > 0 ? 'var(--color-sink)' : 'var(--color-sink)',
               cursor: 'pointer',
             }}
           >
