@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { AreaDefinition, AreaType, HitboxPoint } from '../../types/db';
+import type { AreaDefinition, AreaType, BillQueueArea, HitboxPoint } from '../../types/db';
 import { supabase } from '../../lib/supabase';
 import styles from './HitboxEditor.module.css';
 
@@ -29,6 +29,12 @@ interface Props {
   storeId: string;
   imageWidth?: number;
   imageHeight?: number;
+  billQueueAreas?: BillQueueArea[] | null;
+  billQueuePlaceMode?: boolean;
+  onBillQueueAreaChange?: (area: BillQueueArea) => void;
+  isMainKitchen?: boolean;
+  selectedBillQueueIndex?: number | null;
+  onSelectBillQueueIndex?: (index: number | null) => void;
 }
 
 interface DrawState {
@@ -71,11 +77,18 @@ export default function HitboxEditor({
   storeId,
   imageWidth,
   imageHeight,
+  billQueueAreas,
+  billQueuePlaceMode,
+  onBillQueueAreaChange,
+  isMainKitchen,
+  selectedBillQueueIndex,
+  onSelectBillQueueIndex,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
   const [drawState, setDrawState] = useState<DrawState | null>(null);
+  const [bqDrawState, setBqDrawState] = useState<DrawState | null>(null);
   const [loading, setLoading] = useState(false);
   const [isPanorama, setIsPanorama] = useState(false);
   const [currentSection, setCurrentSection] = useState(1);
@@ -154,23 +167,49 @@ export default function HitboxEditor({
       const el = containerRef.current;
       if (!el) return;
       const pos = getRelativeFromEvent(e, el);
+
+      // Bill queue place mode: start drag-draw for bill queue area
+      if (billQueuePlaceMode && isMainKitchen) {
+        setBqDrawState({ startX: pos.x, startY: pos.y, currentX: pos.x, currentY: pos.y });
+        return;
+      }
+
       setDrawState({ startX: pos.x, startY: pos.y, currentX: pos.x, currentY: pos.y });
     },
-    [],
+    [billQueuePlaceMode, isMainKitchen],
   );
 
   const handleMouseMove = useCallback(
     (e: React.MouseEvent) => {
-      if (!drawState) return;
       const el = containerRef.current;
       if (!el) return;
+
+      if (bqDrawState) {
+        const pos = getRelativeFromEvent(e, el);
+        setBqDrawState((prev) => (prev ? { ...prev, currentX: pos.x, currentY: pos.y } : null));
+        return;
+      }
+
+      if (!drawState) return;
       const pos = getRelativeFromEvent(e, el);
       setDrawState((prev) => (prev ? { ...prev, currentX: pos.x, currentY: pos.y } : null));
     },
-    [drawState],
+    [drawState, bqDrawState],
   );
 
   const handleMouseUp = useCallback(() => {
+    if (bqDrawState) {
+      const x = Math.min(bqDrawState.startX, bqDrawState.currentX);
+      const y = Math.min(bqDrawState.startY, bqDrawState.currentY);
+      const w = Math.abs(bqDrawState.currentX - bqDrawState.startX);
+      const h = Math.abs(bqDrawState.currentY - bqDrawState.startY);
+      setBqDrawState(null);
+      if (w >= 0.003 && h >= 0.003) {
+        onBillQueueAreaChange?.({ x, y, w, h });
+      }
+      return;
+    }
+
     if (!drawState || !zoneId) {
       setDrawState(null);
       return;
@@ -183,7 +222,7 @@ export default function HitboxEditor({
 
     setDrawState(null);
 
-    if (w < 0.01 || h < 0.01) return;
+    if (w < 0.003 || h < 0.003) return;
 
     const newArea: AreaDefinition = {
       id: `temp-${Date.now()}`,
@@ -209,7 +248,7 @@ export default function HitboxEditor({
 
     onAreasChange([...areas, newArea]);
     onSelectArea(newArea);
-  }, [drawState, zoneId, storeId, areas, onAreasChange, onSelectArea]);
+  }, [drawState, bqDrawState, onBillQueueAreaChange, zoneId, storeId, areas, onAreasChange, onSelectArea]);
 
   // ─── Handle drag (vertex move) ───
   const handleHandleMouseDown = useCallback(
@@ -385,10 +424,18 @@ export default function HitboxEditor({
       }
     : null;
 
-  const containerStyle: React.CSSProperties | undefined =
-    isPanorama && imgDisplayWidth
-      ? { width: imgDisplayWidth, transform: `translateX(${translateX}px)`, transition: 'transform 0.3s ease' }
-      : undefined;
+  const containerStyle: React.CSSProperties | undefined = (() => {
+    const base: React.CSSProperties = {};
+    if (isPanorama && imgDisplayWidth) {
+      base.width = imgDisplayWidth;
+      base.transform = `translateX(${translateX}px)`;
+      base.transition = 'transform 0.3s ease';
+    }
+    if (billQueuePlaceMode && isMainKitchen) {
+      base.cursor = 'crosshair';
+    }
+    return Object.keys(base).length > 0 ? base : undefined;
+  })();
 
   const imgStyle: React.CSSProperties | undefined =
     isPanorama && imgDisplayWidth
@@ -404,7 +451,7 @@ export default function HitboxEditor({
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
-        onMouseLeave={() => setDrawState(null)}
+        onMouseLeave={() => { setDrawState(null); setBqDrawState(null); }}
       >
         <img
           ref={imgRef}
@@ -518,6 +565,58 @@ export default function HitboxEditor({
               style={{ pointerEvents: 'none' }}
             />
           )}
+          {/* Bill queue area markers (main_kitchen only) */}
+          {isMainKitchen && billQueueAreas && billQueueAreas.map((area, i) => {
+            const isSelected = i === selectedBillQueueIndex;
+            return (
+              <g key={`bq-${i}`}>
+                <rect
+                  x={area.x * vbW}
+                  y={area.y * vbH}
+                  width={area.w * vbW}
+                  height={area.h * vbH}
+                  fill="rgba(255,64,129,0.15)"
+                  stroke={isSelected ? '#fff' : '#ff4081'}
+                  strokeWidth={isSelected ? 3 : 2}
+                  style={{ cursor: 'pointer', pointerEvents: 'all' }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSelectBillQueueIndex?.(isSelected ? null : i);
+                    onSelectArea(null);
+                  }}
+                />
+                <text
+                  x={area.x * vbW + 6} y={area.y * vbH + 16}
+                  fill={isSelected ? '#fff' : '#ff4081'} fontSize="12" fontWeight="bold"
+                  style={{ pointerEvents: 'none' }}
+                >
+                  빌지큐 {i + 1}
+                </text>
+              </g>
+            );
+          })}
+          {/* Bill queue draw preview (main_kitchen only) */}
+          {isMainKitchen && bqDrawState && (() => {
+            const bqPreview = {
+              x: Math.min(bqDrawState.startX, bqDrawState.currentX),
+              y: Math.min(bqDrawState.startY, bqDrawState.currentY),
+              w: Math.abs(bqDrawState.currentX - bqDrawState.startX),
+              h: Math.abs(bqDrawState.currentY - bqDrawState.startY),
+            };
+            return (
+              <rect
+                x={bqPreview.x * vbW}
+                y={bqPreview.y * vbH}
+                width={bqPreview.w * vbW}
+                height={bqPreview.h * vbH}
+                fill="rgba(255,64,129,0.15)"
+                stroke="#ff4081"
+                strokeWidth={2}
+                strokeDasharray="8 4"
+                style={{ pointerEvents: 'none' }}
+              />
+            );
+          })()}
         </svg>
       </div>
 

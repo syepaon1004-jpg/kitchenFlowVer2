@@ -69,6 +69,7 @@ const GamePage = () => {
   const setContainerDirty = useGameStore((s) => s.setContainerDirty);
   const openOrderSelectModal = useUiStore((s) => s.openOrderSelectModal);
   const openQuantityModal = useUiStore((s) => s.openQuantityModal);
+  const billQueueAreas = useUiStore((s) => s.billQueueAreas);
   const setEquipments = useEquipmentStore((s) => s.setEquipments);
   const updateEquipment = useEquipmentStore((s) => s.updateEquipment);
   const setWokAtSink = useEquipmentStore((s) => s.setWokAtSink);
@@ -498,7 +499,7 @@ const GamePage = () => {
         const si = storeIngredientsMapRef.current.get(ingredientId);
         const unit = si?.unit;
         const defaultQty = si?.default_quantity ?? 1;
-        const isActionUnit = unit === 'spoon' || unit === 'portion' || unit === 'pinch';
+        const isActionUnit = unit === 'spoon' || unit === 'portion' || unit === 'pinch' || unit === 'handful' || unit === 'ladle' || unit === 'spatula';
 
         // 같은 재료가 이미 hand에 있는지 검색
         const existing = ingredientInstances.find(
@@ -599,7 +600,7 @@ const GamePage = () => {
           const si = storeIngredientsMapRef.current.get(ingredientId);
           const unit = si?.unit;
           const defaultQty = si?.default_quantity ?? 1;
-          const isActionUnit = unit === 'spoon' || unit === 'portion' || unit === 'pinch';
+          const isActionUnit = unit === 'spoon' || unit === 'portion' || unit === 'pinch' || unit === 'handful' || unit === 'ladle' || unit === 'spatula';
 
           // 같은 재료가 이미 같은 장비에 있는지 검색
           const existing = ingredientInstances.find(
@@ -671,7 +672,7 @@ const GamePage = () => {
           const si = storeIngredientsMapRef.current.get(ingredientId);
           const unit = si?.unit;
           const defaultQty = si?.default_quantity ?? 1;
-          const isActionUnit = unit === 'spoon' || unit === 'portion' || unit === 'pinch';
+          const isActionUnit = unit === 'spoon' || unit === 'portion' || unit === 'pinch' || unit === 'handful' || unit === 'ladle' || unit === 'spatula';
 
           // 같은 재료가 이미 같은 컨테이너에 있는지 검색
           const existing = ingredientInstances.find(
@@ -955,11 +956,13 @@ const GamePage = () => {
           <div className={styles.gameArea}>
             <GameHeader />
             <div className={styles.mainViewport}>
-              <MainViewport />
+              <MainViewport getRecipeName={getRecipeName} />
             </div>
-            <div className={styles.billQueue}>
-              <BillQueue getRecipeName={getRecipeName} />
-            </div>
+            {(!billQueueAreas || billQueueAreas.length === 0) && (
+              <div className={styles.billQueue}>
+                <BillQueue getRecipeName={getRecipeName} />
+              </div>
+            )}
             <div className={styles.leftSidebar}>
               <LeftSidebar />
             </div>

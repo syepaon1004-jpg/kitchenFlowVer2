@@ -11,7 +11,7 @@
   box-shadow: var(--game-shadow-md);
   backdrop-filter: blur(10px);
   gap: var(--spacing-sm);
-  overflow-x: auto;
+  overflow: hidden;
 }
 
 .empty {
@@ -23,10 +23,11 @@
   border: 1px solid var(--game-border);
   border-radius: var(--spacing-xs);
   padding: var(--spacing-xs) 10px var(--spacing-xs) 22px;
-  white-space: nowrap;
   font-size: var(--font-sm);
   color: var(--game-text-primary);
   position: relative;
+  flex: 1 1 0;
+  min-width: 0;
 }
 
 .orderChip::before {
@@ -48,4 +49,10 @@
 
 .inProgress::before {
   background: var(--color-info);
+}
+
+.elapsed {
+  margin-left: 4px;
+  font-size: var(--font-xs);
+  color: var(--game-text-secondary);
 }

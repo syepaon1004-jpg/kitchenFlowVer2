@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { SectionConfig } from '../types/db';
+import type { SectionConfig, BillQueueArea } from '../types/db';
 
 export const DEFAULT_SECTION_CONFIG: SectionConfig = {
   boundaries: [0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 1.0],
@@ -27,6 +27,7 @@ interface UiState {
   currentSection: number;     // 섹션 인덱스 (1-indexed)
   currentZoneId: string | null;
   sectionConfig: SectionConfig;
+  billQueueAreas: BillQueueArea[] | null;
 
   // 왼쪽 사이드바
   leftSidebarZoneId: string | null; // null이면 zone 미선택
@@ -58,6 +59,7 @@ interface UiState {
   toggleRightSidebar: () => void;
   openOrderSelectModal: (containerInstanceId: string) => void;
   closeOrderSelectModal: () => void;
+  setBillQueueAreas: (areas: BillQueueArea[] | null) => void;
   openQuantityModal: (unit: string, defaultQty: number, callback: (qty: number) => void) => void;
   closeQuantityModal: () => void;
 }
@@ -67,6 +69,7 @@ export const useUiStore = create<UiState>((set, get) => ({
   currentSection: 1,
   currentZoneId: null,
   sectionConfig: DEFAULT_SECTION_CONFIG,
+  billQueueAreas: null,
   leftSidebarZoneId: null,
   leftSidebarOpen: false,
   rightSidebarOpen: false,
@@ -136,6 +139,7 @@ export const useUiStore = create<UiState>((set, get) => ({
     leftSidebarOpen: zoneId !== null,
   }),
   setRightSidebarOpen: (open) => set({ rightSidebarOpen: open }),
+  setBillQueueAreas: (areas) => set({ billQueueAreas: areas }),
   toggleRightSidebar: () => set((s) => ({ rightSidebarOpen: !s.rightSidebarOpen })),
   openOrderSelectModal: (containerInstanceId) =>
     set({ orderSelectModalOpen: true, orderSelectContainerInstanceId: containerInstanceId }),

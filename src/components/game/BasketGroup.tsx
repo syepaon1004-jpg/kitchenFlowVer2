@@ -10,7 +10,7 @@ interface Props {
 }
 
 /** 펼침 시 자식 간 Y축 오프셋 (비율값, 0~1) */
-const STEP = 0.04;
+const STEP = 0.013;
 
 export default function BasketGroup({ basket, children }: Props) {
   const [expanded, setExpanded] = useState(false);
@@ -100,8 +100,8 @@ export default function BasketGroup({ basket, children }: Props) {
 
       {/* 자식 렌더: sort_order 오름차순 (낮은 것 먼저 = 뒤에 깔림) */}
       {children.map((child, i) => {
-        // 낮은 sort_order(index 0) → 가장 많이 이동, 높은 sort_order → 가장 적게
-        const yOffset = expanded ? -(children.length - i) * STEP : 0;
+        // 높은 sort_order(큰 index) → 가장 많이 이동, 낮은 sort_order → 가장 적게
+        const yOffset = expanded ? -(i + 1) * STEP : 0;
         return (
           <div
             key={child.id}
@@ -113,7 +113,7 @@ export default function BasketGroup({ basket, children }: Props) {
               height: `${(child.h / bounds.h) * 100}%`,
               transition: 'top 0.2s ease',
               opacity: draggingChildId === child.id ? 0 : 1,
-              zIndex: i + 1,
+              zIndex: children.length - i,
             }}
           >
             {/* 이미지 렌더링 (SVG) */}

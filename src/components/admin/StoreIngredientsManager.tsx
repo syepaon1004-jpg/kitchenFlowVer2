@@ -5,7 +5,7 @@ import { uploadToStorage } from '../../lib/storage';
 import styles from './StoreIngredientsManager.module.css';
 
 type UnitType = StoreIngredient['unit'];
-const UNITS: UnitType[] = ['g', 'ml', 'ea', 'spoon', 'portion', 'pinch'];
+const UNITS: UnitType[] = ['g', 'ml', 'ea', 'spoon', 'portion', 'pinch', 'handful', 'ladle', 'spatula'];
 
 const UNIT_LABELS: Record<string, string> = {
   g: 'g (그램)',
@@ -14,6 +14,9 @@ const UNIT_LABELS: Record<string, string> = {
   spoon: 'spoon (스푼)',
   portion: 'portion (인분)',
   pinch: 'pinch (꼬집)',
+  handful: 'handful (한 줌)',
+  ladle: 'ladle (국자)',
+  spatula: 'spatula (주걱)',
 };
 
 type SortKey = 'display_name' | 'unit' | 'default_quantity';

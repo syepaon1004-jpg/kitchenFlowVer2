@@ -67,13 +67,18 @@ export default function LeftSidebar() {
                 </button>
               </div>
               <div className={styles.imageWrapper}>
-                <img
-                  src={zone.image_url ?? ''}
-                  alt={zone.label}
-                  className={styles.zoneImage}
-                  draggable={false}
-                />
-                <HitboxLayer zoneId={zone.id} imageWidth={zone.image_width} imageHeight={zone.image_height} />
+                <div
+                  className={styles.imageInner}
+                  style={{ '--img-ratio': zone.image_height > 0 ? zone.image_width / zone.image_height : 1 } as React.CSSProperties}
+                >
+                  <img
+                    src={zone.image_url ?? ''}
+                    alt={zone.label}
+                    className={styles.zoneImage}
+                    draggable={false}
+                  />
+                  <HitboxLayer zoneId={zone.id} imageWidth={zone.image_width} imageHeight={zone.image_height} />
+                </div>
               </div>
             </>
           ) : (

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { GameEquipmentState, ActionType } from '../types/db';
+import type { GameEquipmentState, ActionType, WokStatus } from '../types/db';
 import { tickWokPhysics, canAccumulateStir } from '../lib/physics/wok';
 import { canAccumulateFry } from '../lib/physics/fryingBasket';
 import { tickMicrowavePhysics, canAccumulateMicrowave } from '../lib/physics/microwave';
@@ -28,6 +28,7 @@ interface EquipmentStoreState {
   washing_equipment_ids: Set<string>;
   stirring_equipment_ids: Set<string>;
   wok_at_sink: Map<string, string>; // wokEquipId → sinkEquipId
+  pre_overheat_status_map: Map<string, WokStatus | null>; // equipId → 진입 전 상태
   setEquipments: (equipments: GameEquipmentState[]) => void;
   updateEquipment: (id: string, updates: Partial<GameEquipmentState>) => void;
   addWashing: (id: string) => void;
@@ -46,6 +47,7 @@ export const useEquipmentStore = create<EquipmentStoreState>((set, get) => ({
   washing_equipment_ids: new Set<string>(),
   stirring_equipment_ids: new Set<string>(),
   wok_at_sink: new Map<string, string>(),
+  pre_overheat_status_map: new Map<string, WokStatus | null>(),
 
   setEquipments: (equipments) => set({ equipments }),
 
@@ -109,11 +111,20 @@ export const useEquipmentStore = create<EquipmentStoreState>((set, get) => ({
     const hasWater = wokIngredients.some((i) => waterIngredientIds.has(i.ingredient_id));
 
     const prevStatus = equip.wok_status;
+    const preOverheatStatus = get().pre_overheat_status_map.get(id) ?? null;
     const result = tickWokPhysics({
       wok_temp: equip.wok_temp,
       wok_status: equip.wok_status,
       burner_level: equip.burner_level,
       hasWater,
+      pre_overheat_status: preOverheatStatus,
+    });
+
+    // pre_overheat_status 맵 업데이트
+    set((s) => {
+      const next = new Map(s.pre_overheat_status_map);
+      next.set(id, result.pre_overheat_status);
+      return { pre_overheat_status_map: next };
     });
 
     // burned 전이 순간 1회만 감점

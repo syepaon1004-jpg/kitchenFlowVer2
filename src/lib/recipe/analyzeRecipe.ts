@@ -8,7 +8,7 @@ export interface AiIngredient {
   matched_ingredient_id: string | null;
   raw_name: string;
   quantity: number;
-  unit: 'g' | 'ml' | 'ea' | 'spoon' | 'portion' | 'pinch';
+  unit: 'g' | 'ml' | 'ea' | 'spoon' | 'portion' | 'pinch' | 'handful' | 'ladle' | 'spatula';
   action_type: string; // Edge Function은 ActionType보다 넓은 범위 반환
   duration_sec: number;
   plate_order: number;

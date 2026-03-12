@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { AreaDefinition, KitchenZone, StoreIngredient, Container, IngredientsMaster, SectionConfig } from '../types/db';
+import type { AreaDefinition, BillQueueArea, KitchenZone, StoreIngredient, Container, IngredientsMaster, SectionConfig } from '../types/db';
 import { supabase } from '../lib/supabase';
 import { uploadToStorage } from '../lib/storage';
 import { useAuthStore } from '../stores/authStore';
@@ -87,6 +87,10 @@ const AdminPage = () => {
 
   const handleSelectArea = useCallback((area: AreaDefinition | null) => {
     setSelectedArea(area);
+    if (area) {
+      setBillQueuePlaceMode(false);
+      setSelectedBillQueueIndex(null);
+    }
   }, []);
 
   const handleSaved = useCallback(
@@ -120,6 +124,67 @@ const AdminPage = () => {
           z.id === selectedZoneId ? { ...z, section_config: config } : z,
         ),
       );
+    },
+    [selectedZoneId],
+  );
+
+  // Bill queue areas
+  const [billQueuePlaceMode, setBillQueuePlaceMode] = useState(false);
+  const [selectedBillQueueIndex, setSelectedBillQueueIndex] = useState<number | null>(null);
+  const isMainKitchen = selectedZone?.zone_key === 'main_kitchen';
+
+  const handleBillQueueAreaChange = useCallback(
+    (area: BillQueueArea) => {
+      if (!selectedZoneId) return;
+      setZones((prev) =>
+        prev.map((z) => {
+          if (z.id !== selectedZoneId) return z;
+          const existing = z.bill_queue_areas ?? [];
+          return { ...z, bill_queue_areas: [...existing, area] };
+        }),
+      );
+    },
+    [selectedZoneId],
+  );
+
+  const handleBillQueueAreasSaved = useCallback(
+    (areas: BillQueueArea[] | null) => {
+      if (!selectedZoneId) return;
+      setZones((prev) =>
+        prev.map((z) =>
+          z.id === selectedZoneId ? { ...z, bill_queue_areas: areas } : z,
+        ),
+      );
+    },
+    [selectedZoneId],
+  );
+
+  const handleBillQueueAreaUpdate = useCallback(
+    (index: number, updated: BillQueueArea) => {
+      if (!selectedZoneId) return;
+      setZones((prev) =>
+        prev.map((z) => {
+          if (z.id !== selectedZoneId) return z;
+          const arr = [...(z.bill_queue_areas ?? [])];
+          arr[index] = updated;
+          return { ...z, bill_queue_areas: arr };
+        }),
+      );
+    },
+    [selectedZoneId],
+  );
+
+  const handleBillQueueAreaDelete = useCallback(
+    (index: number) => {
+      if (!selectedZoneId) return;
+      setZones((prev) =>
+        prev.map((z) => {
+          if (z.id !== selectedZoneId) return z;
+          const arr = (z.bill_queue_areas ?? []).filter((_, i) => i !== index);
+          return { ...z, bill_queue_areas: arr.length > 0 ? arr : null };
+        }),
+      );
+      setSelectedBillQueueIndex(null);
     },
     [selectedZoneId],
   );
@@ -336,6 +401,12 @@ const AdminPage = () => {
             storeId={selectedStore.id}
             imageWidth={selectedZone?.image_width}
             imageHeight={selectedZone?.image_height}
+            billQueueAreas={selectedZone?.bill_queue_areas ?? null}
+            billQueuePlaceMode={billQueuePlaceMode}
+            onBillQueueAreaChange={handleBillQueueAreaChange}
+            isMainKitchen={isMainKitchen}
+            selectedBillQueueIndex={selectedBillQueueIndex}
+            onSelectBillQueueIndex={setSelectedBillQueueIndex}
           />
         </div>
 
@@ -350,6 +421,19 @@ const AdminPage = () => {
             onAreasChange={handleAreasChange}
             onSaved={handleSaved}
             onDeleted={handleDeleted}
+            zoneId={selectedZoneId}
+            billQueueAreas={selectedZone?.bill_queue_areas ?? null}
+            onBillQueueAreasSaved={handleBillQueueAreasSaved}
+            billQueuePlaceMode={billQueuePlaceMode}
+            onBillQueuePlaceModeChange={(mode: boolean) => {
+              setBillQueuePlaceMode(mode);
+              if (mode) setSelectedArea(null);
+            }}
+            isMainKitchen={isMainKitchen}
+            selectedBillQueueIndex={selectedBillQueueIndex}
+            onSelectBillQueueIndex={setSelectedBillQueueIndex}
+            onBillQueueAreaUpdate={handleBillQueueAreaUpdate}
+            onBillQueueAreaDelete={handleBillQueueAreaDelete}
           />
         </div>
 

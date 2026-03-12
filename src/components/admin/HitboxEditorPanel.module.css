@@ -233,3 +233,117 @@
   color: #999;
   text-align: center;
 }
+
+/* Bill queue position section */
+.divider {
+  border: none;
+  border-top: 1px solid #e0e0e0;
+  margin: 16px 0;
+}
+
+.billQueueSection {
+  padding-bottom: 4px;
+}
+
+.billQueueTitle {
+  margin: 0 0 10px 0;
+  font-size: 13px;
+  color: #333;
+  font-weight: 600;
+}
+
+.billQueueCoords {
+  display: flex;
+  gap: 8px;
+}
+
+.billQueueCoords .field {
+  flex: 1;
+}
+
+.placeModeBtn {
+  width: 100%;
+  padding: 6px 8px;
+  margin-top: 4px;
+  background: #f0f0f0;
+  color: #555;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  transition: background 0.15s, color 0.15s;
+}
+
+.placeModeBtn:hover {
+  background: #e0e0e0;
+}
+
+.placeModeBtnActive {
+  background: #ff4081;
+  color: #fff;
+  border-color: #ff4081;
+}
+
+.placeModeBtnActive:hover {
+  background: #e91e63;
+}
+
+/* Bill queue box list */
+.bqList {
+  margin-top: 8px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.bqItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.bqItem:last-child {
+  border-bottom: none;
+}
+
+.bqItem:hover {
+  background: #fce4ec;
+}
+
+.bqItemSelected {
+  background: #f8bbd0;
+  font-weight: 600;
+}
+
+.bqItemLabel {
+  color: #ff4081;
+  font-weight: 600;
+}
+
+.bqItemCoords {
+  color: #999;
+  font-size: 11px;
+}
+
+/* Bill queue selected box editor */
+.bqEditor {
+  margin-top: 8px;
+  padding: 8px;
+  background: #fce4ec;
+  border-radius: 4px;
+}
+
+.bqCoordRow {
+  display: flex;
+  gap: 8px;
+}
+
+.bqCoordRow .field {
+  flex: 1;
+}

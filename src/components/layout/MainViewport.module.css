@@ -26,6 +26,12 @@
   height: 100%;
 }
 
+.billQueueAnchor {
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+}
+
 .loading {
   display: flex;
   align-items: center;

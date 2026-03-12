@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type {
   AreaDefinition,
   AreaType,
+  BillQueueArea,
   EquipmentType,
   KitchenZone,
   StoreIngredient,
@@ -20,6 +21,16 @@ interface Props {
   onAreasChange: (areas: AreaDefinition[]) => void;
   onSaved: (saved: AreaDefinition) => void;
   onDeleted: (id: string) => void;
+  zoneId: string | null;
+  billQueueAreas: BillQueueArea[] | null;
+  onBillQueueAreasSaved: (areas: BillQueueArea[] | null) => void;
+  billQueuePlaceMode: boolean;
+  onBillQueuePlaceModeChange: (mode: boolean) => void;
+  isMainKitchen: boolean;
+  selectedBillQueueIndex: number | null;
+  onSelectBillQueueIndex: (index: number | null) => void;
+  onBillQueueAreaUpdate: (index: number, area: BillQueueArea) => void;
+  onBillQueueAreaDelete: (index: number) => void;
 }
 
 const AREA_TYPES: { value: AreaType; label: string }[] = [
@@ -92,6 +103,173 @@ function validate(draft: AreaDefinition): string | null {
   return null;
 }
 
+const bqClamp = (v: number) => Math.min(1, Math.max(0, v));
+
+function BillQueueSection({
+  zoneId,
+  areas,
+  onSaved,
+  placeMode,
+  onPlaceModeChange,
+  selectedIndex,
+  onSelectIndex,
+  onUpdateArea,
+  onDeleteArea,
+}: {
+  zoneId: string;
+  areas: BillQueueArea[] | null;
+  onSaved: (areas: BillQueueArea[] | null) => void;
+  placeMode: boolean;
+  onPlaceModeChange: (mode: boolean) => void;
+  selectedIndex: number | null;
+  onSelectIndex: (index: number | null) => void;
+  onUpdateArea: (index: number, area: BillQueueArea) => void;
+  onDeleteArea: (index: number) => void;
+}) {
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setError(null);
+  }, [zoneId]);
+
+  const handleSave = useCallback(async () => {
+    setSaving(true);
+    setError(null);
+    const { error: dbError } = await supabase
+      .from('kitchen_zones')
+      .update({ bill_queue_areas: areas })
+      .eq('id', zoneId);
+
+    if (dbError) {
+      setError(`저장 실패: ${dbError.message}`);
+      setSaving(false);
+      return;
+    }
+    onSaved(areas);
+    setSaving(false);
+  }, [areas, zoneId, onSaved]);
+
+  const handleClear = useCallback(async () => {
+    setSaving(true);
+    setError(null);
+    const { error: dbError } = await supabase
+      .from('kitchen_zones')
+      .update({ bill_queue_areas: null })
+      .eq('id', zoneId);
+
+    if (dbError) {
+      setError(`삭제 실패: ${dbError.message}`);
+      setSaving(false);
+      return;
+    }
+    onSaved(null);
+    onSelectIndex(null);
+    setSaving(false);
+  }, [zoneId, onSaved, onSelectIndex]);
+
+  const count = areas?.length ?? 0;
+  const selectedArea = selectedIndex !== null && areas ? areas[selectedIndex] : null;
+
+  return (
+    <div className={styles.billQueueSection}>
+      <h4 className={styles.billQueueTitle}>빌지큐 영역 ({count}개)</h4>
+      <button
+        className={`${styles.placeModeBtn} ${placeMode ? styles.placeModeBtnActive : ''}`}
+        onClick={() => onPlaceModeChange(!placeMode)}
+        type="button"
+      >
+        {placeMode ? '드래그 배치 모드 ON' : '드래그 배치'}
+      </button>
+
+      {/* Box list */}
+      {areas && areas.length > 0 && (
+        <div className={styles.bqList}>
+          {areas.map((area, i) => (
+            <div
+              key={i}
+              className={`${styles.bqItem} ${i === selectedIndex ? styles.bqItemSelected : ''}`}
+              onClick={() => onSelectIndex(i === selectedIndex ? null : i)}
+            >
+              <span className={styles.bqItemLabel}>빌지큐 {i + 1}</span>
+              <span className={styles.bqItemCoords}>
+                ({area.x.toFixed(2)}, {area.y.toFixed(2)})
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Selected box editor */}
+      {selectedArea && selectedIndex !== null && (
+        <div className={styles.bqEditor}>
+          <div className={styles.bqCoordRow}>
+            <div className={styles.field}>
+              <label>X</label>
+              <input
+                type="number" step="0.001" min="0" max="1"
+                value={selectedArea.x}
+                onChange={(e) => onUpdateArea(selectedIndex, {
+                  ...selectedArea, x: bqClamp(parseFloat(e.target.value) || 0),
+                })}
+              />
+            </div>
+            <div className={styles.field}>
+              <label>Y</label>
+              <input
+                type="number" step="0.001" min="0" max="1"
+                value={selectedArea.y}
+                onChange={(e) => onUpdateArea(selectedIndex, {
+                  ...selectedArea, y: bqClamp(parseFloat(e.target.value) || 0),
+                })}
+              />
+            </div>
+          </div>
+          <div className={styles.bqCoordRow}>
+            <div className={styles.field}>
+              <label>W</label>
+              <input
+                type="number" step="0.001" min="0" max="1"
+                value={selectedArea.w}
+                onChange={(e) => onUpdateArea(selectedIndex, {
+                  ...selectedArea, w: bqClamp(parseFloat(e.target.value) || 0),
+                })}
+              />
+            </div>
+            <div className={styles.field}>
+              <label>H</label>
+              <input
+                type="number" step="0.001" min="0" max="1"
+                value={selectedArea.h}
+                onChange={(e) => onUpdateArea(selectedIndex, {
+                  ...selectedArea, h: bqClamp(parseFloat(e.target.value) || 0),
+                })}
+              />
+            </div>
+          </div>
+          <button className={styles.deleteBtn} onClick={() => onDeleteArea(selectedIndex)}>
+            이 영역 삭제
+          </button>
+        </div>
+      )}
+
+      <div className={styles.actions}>
+        <button className={styles.saveBtn} onClick={handleSave} disabled={saving}>
+          {saving ? '저장 중...' : '저장'}
+        </button>
+        <button
+          className={styles.deleteBtn}
+          onClick={handleClear}
+          disabled={saving || count === 0}
+        >
+          전체 삭제
+        </button>
+      </div>
+      {error && <div className={styles.error}>{error}</div>}
+    </div>
+  );
+}
+
 export default function HitboxEditorPanel({
   area,
   zones,
@@ -101,6 +279,16 @@ export default function HitboxEditorPanel({
   onAreasChange,
   onSaved,
   onDeleted,
+  zoneId,
+  billQueueAreas,
+  onBillQueueAreasSaved,
+  billQueuePlaceMode,
+  onBillQueuePlaceModeChange,
+  isMainKitchen,
+  selectedBillQueueIndex,
+  onSelectBillQueueIndex,
+  onBillQueueAreaUpdate,
+  onBillQueueAreaDelete,
 }: Props) {
   const [draft, setDraft] = useState<AreaDefinition | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -291,12 +479,30 @@ export default function HitboxEditorPanel({
     onDeleted(draft.id);
   }, [draft, onDeleted]);
 
-  if (!draft) {
-    return <div className={styles.emptyMsg}>히트박스를 선택하거나 새로 그리세요</div>;
-  }
-
   return (
     <div className={styles.panel}>
+      {/* Bill queue areas section — only for main_kitchen zone */}
+      {zoneId && isMainKitchen && (
+        <BillQueueSection
+          zoneId={zoneId}
+          areas={billQueueAreas}
+          onSaved={onBillQueueAreasSaved}
+          placeMode={billQueuePlaceMode}
+          onPlaceModeChange={onBillQueuePlaceModeChange}
+          selectedIndex={selectedBillQueueIndex}
+          onSelectIndex={onSelectBillQueueIndex}
+          onUpdateArea={onBillQueueAreaUpdate}
+          onDeleteArea={onBillQueueAreaDelete}
+        />
+      )}
+
+      {zoneId && isMainKitchen && <hr className={styles.divider} />}
+
+      {/* Hitbox editing — only when area selected */}
+      {!draft ? (
+        <div className={styles.emptyMsg}>히트박스를 선택하거나 새로 그리세요</div>
+      ) : (
+      <>
       <h3>{draft.id.startsWith('temp-') ? '새 히트박스' : '히트박스 편집'}</h3>
 
       <div className={styles.coordInfo}>
@@ -576,6 +782,8 @@ export default function HitboxEditorPanel({
           삭제
         </button>
       </div>
+      </>
+      )}
     </div>
   );
 }

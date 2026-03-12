@@ -26,6 +26,13 @@ export interface SectionConfig {
   walls: number[];       // 벽 섹션 번호 (1-indexed)
 }
 
+export interface BillQueueArea {
+  x: number;  // 이미지 좌측 기준 비율 (0~1)
+  y: number;  // 이미지 상단 기준 비율 (0~1)
+  w: number;  // 이미지 대비 너비 비율 (0~1)
+  h: number;  // 이미지 대비 높이 비율 (0~1)
+}
+
 export interface KitchenZone {
   id: string;
   store_id: string;
@@ -35,6 +42,7 @@ export interface KitchenZone {
   image_width: number;
   image_height: number;
   section_config: SectionConfig | null;
+  bill_queue_areas: BillQueueArea[] | null;
 }
 
 export interface StoreIngredient {
@@ -43,7 +51,7 @@ export interface StoreIngredient {
   master_id: string;
   display_name: string;
   state_label: string | null;
-  unit: 'g' | 'ml' | 'ea' | 'spoon' | 'portion' | 'pinch';
+  unit: 'g' | 'ml' | 'ea' | 'spoon' | 'portion' | 'pinch' | 'handful' | 'ladle' | 'spatula';
   default_quantity: number;
   image_url: string | null;
 }

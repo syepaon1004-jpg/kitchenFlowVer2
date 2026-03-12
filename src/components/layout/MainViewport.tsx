@@ -7,9 +7,14 @@ import { useAuthStore } from '../../stores/authStore';
 import { supabase } from '../../lib/supabase';
 import type { KitchenZone } from '../../types/db';
 import HitboxLayer from '../game/HitboxLayer';
+import BillQueue from './BillQueue';
 import styles from './MainViewport.module.css';
 
-export default function MainViewport() {
+interface Props {
+  getRecipeName?: (recipeId: string) => string;
+}
+
+export default function MainViewport({ getRecipeName }: Props) {
   const currentSection = useUiStore((s) => s.currentSection);
   const setCurrentSection = useUiStore((s) => s.setCurrentSection);
   const currentZoneId = useUiStore((s) => s.currentZoneId);
@@ -19,6 +24,8 @@ export default function MainViewport() {
   const goNextAction = useUiStore((s) => s.goNext);
   const goPrevAction = useUiStore((s) => s.goPrev);
   const goTurnAction = useUiStore((s) => s.goTurn);
+  const setBillQueueAreas = useUiStore((s) => s.setBillQueueAreas);
+  const billQueueAreas = useUiStore((s) => s.billQueueAreas);
   const selectedStore = useAuthStore((s) => s.selectedStore)!;
   const storeId = useGameStore((s) => s.storeId) ?? selectedStore.id;
 
@@ -47,6 +54,7 @@ export default function MainViewport() {
 
           // section_config 적용 (null → DEFAULT fallback in uiStore)
           setSectionConfig(z.section_config);
+          setBillQueueAreas(z.bill_queue_areas);
 
           // 초기 섹션: 1이 벽이면 첫 번째 비벽 섹션 찾기
           const config = z.section_config ?? DEFAULT_SECTION_CONFIG;
@@ -61,7 +69,7 @@ export default function MainViewport() {
           setCurrentSection(initialSection);
         }
       });
-  }, [storeId, setCurrentZoneId, setCurrentSection, setSectionConfig]);
+  }, [storeId, setCurrentZoneId, setCurrentSection, setSectionConfig, setBillQueueAreas]);
 
   // 이미지 크기 추적 (원칙 7: img.offsetWidth 기준)
   useEffect(() => {
@@ -243,6 +251,22 @@ export default function MainViewport() {
               draggable={false}
             />
             {currentZoneId && <HitboxLayer zoneId={currentZoneId} imageWidth={zone.image_width} imageHeight={zone.image_height} />}
+            {billQueueAreas && billQueueAreas.length > 0 && getRecipeName && (
+              billQueueAreas.map((area, i) => (
+                <div
+                  key={i}
+                  className={styles.billQueueAnchor}
+                  style={{
+                    left: `${area.x * 100}%`,
+                    top: `${area.y * 100}%`,
+                    width: `${area.w * 100}%`,
+                    height: `${area.h * 100}%`,
+                  }}
+                >
+                  <BillQueue getRecipeName={getRecipeName} />
+                </div>
+              ))
+            )}
           </div>
           {/* 복사본 R */}
           <img
