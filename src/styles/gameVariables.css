@@ -125,40 +125,26 @@
 /* ===== Mobile (≤768px) ===== */
 @media (max-width: 768px) {
   :root {
-    /* Layout */
-    --game-header-height: 40px;
-    --handbar-height: 80px;
-    /* --nav-back-bottom: calc 자동 연동 — 재정의 불필요 */
-    --billqueue-left: 52px;
-    --billqueue-right-reserve: 220px;
-    --handbar-max-width: 360px;
-    --handbar-left: calc(50% - 180px);
-    --handbar-min-height: 56px;
-
-    /* Font Sizes */
-    --font-2xs: 10px;
-    --font-xs: 11px;
-    --font-sm: 12px;
-    --font-base: 13px;
-    --font-md: 14px;
-    --font-lg: 16px;
-  --font-xl: 18px;
-
-    /* Spacing */
+    --game-header-height: 32px;
+    --handbar-height: 50px;
+    --font-2xs: 8px;
+    --font-xs: 9px;
+    --font-sm: 10px;
+    --font-base: 11px;
+    --font-md: 12px;
+    --font-lg: 13px;
+    --font-xl: 14px;
     --spacing-2xs: 2px;
-    --spacing-xs: 4px;
-    --spacing-sm: 8px;
-    --spacing-md: 12px;
-    --spacing-lg: 16px;
-
-    /* Component-specific */
-    --modal-max-width: 360px;
-    --modal-padding: 20px;
-    --container-image-max-height: 80px;
-    --quantity-input-width: 100px;
-    --toggle-button-padding-v: 12px;
-    --toggle-button-padding-h: 4px;
-    --drag-overlay-size: 60px;
-    --game-nav-size: 44px;
+    --spacing-xs: 3px;
+    --spacing-sm: 6px;
+    --spacing-md: 9px;
+    --spacing-lg: 12px;
+    --modal-max-width: 280px;
+    --modal-padding: 14px;
+    --container-image-max-height: 50px;
+    --quantity-input-width: 70px;
+    --toggle-button-padding-v: 8px;
+    --toggle-button-padding-h: 2px;
+    --drag-overlay-size: 40px;
   }
 }
