@@ -29,6 +29,7 @@ export default function MainViewport({ getRecipeName, getRecipeNaturalText }: Pr
   const billQueueAreas = useUiStore((s) => s.billQueueAreas);
   const selectedStore = useAuthStore((s) => s.selectedStore)!;
   const storeId = useGameStore((s) => s.storeId) ?? selectedStore.id;
+  const resetZoneCache = useUiStore((s) => s.resetZoneCache);
 
   const [zone, setZone] = useState<KitchenZone | null>(null);
   const [visualOffset, setVisualOffset] = useState<-1 | 0 | 1>(0);
@@ -41,6 +42,7 @@ export default function MainViewport({ getRecipeName, getRecipeNaturalText }: Pr
 
   // zone 로딩 + section_config 적용 (Step 14)
   useEffect(() => {
+    resetZoneCache();
     supabase
       .from('kitchen_zones')
       .select('*')
@@ -70,7 +72,7 @@ export default function MainViewport({ getRecipeName, getRecipeNaturalText }: Pr
           setCurrentSection(initialSection);
         }
       });
-  }, [storeId, setCurrentZoneId, setCurrentSection, setSectionConfig, setBillQueueAreas]);
+  }, [storeId, setCurrentZoneId, setCurrentSection, setSectionConfig, setBillQueueAreas, resetZoneCache]);
 
   // 이미지 크기 추적 (원칙 7: img.offsetWidth 기준)
   useEffect(() => {

@@ -10,6 +10,7 @@ export default function LeftSidebar() {
   const leftSidebarOpen = useUiStore((s) => s.leftSidebarOpen);
   const setLeftSidebarZone = useUiStore((s) => s.setLeftSidebarZone);
   const toggleLeftSidebar = useUiStore((s) => s.toggleLeftSidebar);
+  const zoneCacheMap = useUiStore((s) => s.zoneCacheMap);
   const [zone, setZone] = useState<KitchenZone | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
@@ -18,6 +19,15 @@ export default function LeftSidebar() {
       setZone(null);
       return;
     }
+
+    // 캐시 히트: 즉시 반환
+    const cached = zoneCacheMap.get(leftSidebarZoneId);
+    if (cached) {
+      setZone(cached);
+      return;
+    }
+
+    // 캐시 미스: 기존 fetch 폴백
     supabase
       .from('kitchen_zones')
       .select('*')
@@ -28,7 +38,7 @@ export default function LeftSidebar() {
           setZone(data as KitchenZone);
         }
       });
-  }, [leftSidebarZoneId]);
+  }, [leftSidebarZoneId, zoneCacheMap]);
 
   // 외부 클릭 시 사이드바 닫기
   useEffect(() => {

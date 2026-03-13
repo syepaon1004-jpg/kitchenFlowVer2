@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import type { SectionConfig, BillQueueArea } from '../types/db';
+import type { SectionConfig, BillQueueArea, KitchenZone } from '../types/db';
+import { supabase } from '../lib/supabase';
 
 export const DEFAULT_SECTION_CONFIG: SectionConfig = {
   boundaries: [0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 1.0],
@@ -46,6 +47,10 @@ interface UiState {
   quantityModalDefaultQty: number;
   quantityModalCallback: ((qty: number) => void) | null;
 
+  // Zone 프리로드 캐시
+  zoneCacheMap: Map<string, KitchenZone>;
+  _prefetchingIds: Set<string>;
+
   setViewOffset: (offset: number | ((prev: number) => number)) => void;
   setCurrentSection: (section: number) => void;
   setCurrentZoneId: (zoneId: string) => void;
@@ -62,6 +67,8 @@ interface UiState {
   setBillQueueAreas: (areas: BillQueueArea[] | null) => void;
   openQuantityModal: (unit: string, defaultQty: number, callback: (qty: number) => void) => void;
   closeQuantityModal: () => void;
+  prefetchZones: (zoneIds: string[]) => Promise<void>;
+  resetZoneCache: () => void;
 }
 
 export const useUiStore = create<UiState>((set, get) => ({
@@ -79,6 +86,8 @@ export const useUiStore = create<UiState>((set, get) => ({
   quantityModalUnit: null,
   quantityModalDefaultQty: 1,
   quantityModalCallback: null,
+  zoneCacheMap: new Map(),
+  _prefetchingIds: new Set(),
 
   setViewOffset: (offset) =>
     set((state) => ({
@@ -149,4 +158,46 @@ export const useUiStore = create<UiState>((set, get) => ({
     set({ quantityModalOpen: true, quantityModalUnit: unit, quantityModalDefaultQty: defaultQty, quantityModalCallback: callback }),
   closeQuantityModal: () =>
     set({ quantityModalOpen: false, quantityModalUnit: null, quantityModalDefaultQty: 1, quantityModalCallback: null }),
+
+  prefetchZones: async (zoneIds) => {
+    const { zoneCacheMap, _prefetchingIds } = get();
+    const missing = zoneIds.filter(
+      (id) => !zoneCacheMap.has(id) && !_prefetchingIds.has(id),
+    );
+    if (missing.length === 0) return;
+
+    const nextFetching = new Set(_prefetchingIds);
+    missing.forEach((id) => nextFetching.add(id));
+    set({ _prefetchingIds: nextFetching });
+
+    try {
+      const { data } = await supabase
+        .from('kitchen_zones')
+        .select('*')
+        .in('id', missing);
+
+      if (data) {
+        const next = new Map(get().zoneCacheMap);
+        for (const z of data) {
+          const zone = z as KitchenZone;
+          next.set(zone.id, zone);
+          if (zone.image_url) {
+            const img = new Image();
+            img.onerror = () => {
+              console.warn(`[prefetch] 이미지 프리로드 실패: ${zone.image_url}`);
+            };
+            img.src = zone.image_url;
+          }
+        }
+        set({ zoneCacheMap: next });
+      }
+    } finally {
+      const cleaned = new Set(get()._prefetchingIds);
+      missing.forEach((id) => cleaned.delete(id));
+      set({ _prefetchingIds: cleaned });
+    }
+  },
+
+  resetZoneCache: () =>
+    set({ zoneCacheMap: new Map(), _prefetchingIds: new Set() }),
 }));

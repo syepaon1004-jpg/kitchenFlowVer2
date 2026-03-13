@@ -159,6 +159,7 @@ export default function HitboxLayer({ zoneId, imageWidth, imageHeight }: Props) 
   const vbH = imageHeight ?? 1000;
   const [areas, setAreas] = useState<AreaDefinition[]>([]);
   const setLeftSidebarZone = useUiStore((s) => s.setLeftSidebarZone);
+  const prefetchZones = useUiStore((s) => s.prefetchZones);
   const sessionId = useGameStore((s) => s.sessionId);
   const addActionLog = useScoringStore((s) => s.addActionLog);
   const equipments = useEquipmentStore((s) => s.equipments);
@@ -227,6 +228,23 @@ export default function HitboxLayer({ zoneId, imageWidth, imageHeight }: Props) 
     }
     return map;
   }, [areas]);
+
+  // navigate zone 프리로드: area 로드 후 navigate_zone_id를 추출하여 캐시
+  useEffect(() => {
+    if (navigateAreas.length === 0) return;
+
+    const zoneIds = [
+      ...new Set(
+        navigateAreas
+          .map((a) => a.navigate_zone_id)
+          .filter((id): id is string => id !== null),
+      ),
+    ];
+
+    if (zoneIds.length > 0) {
+      prefetchZones(zoneIds);
+    }
+  }, [navigateAreas, prefetchZones]);
 
   return (
     <div style={{ position: 'absolute', inset: 0 }}>
