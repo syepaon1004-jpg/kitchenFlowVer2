@@ -9,6 +9,8 @@ interface Props {
   equipmentState: GameEquipmentState;
   atSink?: boolean;
   skipDroppable?: boolean;
+  skipDraggable?: boolean;
+  overlayImageUrl?: string | null;
 }
 
 const WASH_DURATION = 3000; // 3초
@@ -16,7 +18,7 @@ const WASH_INTERVAL = 50; // 50ms 간격 업데이트
 const STIR_DURATION = 30000; // 30초
 const STIR_INTERVAL = 100; // 100ms 간격 업데이트
 
-export default function WokComponent({ equipmentState, atSink = false, skipDroppable = false }: Props) {
+export default function WokComponent({ equipmentState, atSink = false, skipDroppable = false, skipDraggable = false, overlayImageUrl }: Props) {
   const updateEquipment = useEquipmentStore((s) => s.updateEquipment);
   const isWashing = useEquipmentStore((s) => s.washing_equipment_ids.has(equipmentState.id));
   const isStirring = useEquipmentStore((s) => s.stirring_equipment_ids.has(equipmentState.id));
@@ -65,8 +67,9 @@ export default function WokComponent({ equipmentState, atSink = false, skipDropp
       type: 'equipment' as const,
       equipmentType: 'wok',
       equipmentStateId: equipmentState.id,
+      dragImageUrl: overlayImageUrl ?? undefined,
     },
-    disabled: isWashing,
+    disabled: isWashing || skipDraggable,
   });
 
   const handleBurnerChange = (level: 0 | 1 | 2 | 3) => {
@@ -158,10 +161,9 @@ export default function WokComponent({ equipmentState, atSink = false, skipDropp
     <div
       ref={(node) => {
         if (!skipDroppable) dropRef(node);
-        dragRef(node);
+        if (!skipDraggable) dragRef(node);
       }}
-      {...listeners}
-      {...attributes}
+      {...(!skipDraggable ? { ...listeners, ...attributes } : {})}
       className={styles.container}
       style={{
         background: isOver ? 'rgba(76,175,80,0.15)' : 'var(--equip-bg)',

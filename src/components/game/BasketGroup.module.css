@@ -1,0 +1,18 @@
+.basketToggle {
+  display: none;
+  height: 24px;
+  border: none;
+  border-radius: 0 0 4px 4px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: var(--font-xs);
+  cursor: pointer;
+  z-index: 10;
+  touch-action: manipulation;
+}
+
+@media (max-width: 1024px) {
+  .basketToggle {
+    display: block;
+  }
+}

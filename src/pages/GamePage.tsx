@@ -84,7 +84,7 @@ const GamePage = () => {
   useOrderGenerator();
 
   // 레시피 판별
-  const { loadRecipes, evaluateAll, getRecipeName, getRecipeIngredients } = useRecipeEval(storeId);
+  const { loadRecipes, evaluateAll, getRecipeName, getRecipeIngredients, getRecipeNaturalText } = useRecipeEval(storeId);
 
   // recipes + game_orders 1회 로딩
   useEffect(() => {
@@ -223,25 +223,6 @@ const GamePage = () => {
       });
   }, [storeId, sessionId, setEquipments]);
 
-  // 게임 자동 종료 감지
-  const orders = useGameStore((s) => s.orders);
-  const totalOrderCount = useGameStore((s) => s.totalOrderCount);
-  const sessionEndTriggered = useRef(false);
-
-  useEffect(() => {
-    if (orders.length === 0) return;
-    if (orders.length < totalOrderCount) return;
-    if (sessionEndTriggered.current) return;
-
-    const allDone = orders.every(
-      (o) => o.status === 'completed' || o.status === 'failed',
-    );
-    if (!allDone) return;
-
-    sessionEndTriggered.current = true;
-    handleSessionEnd();
-  }, [orders, totalOrderCount]);
-
   // 세션 결과 오버레이 상태
   const [sessionResult, setSessionResult] = useState<{
     score: number;
@@ -250,149 +231,170 @@ const GamePage = () => {
   } | null>(null);
 
   const handleSessionEnd = useCallback(async () => {
-    const { actionLogs, scoreEvents, recipeErrors, recipeResults, currentScore }
-      = useScoringStore.getState();
-    const { orders } = useGameStore.getState();
-
-    const errors: string[] = [];
-
-    // 1. game_action_logs INSERT (batch)
-    if (actionLogs.length > 0) {
-      const { error } = await supabase
-        .from('game_action_logs')
-        .insert(actionLogs);
-      if (error) errors.push(`action_logs: ${error.message}`);
-    }
-
-    // 2. game_score_events INSERT (batch)
-    if (scoreEvents.length > 0) {
-      const { error } = await supabase
-        .from('game_score_events')
-        .insert(scoreEvents);
-      if (error) errors.push(`score_events: ${error.message}`);
-    }
-
-    // 3. game_recipe_errors INSERT (batch)
-    if (recipeErrors.length > 0) {
-      const { error } = await supabase
-        .from('game_recipe_errors')
-        .insert(recipeErrors);
-      if (error) errors.push(`recipe_errors: ${error.message}`);
-    }
-
-    // 4. game_recipe_results INSERT (batch)
-    if (recipeResults.length > 0) {
-      const { error } = await supabase
-        .from('game_recipe_results')
-        .insert(recipeResults);
-      if (error) errors.push(`recipe_results: ${error.message}`);
-    }
-
-    // 5. game_sessions UPDATE (score, ended_at, status='completed')
-    {
-      const { error } = await supabase
-        .from('game_sessions')
-        .update({
-          score: currentScore,
-          ended_at: new Date().toISOString(),
-          status: 'completed',
-        })
-        .eq('id', sessionId);
-      if (error) errors.push(`sessions: ${error.message}`);
-    }
-
-    // 6. game_orders UPDATE (status, completed_at)
-    const doneOrders = orders.filter(
-      (o) => o.status === 'completed' || o.status === 'failed',
-    );
-    for (const order of doneOrders) {
-      const { error } = await supabase
-        .from('game_orders')
-        .update({ status: order.status, completed_at: order.completed_at })
-        .eq('id', order.id);
-      if (error) errors.push(`order ${order.id}: ${error.message}`);
-    }
-
-    if (errors.length > 0) {
-      console.warn('[GamePage] DB 저장 부분 실패:', errors);
-    }
-
-    // 7. generate-feedback Edge Function 호출
-    let feedbackText: string | null = null;
     try {
-      const idle5s = scoreEvents.filter((e) => e.event_type === 'short_idle').length;
-      const idle10s = scoreEvents.filter((e) => e.event_type === 'long_idle').length;
-      const redundantNav = scoreEvents.filter((e) => e.event_type === 'redundant_nav').length;
+      const { actionLogs, scoreEvents, recipeErrors, recipeResults, currentScore }
+        = useScoringStore.getState();
+      const { orders } = useGameStore.getState();
 
-      const completedResults = recipeResults.filter((r) => r.is_success);
-      const failedResults = recipeResults.filter((r) => !r.is_success);
+      const errors: string[] = [];
 
-      const serveTimes = recipeResults
-        .filter((r) => r.serve_time_ms != null)
-        .map((r) => ({
-          recipe_name: getRecipeName(r.recipe_id),
-          time_ms: r.serve_time_ms!,
+      // 1. game_orders UPSERT (클라이언트에서 생성된 주문을 DB에 저장 — FK 선행)
+      if (orders.length > 0) {
+        const { error } = await supabase
+          .from('game_orders')
+          .upsert(orders, { onConflict: 'id' });
+        if (error) errors.push(`orders: ${error.message}`);
+      }
+
+      // 2. game_action_logs INSERT (batch)
+      if (actionLogs.length > 0) {
+        const { error } = await supabase
+          .from('game_action_logs')
+          .insert(actionLogs);
+        if (error) errors.push(`action_logs: ${error.message}`);
+      }
+
+      // 3. game_score_events INSERT (batch)
+      if (scoreEvents.length > 0) {
+        const { error } = await supabase
+          .from('game_score_events')
+          .insert(scoreEvents);
+        if (error) errors.push(`score_events: ${error.message}`);
+      }
+
+      // 4. game_recipe_errors INSERT (batch)
+      if (recipeErrors.length > 0) {
+        const { error } = await supabase
+          .from('game_recipe_errors')
+          .insert(recipeErrors);
+        if (error) errors.push(`recipe_errors: ${error.message}`);
+      }
+
+      // 5. game_recipe_results INSERT (batch)
+      if (recipeResults.length > 0) {
+        const { error } = await supabase
+          .from('game_recipe_results')
+          .insert(recipeResults);
+        if (error) errors.push(`recipe_results: ${error.message}`);
+      }
+
+      // 6. game_sessions UPDATE (score, ended_at, status='completed')
+      {
+        const { error } = await supabase
+          .from('game_sessions')
+          .update({
+            score: currentScore,
+            ended_at: new Date().toISOString(),
+            status: 'completed',
+          })
+          .eq('id', sessionId);
+        if (error) errors.push(`sessions: ${error.message}`);
+      }
+
+      if (errors.length > 0) {
+        console.warn('[GamePage] DB 저장 부분 실패:', errors);
+      }
+
+      // 7. generate-feedback Edge Function 호출
+      let feedbackText: string | null = null;
+      try {
+        const idle5s = scoreEvents.filter((e) => e.event_type === 'short_idle').length;
+        const idle10s = scoreEvents.filter((e) => e.event_type === 'long_idle').length;
+        const redundantNav = scoreEvents.filter((e) => e.event_type === 'redundant_nav').length;
+
+        const completedResults = recipeResults.filter((r) => r.is_success);
+        const failedResults = recipeResults.filter((r) => !r.is_success);
+
+        const serveTimes = recipeResults
+          .filter((r) => r.serve_time_ms != null)
+          .map((r) => ({
+            recipe_name: getRecipeName(r.recipe_id),
+            time_ms: r.serve_time_ms!,
+          }));
+
+        const avgServeTime = serveTimes.length > 0
+          ? serveTimes.reduce((sum, s) => sum + s.time_ms, 0) / serveTimes.length
+          : 0;
+
+        // recipe_errors에 사람이 읽을 수 있는 이름 추가 (AI 프롬프트 품질 개선)
+        const { storeIngredientsMap } = useGameStore.getState();
+        const enrichedErrors = recipeErrors.map((e) => ({
+          ...e,
+          details: {
+            ...e.details,
+            recipe_name: getRecipeName(e.recipe_id),
+            ...(e.details.ingredient_id
+              ? {
+                  ingredient_name:
+                    storeIngredientsMap.get(e.details.ingredient_id as string)?.display_name
+                    ?? String(e.details.ingredient_id),
+                }
+              : {}),
+          },
         }));
 
-      const avgServeTime = serveTimes.length > 0
-        ? serveTimes.reduce((sum, s) => sum + s.time_ms, 0) / serveTimes.length
-        : 0;
-
-      // recipe_errors에 사람이 읽을 수 있는 이름 추가 (AI 프롬프트 품질 개선)
-      const { storeIngredientsMap } = useGameStore.getState();
-      const enrichedErrors = recipeErrors.map((e) => ({
-        ...e,
-        details: {
-          ...e.details,
-          recipe_name: getRecipeName(e.recipe_id),
-          ...(e.details.ingredient_id
-            ? {
-                ingredient_name:
-                  storeIngredientsMap.get(e.details.ingredient_id as string)?.display_name
-                  ?? String(e.details.ingredient_id),
-              }
-            : {}),
-        },
-      }));
-
-      const { data: fbData, error: fbError } = await supabase.functions.invoke(
-        'generate-feedback',
-        {
-          body: {
-            session_id: sessionId,
-            score: currentScore,
-            score_events: scoreEvents,
-            recipe_errors: enrichedErrors,
-            action_log_summary: {
-              total_actions: actionLogs.length,
-              idle_count_5s: idle5s,
-              idle_count_10s: idle10s,
-              redundant_nav_count: redundantNav,
-              avg_serve_time_ms: avgServeTime,
-              recipes_completed: completedResults.map((r) => getRecipeName(r.recipe_id)),
-              recipes_failed: failedResults.map((r) => getRecipeName(r.recipe_id)),
+        const { data: fbData, error: fbError } = await supabase.functions.invoke(
+          'generate-feedback',
+          {
+            body: {
+              session_id: sessionId,
+              score: currentScore,
+              score_events: scoreEvents,
+              recipe_errors: enrichedErrors,
+              action_log_summary: {
+                total_actions: actionLogs.length,
+                idle_count_5s: idle5s,
+                idle_count_10s: idle10s,
+                redundant_nav_count: redundantNav,
+                avg_serve_time_ms: avgServeTime,
+                recipes_completed: completedResults.map((r) => getRecipeName(r.recipe_id)),
+                recipes_failed: failedResults.map((r) => getRecipeName(r.recipe_id)),
+              },
+              serving_times: serveTimes,
             },
-            serving_times: serveTimes,
           },
-        },
-      );
+        );
 
-      if (fbError) {
-        console.warn('[GamePage] AI 피드백 생성 실패:', fbError);
-      } else {
-        feedbackText = fbData?.feedback ?? null;
+        if (fbError) {
+          console.warn('[GamePage] AI 피드백 생성 실패:', fbError);
+        } else {
+          feedbackText = fbData?.feedback ?? null;
+        }
+      } catch (err) {
+        console.warn('[GamePage] AI 피드백 호출 실패:', err);
       }
-    } catch (err) {
-      console.warn('[GamePage] AI 피드백 호출 실패:', err);
-    }
 
-    // 8. 결과 오버레이 표시
-    setSessionResult({
-      score: currentScore,
-      scoreEvents,
-      feedbackText,
-    });
+      // 8. 결과 오버레이 표시
+      setSessionResult({
+        score: currentScore,
+        scoreEvents,
+        feedbackText,
+      });
+    } catch (err) {
+      console.error('[GamePage] handleSessionEnd 실패:', err);
+      setSessionResult({
+        score: useScoringStore.getState().currentScore,
+        scoreEvents: useScoringStore.getState().scoreEvents,
+        feedbackText: null,
+      });
+    }
   }, [sessionId, getRecipeName]);
+
+  // 게임 자동 종료 감지
+  const orders = useGameStore((s) => s.orders);
+  const totalOrderCount = useGameStore((s) => s.totalOrderCount);
+  const sessionEndTriggered = useRef(false);
+
+  useEffect(() => {
+    if (orders.length === 0) return;
+    if (sessionEndTriggered.current) return;
+
+    const completedCount = orders.filter((o) => o.status === 'completed').length;
+    if (completedCount < totalOrderCount) return;
+
+    sessionEndTriggered.current = true;
+    handleSessionEnd();
+  }, [orders, totalOrderCount, handleSessionEnd]);
 
   // 드래그 상태 (DragOverlay용)
   const [dragImageUrl, setDragImageUrl] = useState<string | null>(null);
@@ -956,11 +958,11 @@ const GamePage = () => {
           <div className={styles.gameArea}>
             <GameHeader />
             <div className={styles.mainViewport}>
-              <MainViewport getRecipeName={getRecipeName} />
+              <MainViewport getRecipeName={getRecipeName} getRecipeNaturalText={getRecipeNaturalText} />
             </div>
             {(!billQueueAreas || billQueueAreas.length === 0) && (
               <div className={styles.billQueue}>
-                <BillQueue getRecipeName={getRecipeName} />
+                <BillQueue getRecipeName={getRecipeName} getRecipeNaturalText={getRecipeNaturalText} />
               </div>
             )}
             <div className={styles.leftSidebar}>

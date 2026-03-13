@@ -131,5 +131,9 @@ export function useRecipeEval(storeId: string) {
     return cacheRef.current.recipeIngredients.get(recipeId) ?? [];
   }, []);
 
-  return { loadRecipes, evaluate, evaluateAll, getRecipeName, getRecipeIngredients };
+  const getRecipeNaturalText = useCallback((recipeId: string): string | null => {
+    return cacheRef.current.recipes.get(recipeId)?.natural_text ?? null;
+  }, []);
+
+  return { loadRecipes, evaluate, evaluateAll, getRecipeName, getRecipeIngredients, getRecipeNaturalText };
 }

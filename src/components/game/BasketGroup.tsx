@@ -3,6 +3,7 @@ import { useDndMonitor } from '@dnd-kit/core';
 import type { AreaDefinition } from '../../types/db';
 import HitboxItem from './HitboxItem';
 import DraggableHitbox from './DraggableHitbox';
+import styles from './BasketGroup.module.css';
 
 interface Props {
   basket: AreaDefinition;
@@ -10,7 +11,7 @@ interface Props {
 }
 
 /** 펼침 시 자식 간 Y축 오프셋 (비율값, 0~1) */
-const STEP = 0.013;
+const STEP = 0.039;
 
 export default function BasketGroup({ basket, children }: Props) {
   const [expanded, setExpanded] = useState(false);
@@ -99,9 +100,8 @@ export default function BasketGroup({ basket, children }: Props) {
       </div>
 
       {/* 자식 렌더: sort_order 오름차순 (낮은 것 먼저 = 뒤에 깔림) */}
-      {children.map((child, i) => {
-        // 높은 sort_order(큰 index) → 가장 많이 이동, 낮은 sort_order → 가장 적게
-        const yOffset = expanded ? -(i + 1) * STEP : 0;
+      {[...children].sort((a, b) => b.sort_order - a.sort_order).map((child) => {
+        const yOffset = expanded ? -child.sort_order * STEP : 0;
         return (
           <div
             key={child.id}
@@ -113,7 +113,6 @@ export default function BasketGroup({ basket, children }: Props) {
               height: `${(child.h / bounds.h) * 100}%`,
               transition: 'top 0.2s ease',
               opacity: draggingChildId === child.id ? 0 : 1,
-              zIndex: children.length - i,
             }}
           >
             {/* 이미지 렌더링 (SVG) */}
@@ -135,6 +134,23 @@ export default function BasketGroup({ basket, children }: Props) {
           </div>
         );
       })}
+
+      {/* 토글 버튼: 바구니 아래에 배치, 태블릿/모바일에서만 표시 */}
+      <button
+        className={styles.basketToggle}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (!locked) setExpanded((prev) => !prev);
+        }}
+        style={{
+          position: 'absolute',
+          left: `${((basket.x - bounds.x) / bounds.w) * 100}%`,
+          top: `${((basket.y + basket.h - bounds.y) / bounds.h) * 100}%`,
+          width: `${(basket.w / bounds.w) * 100}%`,
+        }}
+      >
+        {expanded ? '▲ 접기' : '▼ 펼치기'}
+      </button>
     </div>
   );
 }

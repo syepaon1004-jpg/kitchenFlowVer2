@@ -126,7 +126,7 @@ const RecipeManager = ({ storeId, ingredients, containers }: Props) => {
         })),
     );
 
-    setAiText('');
+    setAiText(recipe.natural_text ?? '');
     setAiLowConfidence(new Set());
     setAiError(null);
   };
@@ -331,6 +331,7 @@ const RecipeManager = ({ storeId, ingredients, containers }: Props) => {
             store_id: storeId,
             name: formName.trim(),
             target_container_id: formContainerId,
+            natural_text: aiText.trim() || null,
           })
           .select()
           .single();
@@ -382,6 +383,7 @@ const RecipeManager = ({ storeId, ingredients, containers }: Props) => {
           .update({
             name: formName.trim(),
             target_container_id: formContainerId,
+            natural_text: aiText.trim() || null,
           })
           .eq('id', selectedId)
           .select()

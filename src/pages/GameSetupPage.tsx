@@ -236,7 +236,7 @@ const GameSetupPage = () => {
         <div className={styles.orderCountSection}>
           <span className={styles.orderCountLabel}>주문 수</span>
           <div className={styles.orderCountControls}>
-            {[5, 10, 15, 20].map((n) => (
+            {[1, 5, 10, 15, 20].map((n) => (
               <button
                 key={n}
                 className={`${styles.orderCountBtn} ${orderCount === n ? styles.orderCountBtnActive : ''}`}

@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { useDroppable } from '@dnd-kit/core';
+import { useDroppable, useDraggable, useDndContext } from '@dnd-kit/core';
 import type { AreaDefinition, GameEquipmentState, EquipmentType } from '../../types/db';
 import { supabase } from '../../lib/supabase';
 import { useUiStore } from '../../stores/uiStore';
@@ -81,15 +81,27 @@ function EquipmentOverlayWrapper({
   area,
   equipState,
   EquipComp,
+  hideOverlay,
+  draggableConfig,
 }: {
   area: AreaDefinition;
   equipState: GameEquipmentState;
-  EquipComp: React.ComponentType<{ equipmentState: GameEquipmentState; skipDroppable?: boolean }>;
+  EquipComp: React.ComponentType<{ equipmentState: GameEquipmentState; skipDroppable?: boolean; skipDraggable?: boolean; overlayImageUrl?: string | null }>;
+  hideOverlay?: boolean;
+  draggableConfig?: { id: string; data: Record<string, unknown>; disabled?: boolean };
 }) {
   const { setNodeRef, isOver } = useDroppable({
     id: equipmentDroppableId(area.equipment_type!, equipState.id),
     data: { equipmentStateId: equipState.id, equipmentType: area.equipment_type },
   });
+
+  const { setNodeRef: dragRef, listeners: dragListeners, attributes: dragAttributes } = useDraggable({
+    id: draggableConfig?.id ?? `overlay-drag-noop-${equipState.id}`,
+    data: draggableConfig?.data ?? {},
+    disabled: !draggableConfig || draggableConfig.disabled,
+  });
+
+  const dragEnabled = !!draggableConfig && !draggableConfig.disabled;
 
   return (
     <div
@@ -102,33 +114,41 @@ function EquipmentOverlayWrapper({
         overflow: 'visible',
       }}
     >
-      {/* Droppable = 이미지 영역만 */}
+      {/* Droppable + Draggable = 이미지 영역 */}
       <div
-        ref={setNodeRef}
+        ref={(node) => {
+          setNodeRef(node);
+          dragRef(node);
+        }}
+        {...(dragEnabled ? { ...dragListeners, ...dragAttributes } : {})}
         style={{
           position: 'relative',
           width: '100%',
           height: '100%',
           border: isOver ? '2px solid #4caf50' : undefined,
+          cursor: dragEnabled ? 'grab' : undefined,
+          touchAction: draggableConfig ? 'none' : undefined,
         }}
       >
-        <svg
-          viewBox="0 0 1000 1000"
-          preserveAspectRatio="none"
-          style={{
-            position: 'absolute',
-            inset: 0,
-            width: '100%',
-            height: '100%',
-            pointerEvents: 'none',
-          }}
-        >
-          <HitboxItem area={area} fillParent />
-        </svg>
+        {!hideOverlay && (
+          <svg
+            viewBox="0 0 1000 1000"
+            preserveAspectRatio="none"
+            style={{
+              position: 'absolute',
+              inset: 0,
+              width: '100%',
+              height: '100%',
+              pointerEvents: 'none',
+            }}
+          >
+            <HitboxItem area={area} fillParent />
+          </svg>
+        )}
       </div>
       {/* 버튼은 히트박스 영역 바깥(아래)에 렌더링 */}
       <div style={{ width: '100%', background: 'rgba(0,0,0,0.7)', borderRadius: '0 0 6px 6px' }}>
-        <EquipComp equipmentState={equipState} skipDroppable />
+        <EquipComp equipmentState={equipState} skipDroppable skipDraggable={!!draggableConfig} overlayImageUrl={area.overlay_image_url} />
       </div>
     </div>
   );
@@ -143,6 +163,8 @@ export default function HitboxLayer({ zoneId, imageWidth, imageHeight }: Props) 
   const addActionLog = useScoringStore((s) => s.addActionLog);
   const equipments = useEquipmentStore((s) => s.equipments);
   const wokAtSink = useEquipmentStore((s) => s.wok_at_sink);
+  const washingEquipmentIds = useEquipmentStore((s) => s.washing_equipment_ids);
+  const { active } = useDndContext();
 
   useEffect(() => {
     setAreas([]);
@@ -176,6 +198,21 @@ export default function HitboxLayer({ zoneId, imageWidth, imageHeight }: Props) 
     () => areas.filter((a) => a.area_type === 'basket'),
     [areas],
   );
+  // 웍 overlay를 숨겨야 하는 area ID (드래그 중 또는 씽크에 있을 때)
+  const hiddenOverlayAreaIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const area of equipmentAreas) {
+      if (!area.overlay_image_url || area.equipment_type !== 'wok') continue;
+      const equipState = equipments.find(
+        (e) => e.equipment_type === area.equipment_type && e.equipment_index === area.equipment_index,
+      );
+      if (!equipState) continue;
+      if (wokAtSink.has(equipState.id)) ids.add(area.id);
+      if (active?.id === `wok-drag-${equipState.id}`) ids.add(area.id);
+    }
+    return ids;
+  }, [equipmentAreas, equipments, wokAtSink, active]);
+
   const basketChildrenMap = useMemo(() => {
     const map = new Map<string, AreaDefinition[]>();
     for (const area of areas) {
@@ -186,7 +223,7 @@ export default function HitboxLayer({ zoneId, imageWidth, imageHeight }: Props) 
       }
     }
     for (const list of map.values()) {
-      list.sort((a, b) => a.sort_order - b.sort_order);
+      list.sort((a, b) => a.sort_order - b.sort_order || a.id.localeCompare(b.id));
     }
     return map;
   }, [areas]);
@@ -206,7 +243,7 @@ export default function HitboxLayer({ zoneId, imageWidth, imageHeight }: Props) 
         }}
       >
         {areas
-          .filter((a) => a.area_type !== 'basket' && !a.parent_area_id)
+          .filter((a) => a.area_type !== 'basket' && !a.parent_area_id && !hiddenOverlayAreaIds.has(a.id))
           .map((area) => (
             <HitboxItem key={area.id} area={area} vbW={vbW} vbH={vbH} />
           ))}
@@ -285,7 +322,13 @@ export default function HitboxLayer({ zoneId, imageWidth, imageHeight }: Props) 
                     clipPath: polygonClipPath(area),
                   }}
                 >
-                  <WokComponent equipmentState={wokEquipState} atSink />
+                  <WokComponent
+                    equipmentState={wokEquipState}
+                    atSink
+                    overlayImageUrl={equipmentAreas.find(
+                      (a) => a.equipment_type === 'wok' && a.equipment_index === wokEquipState.equipment_index,
+                    )?.overlay_image_url}
+                  />
                 </div>
               );
             }
@@ -313,6 +356,17 @@ export default function HitboxLayer({ zoneId, imageWidth, imageHeight }: Props) 
               area={area}
               equipState={equipState}
               EquipComp={EquipComp}
+              hideOverlay={hiddenOverlayAreaIds.has(area.id)}
+              draggableConfig={area.equipment_type === 'wok' ? {
+                id: `wok-drag-${equipState.id}`,
+                data: {
+                  type: 'equipment' as const,
+                  equipmentType: 'wok',
+                  equipmentStateId: equipState.id,
+                  dragImageUrl: area.overlay_image_url,
+                },
+                disabled: washingEquipmentIds.has(equipState.id),
+              } : undefined}
             />
           );
         }

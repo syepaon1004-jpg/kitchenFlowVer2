@@ -96,6 +96,7 @@ export interface Recipe {
   name: string;
   target_container_id: string | null;
   category: string | null;
+  natural_text: string | null;
 }
 
 export const ACTION_TYPES = ['stir', 'fry', 'microwave', 'boil', 'mix'] as const;

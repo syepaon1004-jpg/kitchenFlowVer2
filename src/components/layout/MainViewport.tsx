@@ -12,9 +12,10 @@ import styles from './MainViewport.module.css';
 
 interface Props {
   getRecipeName?: (recipeId: string) => string;
+  getRecipeNaturalText?: (recipeId: string) => string | null;
 }
 
-export default function MainViewport({ getRecipeName }: Props) {
+export default function MainViewport({ getRecipeName, getRecipeNaturalText }: Props) {
   const currentSection = useUiStore((s) => s.currentSection);
   const setCurrentSection = useUiStore((s) => s.setCurrentSection);
   const currentZoneId = useUiStore((s) => s.currentZoneId);
@@ -263,7 +264,7 @@ export default function MainViewport({ getRecipeName }: Props) {
                     height: `${area.h * 100}%`,
                   }}
                 >
-                  <BillQueue getRecipeName={getRecipeName} />
+                  <BillQueue getRecipeName={getRecipeName} getRecipeNaturalText={getRecipeNaturalText} />
                 </div>
               ))
             )}

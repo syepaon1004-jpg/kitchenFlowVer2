@@ -7,6 +7,7 @@ import type {
   ScoreEventType,
 } from '../types/db';
 import { SCORE_CONFIG } from '../lib/scoring/constants';
+import { useGameStore } from './gameStore';
 
 interface ScoringState {
   actionLogs: GameActionLog[];
@@ -139,7 +140,9 @@ export const useScoringStore = create<ScoringState>((set, get) => ({
       // LONG_IDLE 감점 추가
       const penaltyEvent: GameScoreEvent = {
         id: crypto.randomUUID(),
-        session_id: state.actionLogs.length > 0 ? state.actionLogs[0].session_id : '',
+        session_id: state.actionLogs.length > 0
+          ? state.actionLogs[0].session_id
+          : (useGameStore.getState().sessionId ?? ''),
         event_type: 'long_idle' as ScoreEventType,
         points: SCORE_CONFIG.LONG_IDLE,
         timestamp_ms: now,
@@ -154,7 +157,9 @@ export const useScoringStore = create<ScoringState>((set, get) => ({
     } else if (idleMs >= SCORE_CONFIG.SHORT_IDLE_THRESHOLD && state.idlePenaltyLevel < 1) {
       const penaltyEvent: GameScoreEvent = {
         id: crypto.randomUUID(),
-        session_id: state.actionLogs.length > 0 ? state.actionLogs[0].session_id : '',
+        session_id: state.actionLogs.length > 0
+          ? state.actionLogs[0].session_id
+          : (useGameStore.getState().sessionId ?? ''),
         event_type: 'short_idle' as ScoreEventType,
         points: SCORE_CONFIG.SHORT_IDLE,
         timestamp_ms: now,

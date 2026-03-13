@@ -266,6 +266,90 @@ const AdminPage = () => {
 
   const canSubmit = newZoneKey.trim() !== '' && newZoneLabel.trim() !== '' && newZoneFile !== null;
 
+  // Bulk save all areas for the current zone
+  const [bulkSaving, setBulkSaving] = useState(false);
+  const [bulkSaveMsg, setBulkSaveMsg] = useState<string | null>(null);
+
+  const handleBulkSave = useCallback(async () => {
+    if (!selectedZoneId || areas.length === 0) return;
+    setBulkSaving(true);
+    setBulkSaveMsg(null);
+
+    const newAreas = areas.filter((a) => a.id.startsWith('temp-'));
+    const existingAreas = areas.filter((a) => !a.id.startsWith('temp-'));
+
+    const errors: string[] = [];
+    const savedResults: AreaDefinition[] = [...existingAreas];
+
+    // Insert new areas
+    if (newAreas.length > 0) {
+      const payloads = newAreas.map((a) => {
+        const { id, ...rest } = a;
+        // Compute bounding box from points if needed
+        if (rest.points && rest.points.length >= 3) {
+          const xs = rest.points.map((p) => p[0]);
+          const ys = rest.points.map((p) => p[1]);
+          rest.x = Math.min(...xs);
+          rest.y = Math.min(...ys);
+          rest.w = Math.max(...xs) - Math.min(...xs);
+          rest.h = Math.max(...ys) - Math.min(...ys);
+        }
+        return rest;
+      });
+
+      const { data, error } = await supabase
+        .from('area_definitions')
+        .insert(payloads)
+        .select();
+
+      if (error) {
+        errors.push(`신규 저장 실패: ${error.message}`);
+      } else if (data) {
+        savedResults.push(...(data as AreaDefinition[]));
+      }
+    }
+
+    // Update existing areas
+    for (const area of existingAreas) {
+      const { id, ...payload } = area;
+      if (payload.points && payload.points.length >= 3) {
+        const xs = payload.points.map((p) => p[0]);
+        const ys = payload.points.map((p) => p[1]);
+        payload.x = Math.min(...xs);
+        payload.y = Math.min(...ys);
+        payload.w = Math.max(...xs) - Math.min(...xs);
+        payload.h = Math.max(...ys) - Math.min(...ys);
+      }
+
+      const { error } = await supabase
+        .from('area_definitions')
+        .update(payload)
+        .eq('id', id);
+
+      if (error) {
+        errors.push(`${area.label || id} 수정 실패: ${error.message}`);
+      }
+    }
+
+    if (errors.length > 0) {
+      setBulkSaveMsg(`오류: ${errors.join(', ')}`);
+    } else {
+      setBulkSaveMsg(`${areas.length}개 히트박스 저장 완료`);
+      // Refresh areas from DB to get correct IDs
+      const { data } = await supabase
+        .from('area_definitions')
+        .select('*')
+        .eq('zone_id', selectedZoneId);
+      if (data) {
+        setAreas(data as AreaDefinition[]);
+        setSelectedArea(null);
+      }
+      setTimeout(() => setBulkSaveMsg(null), 2000);
+    }
+
+    setBulkSaving(false);
+  }, [selectedZoneId, areas]);
+
   if (!selectedStore) return null;
 
   return (
@@ -385,6 +469,22 @@ const AdminPage = () => {
                   취소
                 </button>
               </div>
+            </div>
+          )}
+
+          {/* Bulk save button */}
+          {selectedZoneId && areas.length > 0 && (
+            <button
+              className={styles.bulkSaveBtn}
+              onClick={handleBulkSave}
+              disabled={bulkSaving}
+            >
+              {bulkSaving ? '저장 중...' : `일괄 저장 (${areas.length})`}
+            </button>
+          )}
+          {bulkSaveMsg && (
+            <div className={bulkSaveMsg.startsWith('오류') ? styles.addZoneError : styles.bulkSaveSuccess}>
+              {bulkSaveMsg}
             </div>
           )}
         </div>
