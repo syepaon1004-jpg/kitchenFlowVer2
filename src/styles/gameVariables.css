@@ -74,6 +74,7 @@
   --game-nav-size: 48px;
 
   /* === 장비 컴포넌트 === */
+  --equip-btn-min-size: 0;
   --equip-bg: rgba(0, 0, 0, 0.2);
   --equip-text: #fff;
   --equip-btn-radius: 6px;
@@ -118,7 +119,8 @@
     --toggle-button-padding-v: 10px;
     --toggle-button-padding-h: 3px;
     --drag-overlay-size: 48px;
-    --game-nav-size: 40px;
+    --game-nav-size: 48px;
+    --equip-btn-min-size: 44px;
   }
 }
 
@@ -146,5 +148,7 @@
     --toggle-button-padding-v: 8px;
     --toggle-button-padding-h: 2px;
     --drag-overlay-size: 40px;
+    --game-nav-size: 44px;
+    --equip-btn-min-size: 44px;
   }
 }

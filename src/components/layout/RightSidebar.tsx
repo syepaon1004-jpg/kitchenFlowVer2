@@ -13,9 +13,10 @@ interface Props {
   getRecipeName: (recipeId: string) => string;
   recipeSteps: RecipeStep[];
   getRecipeIngredients: (recipeId: string) => RecipeIngredient[];
+  getRecipeTargetContainerId: (recipeId: string) => string | null;
 }
 
-export default function RightSidebar({ containersMap, getRecipeName, recipeSteps, getRecipeIngredients }: Props) {
+export default function RightSidebar({ containersMap, getRecipeName, recipeSteps, getRecipeIngredients, getRecipeTargetContainerId }: Props) {
   const { setNodeRef, isOver } = useDroppable({ id: 'right-sidebar' });
   const containerInstances = useGameStore((s) => s.containerInstances);
   const ingredientInstances = useGameStore((s) => s.ingredientInstances);
@@ -54,13 +55,37 @@ export default function RightSidebar({ containersMap, getRecipeName, recipeSteps
     [containerInstances],
   );
 
-  // canServe: 해당 orderId의 모든 컨테이너가 is_complete === true
+  // canServe: 레시피가 요구하는 그릇 타입이 전부 배정되고 모두 is_complete
   const canServe = useCallback(
     (orderId: string): boolean => {
+      const order = orders.find((o) => o.id === orderId);
+      if (!order) return false;
+
       const assigned = containerInstances.filter((c) => c.assigned_order_id === orderId);
-      return assigned.length > 0 && assigned.every((c) => c.is_complete);
+      if (assigned.length === 0) return false;
+      if (!assigned.every((c) => c.is_complete)) return false;
+
+      // 레시피가 요구하는 그릇 타입 set 도출
+      const recipeIngs = getRecipeIngredients(order.recipe_id);
+      const recipeTargetId = getRecipeTargetContainerId(order.recipe_id);
+
+      const requiredContainerIds = new Set<string | null>();
+      for (const ri of recipeIngs) {
+        requiredContainerIds.add(ri.target_container_id ?? recipeTargetId);
+      }
+
+      // 배정된 그릇 타입 set
+      const assignedContainerIds = new Set(assigned.map((c) => c.container_id));
+
+      // 필요한 그릇 타입이 전부 배정되었는지 확인
+      for (const reqId of requiredContainerIds) {
+        if (reqId === null) continue; // null = 아무 그릇 OK → 이미 assigned.length > 0 확인됨
+        if (!assignedContainerIds.has(reqId)) return false;
+      }
+
+      return true;
     },
-    [containerInstances],
+    [containerInstances, orders, getRecipeIngredients, getRecipeTargetContainerId],
   );
 
   const handleServe = useCallback(

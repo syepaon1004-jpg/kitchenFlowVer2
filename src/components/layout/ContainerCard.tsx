@@ -77,7 +77,7 @@ export default function ContainerCard({
     const order = orders.find((o) => o.id === instance.assigned_order_id);
     if (!order) return [];
     const allRi = getRecipeIngredients(order.recipe_id);
-    return allRi.filter((ri) => ri.required_action_type === 'mix');
+    return allRi.filter((ri) => ri.required_actions?.some((a) => a.action_type === 'mix') ?? false);
   }, [instance.assigned_order_id, orders, getRecipeIngredients]);
 
   // bowl 타입만 섞기 가능
@@ -111,7 +111,7 @@ export default function ContainerCard({
       if (!inst) return false;
       const mixEntry = inst.action_history.find((h) => h.actionType === 'mix');
       if (!mixEntry) return false;
-      const minSeconds = ri.required_duration_min ?? 1;
+      const minSeconds = ri.required_actions?.find((a) => a.action_type === 'mix')?.duration_min ?? 1;
       return mixEntry.seconds >= minSeconds;
     });
   }, [hasMixIngredients, allMixIngredientsPresent, mixRecipeIngredients, containerIngredients]);
@@ -119,7 +119,7 @@ export default function ContainerCard({
   // UI 게이지 목표 시간 (recipe의 required_duration_min 기반)
   const mixTargetSeconds = useMemo(() => {
     if (mixRecipeIngredients.length === 0) return 5;
-    return mixRecipeIngredients[0].required_duration_min ?? 5;
+    return mixRecipeIngredients[0].required_actions?.find((a) => a.action_type === 'mix')?.duration_min ?? 5;
   }, [mixRecipeIngredients]);
 
   const { setNodeRef: dragRef, listeners, attributes } = useDraggable({

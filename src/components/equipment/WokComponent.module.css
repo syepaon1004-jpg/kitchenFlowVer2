@@ -29,6 +29,7 @@
 .burnerBtn {
   flex: 1;
   padding: 1px 0;
+  min-height: var(--equip-btn-min-size);
   font-size: var(--font-2xs);
   color: #fff;
   border: none;
@@ -38,6 +39,7 @@
 
 .actionBtn {
   padding: var(--spacing-xs) 0;
+  min-height: var(--equip-btn-min-size);
   font-size: var(--font-2xs);
   color: #fff;
   border: none;

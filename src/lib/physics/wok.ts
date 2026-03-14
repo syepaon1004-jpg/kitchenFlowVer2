@@ -58,10 +58,10 @@ export function tickWokPhysics(state: WokState): WokTickResult {
   return { wok_temp: newTemp, wok_status, pre_overheat_status };
 }
 
-/** clean + burner_level > 0일 때만 stir 누적 */
+/** clean 또는 overheating + burner_level > 0일 때 stir 누적 */
 export function canAccumulateStir(
   wok_status: WokStatus,
   burner_level: 0 | 1 | 2 | 3,
 ): boolean {
-  return wok_status === 'clean' && burner_level > 0;
+  return (wok_status === 'clean' || wok_status === 'overheating') && burner_level > 0;
 }

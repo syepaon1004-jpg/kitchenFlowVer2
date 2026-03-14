@@ -1,0 +1,15 @@
+.equipOverlay {
+  display: flex;
+  flex-direction: column;
+}
+
+.equipOverlayWok {
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 1024px) {
+  .equipOverlayWok {
+    flex-direction: column-reverse;
+  }
+}

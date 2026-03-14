@@ -84,7 +84,7 @@ const GamePage = () => {
   useOrderGenerator();
 
   // 레시피 판별
-  const { loadRecipes, evaluateAll, getRecipeName, getRecipeIngredients, getRecipeNaturalText } = useRecipeEval(storeId);
+  const { loadRecipes, evaluateAll, getRecipeName, getRecipeIngredients, getRecipeNaturalText, getRecipeTargetContainerId } = useRecipeEval(storeId);
 
   // recipes + game_orders 1회 로딩
   useEffect(() => {
@@ -969,7 +969,7 @@ const GamePage = () => {
               <LeftSidebar />
             </div>
             <div className={styles.rightSidebar}>
-              <RightSidebar containersMap={containersMap} getRecipeName={getRecipeName} recipeSteps={recipeSteps} getRecipeIngredients={getRecipeIngredients} />
+              <RightSidebar containersMap={containersMap} getRecipeName={getRecipeName} recipeSteps={recipeSteps} getRecipeIngredients={getRecipeIngredients} getRecipeTargetContainerId={getRecipeTargetContainerId} />
             </div>
             <div className={styles.handbar}>
               <Handbar />

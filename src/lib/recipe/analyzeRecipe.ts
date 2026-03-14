@@ -4,13 +4,18 @@ import type { ActionType, StoreIngredient, Container } from '../../types/db';
 
 /* ── Edge Function 응답 타입 ── */
 
+export interface AiRequiredAction {
+  action_type: string; // Edge Function은 ActionType보다 넓은 범위 반환
+  duration_min: number | null;
+  duration_max: number | null;
+}
+
 export interface AiIngredient {
   matched_ingredient_id: string | null;
   raw_name: string;
   quantity: number;
   unit: 'g' | 'ml' | 'ea' | 'spoon' | 'portion' | 'pinch' | 'handful' | 'ladle' | 'spatula';
-  action_type: string; // Edge Function은 ActionType보다 넓은 범위 반환
-  duration_sec: number;
+  required_actions: AiRequiredAction[];
   plate_order: number;
   confidence: 'high' | 'medium' | 'low';
 }

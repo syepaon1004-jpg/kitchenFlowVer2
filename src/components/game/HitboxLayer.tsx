@@ -14,6 +14,7 @@ import WokComponent from '../equipment/WokComponent';
 import FryingBasketComponent from '../equipment/FryingBasketComponent';
 import MicrowaveComponent from '../equipment/MicrowaveComponent';
 import SinkComponent from '../equipment/SinkComponent';
+import hitboxStyles from './HitboxLayer.module.css';
 
 interface Props {
   zoneId: string;
@@ -105,6 +106,7 @@ function EquipmentOverlayWrapper({
 
   return (
     <div
+      className={area.equipment_type === 'wok' ? hitboxStyles.equipOverlayWok : hitboxStyles.equipOverlay}
       style={{
         position: 'absolute',
         left: `${area.x * 100}%`,
@@ -125,6 +127,7 @@ function EquipmentOverlayWrapper({
           position: 'relative',
           width: '100%',
           height: '100%',
+          flexShrink: 0,
           border: isOver ? '2px solid #4caf50' : undefined,
           cursor: dragEnabled ? 'grab' : undefined,
           touchAction: draggableConfig ? 'none' : undefined,

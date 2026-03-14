@@ -22,6 +22,7 @@
 
 .toggleBtn {
   padding: var(--spacing-2xs) 0;
+  min-height: var(--equip-btn-min-size);
   font-size: var(--font-2xs);
   color: #fff;
   border: none;

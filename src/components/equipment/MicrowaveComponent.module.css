@@ -46,6 +46,7 @@
 .startBtn {
   font-size: var(--font-2xs);
   padding: 1px 4px;
+  min-height: var(--equip-btn-min-size);
   color: #fff;
   border: none;
   border-radius: 3px;
@@ -54,6 +55,7 @@
 .resetBtn {
   font-size: var(--font-2xs);
   padding: 1px 0;
+  min-height: var(--equip-btn-min-size);
   background: var(--color-success);
   color: #fff;
   border: none;

@@ -9,17 +9,24 @@ export function evaluateContainer(
 ): RecipeEvaluationResult {
   const errors: RecipeError[] = [];
 
-  // 1. 그릇 타입 검사 (즉시)
-  if (containerTypeId !== recipe.target_container_id) {
+  // 1. 이 container에 해당하는 recipe_ingredients만 필터
+  const filtered = recipeIngredients.filter((ri) => {
+    if (ri.target_container_id != null) {
+      return ri.target_container_id === containerTypeId;
+    }
+    // ri.target_container_id === null → fallback
+    return (
+      recipe.target_container_id === containerTypeId ||
+      recipe.target_container_id === null
+    );
+  });
+
+  if (filtered.length === 0) {
     errors.push({
       type: 'wrong_container',
       details: { got: containerTypeId, expected: recipe.target_container_id },
     });
     return { isComplete: false, errors, checkedUpToPlateOrder: 0 };
-  }
-
-  if (recipeIngredients.length === 0) {
-    return { isComplete: false, errors: [], checkedUpToPlateOrder: 0 };
   }
 
   // currentMaxPlateOrder: 그릇 안 재료 중 가장 높은 plate_order
@@ -29,11 +36,11 @@ export function evaluateContainer(
       : 0;
 
   // 레시피의 최대 plate_order
-  const maxRecipePlateOrder = Math.max(...recipeIngredients.map((r) => r.plate_order));
+  const maxRecipePlateOrder = Math.max(...filtered.map((r) => r.plate_order));
 
   // 2. unexpected_ingredient 검사 (즉시 — 레시피에 없는 재료)
   for (const inst of inContainer) {
-    const inRecipe = recipeIngredients.some((r) => r.ingredient_id === inst.ingredient_id);
+    const inRecipe = filtered.some((r) => r.ingredient_id === inst.ingredient_id);
     if (!inRecipe) {
       errors.push({
         type: 'unexpected_ingredient',
@@ -45,7 +52,7 @@ export function evaluateContainer(
 
   // 3. plate_order_mismatch 검사 (즉시 — 레시피에 있지만 할당된 plate_order가 불일치)
   for (const inst of inContainer) {
-    const ri = recipeIngredients.find((r) => r.ingredient_id === inst.ingredient_id);
+    const ri = filtered.find((r) => r.ingredient_id === inst.ingredient_id);
     if (ri && inst.plate_order !== ri.plate_order) {
       errors.push({
         type: 'plate_order_mismatch',
@@ -65,7 +72,7 @@ export function evaluateContainer(
       : currentMaxPlateOrder - 1;
 
   // confirmedPlateOrder까지의 레시피 재료만 검증
-  const expectedByNow = recipeIngredients.filter(
+  const expectedByNow = filtered.filter(
     (r) => r.plate_order <= confirmedPlateOrder,
   );
 
@@ -93,31 +100,33 @@ export function evaluateContainer(
       });
     }
 
-    // 6. action 검사
-    if (ri.required_action_type) {
-      const action = found.action_history.find(
-        (a) => a.actionType === ri.required_action_type,
-      );
-      if (!action) {
-        errors.push({
-          type: 'action_insufficient',
-          ingredient_id: ri.ingredient_id,
-          details: { required: ri.required_action_type },
-        });
-      } else {
-        if (ri.required_duration_min != null && action.seconds < ri.required_duration_min) {
+    // 6. action 검사 (다중 액션)
+    if (ri.required_actions && ri.required_actions.length > 0) {
+      for (const req of ri.required_actions) {
+        const action = found.action_history.find(
+          (a) => a.actionType === req.action_type,
+        );
+        if (!action) {
           errors.push({
             type: 'action_insufficient',
             ingredient_id: ri.ingredient_id,
-            details: { seconds: action.seconds, min: ri.required_duration_min },
+            details: { action_type: req.action_type, required: req.action_type },
           });
-        }
-        if (ri.required_duration_max != null && action.seconds > ri.required_duration_max) {
-          errors.push({
-            type: 'action_excessive',
-            ingredient_id: ri.ingredient_id,
-            details: { seconds: action.seconds, max: ri.required_duration_max },
-          });
+        } else {
+          if (req.duration_min != null && action.seconds < req.duration_min) {
+            errors.push({
+              type: 'action_insufficient',
+              ingredient_id: ri.ingredient_id,
+              details: { action_type: req.action_type, seconds: action.seconds, min: req.duration_min },
+            });
+          }
+          if (req.duration_max != null && action.seconds > req.duration_max) {
+            errors.push({
+              type: 'action_excessive',
+              ingredient_id: ri.ingredient_id,
+              details: { action_type: req.action_type, seconds: action.seconds, max: req.duration_max },
+            });
+          }
         }
       }
     }
@@ -125,7 +134,7 @@ export function evaluateContainer(
 
   // 7. 전체 완성 판정
   // 모든 recipeIngredients가 매칭되고 오류가 0개여야 isComplete
-  const allIngredientsPresent = recipeIngredients.every((ri) =>
+  const allIngredientsPresent = filtered.every((ri) =>
     inContainer.some((inst) => inst.ingredient_id === ri.ingredient_id),
   );
   const isComplete =

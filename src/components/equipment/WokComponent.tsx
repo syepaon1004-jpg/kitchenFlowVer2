@@ -117,7 +117,7 @@ export default function WokComponent({ equipmentState, atSink = false, skipDropp
     (e: React.PointerEvent) => {
       e.stopPropagation();
       e.preventDefault();
-      if (!equipmentState.burner_level || equipmentState.wok_status !== 'clean') return;
+      if (!equipmentState.burner_level || (equipmentState.wok_status !== 'clean' && equipmentState.wok_status !== 'overheating')) return;
 
       addStirring(equipmentState.id);
       let elapsed = 0;
@@ -154,6 +154,7 @@ export default function WokComponent({ equipmentState, atSink = false, skipDropp
           ? 'var(--color-dirty)'
           : 'var(--color-success)';
 
+  const canStir = !!equipmentState.burner_level && (equipmentState.wok_status === 'clean' || equipmentState.wok_status === 'overheating') && !hasWaterInWok;
   const needsWash = atSink && equipmentState.wok_status !== 'clean';
   const washPercent = (washProgress / WASH_DURATION) * 100;
 
@@ -206,12 +207,12 @@ export default function WokComponent({ equipmentState, atSink = false, skipDropp
             onPointerDown={startStir}
             onPointerUp={stopStir}
             onPointerLeave={stopStir}
-            disabled={!equipmentState.burner_level || equipmentState.wok_status !== 'clean' || hasWaterInWok}
+            disabled={!canStir}
             className={styles.actionBtn}
             style={{
-              background: isStirring ? 'var(--color-fire-active)' : (!equipmentState.burner_level || equipmentState.wok_status !== 'clean' || hasWaterInWok) ? '#555' : 'var(--color-warning)',
-              color: isStirring || (equipmentState.burner_level && equipmentState.wok_status === 'clean' && !hasWaterInWok) ? '#fff' : 'var(--equip-text)',
-              cursor: (!equipmentState.burner_level || equipmentState.wok_status !== 'clean' || hasWaterInWok) ? 'not-allowed' : 'pointer',
+              background: isStirring ? 'var(--color-fire-active)' : canStir ? 'var(--color-warning)' : '#555',
+              color: isStirring || canStir ? '#fff' : 'var(--equip-text)',
+              cursor: canStir ? 'pointer' : 'not-allowed',
             }}
           >
             <div

@@ -102,6 +102,12 @@ export interface Recipe {
 export const ACTION_TYPES = ['stir', 'fry', 'microwave', 'boil', 'mix'] as const;
 export type ActionType = (typeof ACTION_TYPES)[number];
 
+export interface RequiredAction {
+  action_type: ActionType;
+  duration_min: number | null;
+  duration_max: number | null;
+}
+
 export interface RecipeIngredient {
   id: string;
   recipe_id: string;
@@ -109,9 +115,8 @@ export interface RecipeIngredient {
   quantity: number;
   quantity_tolerance: number; // default 0.1
   plate_order: number;
-  required_action_type: ActionType | null;
-  required_duration_min: number | null;
-  required_duration_max: number | null;
+  target_container_id: string | null;
+  required_actions: RequiredAction[] | null;
 }
 
 /**

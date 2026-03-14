@@ -87,3 +87,9 @@
   border-radius: 12px;
   padding: 10px var(--spacing-lg);
 }
+
+@media (max-width: 1024px) {
+  .navBack {
+    min-height: var(--game-nav-size);
+  }
+}

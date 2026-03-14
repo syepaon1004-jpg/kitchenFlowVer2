@@ -1,11 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ACTION_TYPES } from '../../types/db';
-import type { ActionType, Container, Recipe, RecipeIngredient, RecipeStep, StoreIngredient } from '../../types/db';
+import type { ActionType, Container, Recipe, RecipeIngredient, RecipeStep, RequiredAction, StoreIngredient } from '../../types/db';
 import { supabase } from '../../lib/supabase';
 import { uploadToStorage } from '../../lib/storage';
 import { analyzeRecipe, toValidActionType } from '../../lib/recipe/analyzeRecipe';
 import styles from './RecipeManager.module.css';
 
+
+interface ActionRow {
+  key: number;
+  action_type: ActionType;
+  duration_min: number | null;
+  duration_max: number | null;
+}
 
 interface IngredientRow {
   key: number; // local key for React list
@@ -13,9 +20,8 @@ interface IngredientRow {
   quantity: number;
   quantity_tolerance: number;
   plate_order: number;
-  required_action_type: ActionType | null;
-  required_duration_min: number | null;
-  required_duration_max: number | null;
+  target_container_id: string | null;
+  actions: ActionRow[];
 }
 
 const emptyRow = (key: number): IngredientRow => ({
@@ -24,9 +30,8 @@ const emptyRow = (key: number): IngredientRow => ({
   quantity: 1,
   quantity_tolerance: 0.1,
   plate_order: 1,
-  required_action_type: null,
-  required_duration_min: null,
-  required_duration_max: null,
+  target_container_id: null,
+  actions: [],
 });
 
 interface StepRow {
@@ -93,16 +98,24 @@ const RecipeManager = ({ storeId, ingredients, containers }: Props) => {
     const ingRows = (ingRes.data as RecipeIngredient[] | null) ?? [];
     let k = 1;
     setRows(
-      ingRows.map((ri) => ({
-        key: k++,
-        ingredient_id: ri.ingredient_id,
-        quantity: ri.quantity,
-        quantity_tolerance: ri.quantity_tolerance,
-        plate_order: ri.plate_order,
-        required_action_type: ri.required_action_type,
-        required_duration_min: ri.required_duration_min,
-        required_duration_max: ri.required_duration_max,
-      })),
+      ingRows.map((ri) => {
+        const rowKey = k++;
+        const actions: ActionRow[] = (ri.required_actions ?? []).map((a) => ({
+          key: k++,
+          action_type: a.action_type,
+          duration_min: a.duration_min,
+          duration_max: a.duration_max,
+        }));
+        return {
+          key: rowKey,
+          ingredient_id: ri.ingredient_id,
+          quantity: ri.quantity,
+          quantity_tolerance: ri.quantity_tolerance,
+          plate_order: ri.plate_order,
+          target_container_id: ri.target_container_id,
+          actions,
+        };
+      }),
     );
     setNextKey(k);
     setFormName(recipe.name);
@@ -203,8 +216,32 @@ const RecipeManager = ({ storeId, ingredients, containers }: Props) => {
           lowKeys.add(rowKey);
         }
 
-        const actionType = toValidActionType(ai.action_type);
-        const duration = ai.duration_sec > 0 ? ai.duration_sec : null;
+        const rawActions: ActionRow[] = (ai.required_actions ?? [])
+          .map((a) => {
+            const validType = toValidActionType(a.action_type);
+            if (!validType) return null;
+            return { key: key++, action_type: validType, duration_min: a.duration_min, duration_max: a.duration_max };
+          })
+          .filter((a): a is ActionRow => a !== null);
+
+        // 같은 action_type 합산 (안전망)
+        const merged = new Map<string, ActionRow>();
+        for (const act of rawActions) {
+          const existing = merged.get(act.action_type);
+          if (existing) {
+            existing.duration_min =
+              existing.duration_min != null || act.duration_min != null
+                ? (existing.duration_min ?? 0) + (act.duration_min ?? 0)
+                : null;
+            existing.duration_max =
+              existing.duration_max != null || act.duration_max != null
+                ? (existing.duration_max ?? 0) + (act.duration_max ?? 0)
+                : null;
+          } else {
+            merged.set(act.action_type, { ...act });
+          }
+        }
+        const actions = Array.from(merged.values());
 
         return {
           key: rowKey,
@@ -212,9 +249,8 @@ const RecipeManager = ({ storeId, ingredients, containers }: Props) => {
           quantity: ai.quantity,
           quantity_tolerance: 0.1,
           plate_order: ai.plate_order,
-          required_action_type: actionType,
-          required_duration_min: duration,
-          required_duration_max: null,
+          target_container_id: null,
+          actions,
         };
       });
 
@@ -350,9 +386,10 @@ const RecipeManager = ({ storeId, ingredients, containers }: Props) => {
           quantity: r.quantity,
           quantity_tolerance: r.quantity_tolerance,
           plate_order: r.plate_order,
-          required_action_type: r.required_action_type,
-          required_duration_min: r.required_duration_min,
-          required_duration_max: r.required_duration_max,
+          target_container_id: r.target_container_id,
+          required_actions: r.actions.length > 0
+            ? r.actions.map((a): RequiredAction => ({ action_type: a.action_type, duration_min: a.duration_min, duration_max: a.duration_max }))
+            : null,
         }));
 
         const { error: ingErr } = await supabase
@@ -413,9 +450,10 @@ const RecipeManager = ({ storeId, ingredients, containers }: Props) => {
           quantity: r.quantity,
           quantity_tolerance: r.quantity_tolerance,
           plate_order: r.plate_order,
-          required_action_type: r.required_action_type,
-          required_duration_min: r.required_duration_min,
-          required_duration_max: r.required_duration_max,
+          target_container_id: r.target_container_id,
+          required_actions: r.actions.length > 0
+            ? r.actions.map((a): RequiredAction => ({ action_type: a.action_type, duration_min: a.duration_min, duration_max: a.duration_max }))
+            : null,
         }));
 
         const { error: ingErr } = await supabase
@@ -565,9 +603,8 @@ const RecipeManager = ({ storeId, ingredients, containers }: Props) => {
                       <th>수량</th>
                       <th>허용오차</th>
                       <th>순서</th>
-                      <th>조리법</th>
-                      <th>최소(초)</th>
-                      <th>최대(초)</th>
+                      <th>그릇</th>
+                      <th>조리 액션</th>
                       {isEditing && <th></th>}
                     </tr>
                   </thead>
@@ -644,62 +681,97 @@ const RecipeManager = ({ storeId, ingredients, containers }: Props) => {
                         <td>
                           {isEditing ? (
                             <select
-                              value={row.required_action_type ?? ''}
+                              value={row.target_container_id ?? ''}
                               onChange={(e) =>
-                                updateRow(
-                                  row.key,
-                                  'required_action_type',
-                                  e.target.value || null,
-                                )
+                                updateRow(row.key, 'target_container_id', e.target.value || null)
                               }
                             >
-                              <option value="">없음</option>
-                              {ACTION_TYPES.map((a) => (
-                                <option key={a} value={a}>
-                                  {a}
+                              <option value="">기본</option>
+                              {containers.map((c) => (
+                                <option key={c.id} value={c.id}>
+                                  {c.name} ({c.container_type})
                                 </option>
                               ))}
                             </select>
                           ) : (
-                            row.required_action_type ?? '—'
+                            row.target_container_id ? getContainerName(row.target_container_id) : '기본'
                           )}
                         </td>
                         <td>
-                          {isEditing ? (
-                            <input
-                              type="number"
-                              min={0}
-                              step="any"
-                              value={row.required_duration_min ?? ''}
-                              onChange={(e) =>
-                                updateRow(
-                                  row.key,
-                                  'required_duration_min',
-                                  e.target.value === '' ? null : Number(e.target.value),
-                                )
-                              }
-                            />
-                          ) : (
-                            row.required_duration_min ?? '—'
-                          )}
-                        </td>
-                        <td>
-                          {isEditing ? (
-                            <input
-                              type="number"
-                              min={0}
-                              step="any"
-                              value={row.required_duration_max ?? ''}
-                              onChange={(e) =>
-                                updateRow(
-                                  row.key,
-                                  'required_duration_max',
-                                  e.target.value === '' ? null : Number(e.target.value),
-                                )
-                              }
-                            />
-                          ) : (
-                            row.required_duration_max ?? '—'
+                          {/* 액션 서브리스트 */}
+                          {row.actions.length === 0 && !isEditing && '—'}
+                          {row.actions.map((act) => (
+                            <div key={act.key} className={styles.actionRow}>
+                              {isEditing ? (
+                                <>
+                                  <select
+                                    value={act.action_type}
+                                    onChange={(e) => {
+                                      const newActions = row.actions.map((a) =>
+                                        a.key === act.key ? { ...a, action_type: e.target.value as ActionType } : a,
+                                      );
+                                      updateRow(row.key, 'actions', newActions);
+                                    }}
+                                  >
+                                    {ACTION_TYPES.map((a) => (
+                                      <option key={a} value={a}>{a}</option>
+                                    ))}
+                                  </select>
+                                  <input
+                                    type="number"
+                                    min={0}
+                                    step="any"
+                                    placeholder="최소(초)"
+                                    value={act.duration_min ?? ''}
+                                    onChange={(e) => {
+                                      const newActions = row.actions.map((a) =>
+                                        a.key === act.key ? { ...a, duration_min: e.target.value === '' ? null : Number(e.target.value) } : a,
+                                      );
+                                      updateRow(row.key, 'actions', newActions);
+                                    }}
+                                  />
+                                  <input
+                                    type="number"
+                                    min={0}
+                                    step="any"
+                                    placeholder="최대(초)"
+                                    value={act.duration_max ?? ''}
+                                    onChange={(e) => {
+                                      const newActions = row.actions.map((a) =>
+                                        a.key === act.key ? { ...a, duration_max: e.target.value === '' ? null : Number(e.target.value) } : a,
+                                      );
+                                      updateRow(row.key, 'actions', newActions);
+                                    }}
+                                  />
+                                  <button
+                                    className={styles.removeRowBtn}
+                                    onClick={() => {
+                                      const newActions = row.actions.filter((a) => a.key !== act.key);
+                                      updateRow(row.key, 'actions', newActions);
+                                    }}
+                                  >
+                                    ✕
+                                  </button>
+                                </>
+                              ) : (
+                                <span>{act.action_type} ({act.duration_min ?? '—'} ~ {act.duration_max ?? '—'}초)</span>
+                              )}
+                            </div>
+                          ))}
+                          {isEditing && (
+                            <button
+                              className={styles.addRowBtn}
+                              onClick={() => {
+                                setNextKey((prev) => {
+                                  const newAction: ActionRow = { key: prev, action_type: 'stir', duration_min: null, duration_max: null };
+                                  const newActions = [...row.actions, newAction];
+                                  updateRow(row.key, 'actions', newActions);
+                                  return prev + 1;
+                                });
+                              }}
+                            >
+                              + 액션
+                            </button>
                           )}
                         </td>
                         {isEditing && (

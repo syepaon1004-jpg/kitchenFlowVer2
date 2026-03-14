@@ -169,6 +169,8 @@ export default function MainViewport({ getRecipeName, getRecipeNaturalText }: Pr
   const rightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const backTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const rightEdgeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastNavTimestampRef = useRef(0);
+  const NAV_COOLDOWN_MS = 500;
 
   const setRightSidebarOpen = useUiStore((s) => s.setRightSidebarOpen);
 
@@ -183,6 +185,7 @@ export default function MainViewport({ getRecipeName, getRecipeNaturalText }: Pr
       flagRef.current = false;
       if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null; }
     }
+    lastNavTimestampRef.current = 0;
   }, []);
 
   useDndMonitor({
@@ -204,11 +207,17 @@ export default function MainViewport({ getRecipeName, getRecipeNaturalText }: Pr
         timerRef: React.RefObject<ReturnType<typeof setTimeout> | null>,
         action: () => void,
         delay: number,
+        isNav = false,
       ) => {
         if (isInside) {
           if (!flagRef.current) {
+            if (isNav && Date.now() - lastNavTimestampRef.current < NAV_COOLDOWN_MS) return;
             flagRef.current = true;
-            timerRef.current = setTimeout(() => { action(); flagRef.current = false; timerRef.current = null; }, delay);
+            timerRef.current = setTimeout(() => {
+              if (isNav) lastNavTimestampRef.current = Date.now();
+              action();
+              timerRef.current = null;
+            }, delay);
           }
         } else if (flagRef.current) {
           flagRef.current = false;
@@ -217,13 +226,13 @@ export default function MainViewport({ getRecipeName, getRecipeNaturalText }: Pr
       };
 
       // ◀ 버튼 호버 → 0.5s → goPrev
-      checkHover(isInsideEl(navLeftRef.current), isOverLeftRef, leftTimerRef, goPrev, 500);
+      checkHover(isInsideEl(navLeftRef.current), isOverLeftRef, leftTimerRef, goPrev, 500, true);
       // ▶ 버튼 호버 → 0.5s → goNext
-      checkHover(isInsideEl(navRightRef.current), isOverRightRef, rightTimerRef, goNext, 500);
+      checkHover(isInsideEl(navRightRef.current), isOverRightRef, rightTimerRef, goNext, 500, true);
       // 뒤돌기 버튼 호버 → 0.5s → goTurn
-      checkHover(isInsideEl(navBackRef.current), isOverBackRef, backTimerRef, goTurn, 500);
+      checkHover(isInsideEl(navBackRef.current), isOverBackRef, backTimerRef, goTurn, 500, true);
 
-      // 오른쪽 가장자리(10%) → 0.2s → 사이드바 펼침
+      // 오른쪽 가장자리(10%) → 0.2s → 사이드바 펼침 (쿨다운 미적용)
       if (containerRef.current) {
         const vpRect = containerRef.current.getBoundingClientRect();
         const rightEdge = pointerX > vpRect.right - vpRect.width * 0.1;
