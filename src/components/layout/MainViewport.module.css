@@ -32,6 +32,12 @@
   pointer-events: none;
 }
 
+.leftSidebarAnchor {
+  position: absolute;
+  z-index: 3;
+  pointer-events: none;
+}
+
 .loading {
   display: flex;
   align-items: center;

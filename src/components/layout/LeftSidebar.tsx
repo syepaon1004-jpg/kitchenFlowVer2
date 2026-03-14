@@ -9,7 +9,7 @@ export default function LeftSidebar() {
   const leftSidebarZoneId = useUiStore((s) => s.leftSidebarZoneId);
   const leftSidebarOpen = useUiStore((s) => s.leftSidebarOpen);
   const setLeftSidebarZone = useUiStore((s) => s.setLeftSidebarZone);
-  const toggleLeftSidebar = useUiStore((s) => s.toggleLeftSidebar);
+  const clearLeftSidebarAnchor = useUiStore((s) => s.clearLeftSidebarAnchor);
   const zoneCacheMap = useUiStore((s) => s.zoneCacheMap);
   const [zone, setZone] = useState<KitchenZone | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -56,13 +56,14 @@ export default function LeftSidebar() {
 
   return (
     <div ref={wrapperRef} className={styles.leftSidebarWrapper}>
-      <div className={`${styles.sidebar} ${leftSidebarOpen ? styles.open : ''}`}>
-        <button
-          className={styles.toggleButton}
-          onClick={toggleLeftSidebar}
-        >
-          {leftSidebarOpen ? '<<' : '>>'}
-        </button>
+      <div
+        className={`${styles.sidebar} ${leftSidebarOpen ? styles.open : ''}`}
+        onTransitionEnd={(e) => {
+          if (e.propertyName === 'max-height' && !leftSidebarOpen) {
+            clearLeftSidebarAnchor();
+          }
+        }}
+      >
         <div className={styles.sidebarContent}>
           {zone ? (
             <>
@@ -77,10 +78,7 @@ export default function LeftSidebar() {
                 </button>
               </div>
               <div className={styles.imageWrapper}>
-                <div
-                  className={styles.imageInner}
-                  style={{ '--img-ratio': zone.image_height > 0 ? zone.image_width / zone.image_height : 1 } as React.CSSProperties}
-                >
+                <div className={styles.imageInner}>
                   <img
                     src={zone.image_url ?? ''}
                     alt={zone.label}

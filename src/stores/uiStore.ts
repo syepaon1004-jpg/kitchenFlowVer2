@@ -33,6 +33,7 @@ interface UiState {
   // 왼쪽 사이드바
   leftSidebarZoneId: string | null; // null이면 zone 미선택
   leftSidebarOpen: boolean;         // CSS 슬라이드 열림/닫힘
+  leftSidebarAnchor: { x: number; y: number; w: number; h: number } | null;
 
   // 오른쪽 사이드바
   rightSidebarOpen: boolean;
@@ -59,7 +60,8 @@ interface UiState {
   goPrev: () => TurnResult | null;
   goTurn: () => TurnResult | null;
   toggleLeftSidebar: () => void;
-  setLeftSidebarZone: (zoneId: string | null) => void;
+  setLeftSidebarZone: (zoneId: string | null, anchor?: { x: number; y: number; w: number; h: number }) => void;
+  clearLeftSidebarAnchor: () => void;
   setRightSidebarOpen: (open: boolean) => void;
   toggleRightSidebar: () => void;
   openOrderSelectModal: (containerInstanceId: string) => void;
@@ -79,6 +81,7 @@ export const useUiStore = create<UiState>((set, get) => ({
   billQueueAreas: null,
   leftSidebarZoneId: null,
   leftSidebarOpen: false,
+  leftSidebarAnchor: null,
   rightSidebarOpen: false,
   orderSelectModalOpen: false,
   orderSelectContainerInstanceId: null,
@@ -143,10 +146,15 @@ export const useUiStore = create<UiState>((set, get) => ({
   },
 
   toggleLeftSidebar: () => set((s) => ({ leftSidebarOpen: !s.leftSidebarOpen })),
-  setLeftSidebarZone: (zoneId) => set({
-    leftSidebarZoneId: zoneId,
-    leftSidebarOpen: zoneId !== null,
-  }),
+  setLeftSidebarZone: (zoneId, anchor) => {
+    if (zoneId) {
+      set({ leftSidebarZoneId: zoneId, leftSidebarOpen: true, leftSidebarAnchor: anchor ?? null });
+    } else {
+      set({ leftSidebarZoneId: null, leftSidebarOpen: false });
+      // anchor는 유지 — 닫힘 애니메이션 중 컴포넌트 마운트 유지
+    }
+  },
+  clearLeftSidebarAnchor: () => set({ leftSidebarAnchor: null }),
   setRightSidebarOpen: (open) => set({ rightSidebarOpen: open }),
   setBillQueueAreas: (areas) => set({ billQueueAreas: areas }),
   toggleRightSidebar: () => set((s) => ({ rightSidebarOpen: !s.rightSidebarOpen })),

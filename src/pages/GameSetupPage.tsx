@@ -120,6 +120,24 @@ const GameSetupPage = () => {
     setSession(session.id, selectedStore.id);
     setActiveRecipeIds(selectedIds);
     setTotalOrderCount(orderCount);
+
+    // 전체 zone 이미지 프리로드 (게임 진입 시 렉 방지)
+    const { data: zones } = await supabase
+      .from('kitchen_zones')
+      .select('id, image_url')
+      .eq('store_id', selectedStore.id);
+
+    if (zones) {
+      const decodePromises = zones
+        .filter((z: { image_url: string | null }) => z.image_url)
+        .map((z: { image_url: string | null }) => {
+          const img = new Image();
+          img.src = z.image_url!;
+          return img.decode().catch(() => {});
+        });
+      await Promise.allSettled(decodePromises);
+    }
+
     navigate('/game');
   };
 

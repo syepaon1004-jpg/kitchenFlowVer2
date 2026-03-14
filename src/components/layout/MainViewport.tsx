@@ -8,6 +8,7 @@ import { supabase } from '../../lib/supabase';
 import type { KitchenZone } from '../../types/db';
 import HitboxLayer from '../game/HitboxLayer';
 import BillQueue from './BillQueue';
+import LeftSidebar from './LeftSidebar';
 import styles from './MainViewport.module.css';
 
 interface Props {
@@ -27,6 +28,7 @@ export default function MainViewport({ getRecipeName, getRecipeNaturalText }: Pr
   const goTurnAction = useUiStore((s) => s.goTurn);
   const setBillQueueAreas = useUiStore((s) => s.setBillQueueAreas);
   const billQueueAreas = useUiStore((s) => s.billQueueAreas);
+  const leftSidebarAnchor = useUiStore((s) => s.leftSidebarAnchor);
   const selectedStore = useAuthStore((s) => s.selectedStore)!;
   const storeId = useGameStore((s) => s.storeId) ?? selectedStore.id;
   const resetZoneCache = useUiStore((s) => s.resetZoneCache);
@@ -286,6 +288,18 @@ export default function MainViewport({ getRecipeName, getRecipeNaturalText }: Pr
                   <BillQueue getRecipeName={getRecipeName} getRecipeNaturalText={getRecipeNaturalText} />
                 </div>
               ))
+            )}
+            {leftSidebarAnchor && (
+              <div
+                className={styles.leftSidebarAnchor}
+                style={{
+                  left: `${leftSidebarAnchor.x * 100}%`,
+                  top: `${leftSidebarAnchor.y * 100}%`,
+                  width: `${leftSidebarAnchor.w * 100}%`,
+                }}
+              >
+                <LeftSidebar />
+              </div>
             )}
           </div>
           {/* 복사본 R */}

@@ -24,7 +24,7 @@ import type {
 } from '../types/db';
 import type { DragMeta } from '../types/game';
 import BillQueue from '../components/layout/BillQueue';
-import LeftSidebar from '../components/layout/LeftSidebar';
+
 import MainViewport from '../components/layout/MainViewport';
 import RightSidebar from '../components/layout/RightSidebar';
 import Handbar from '../components/layout/Handbar';
@@ -965,9 +965,6 @@ const GamePage = () => {
                 <BillQueue getRecipeName={getRecipeName} getRecipeNaturalText={getRecipeNaturalText} />
               </div>
             )}
-            <div className={styles.leftSidebar}>
-              <LeftSidebar />
-            </div>
             <div className={styles.rightSidebar}>
               <RightSidebar containersMap={containersMap} getRecipeName={getRecipeName} recipeSteps={recipeSteps} getRecipeIngredients={getRecipeIngredients} getRecipeTargetContainerId={getRecipeTargetContainerId} />
             </div>

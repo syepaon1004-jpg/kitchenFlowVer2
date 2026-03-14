@@ -32,16 +32,6 @@
   pointer-events: none;
 }
 
-.leftSidebar {
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 30%;
-  z-index: 20;
-  pointer-events: none;
-}
-
 .rightSidebar {
   position: absolute;
   right: 0;

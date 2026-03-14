@@ -281,7 +281,12 @@ export default function HitboxLayer({ zoneId, imageWidth, imageHeight }: Props) 
           key={`nav-${area.id}`}
           onClick={() => {
             if (!area.navigate_zone_id) return;
-            setLeftSidebarZone(area.navigate_zone_id);
+            setLeftSidebarZone(area.navigate_zone_id, {
+              x: area.x,
+              y: area.y,
+              w: area.w,
+              h: area.h,
+            });
             if (sessionId) {
               addActionLog({
                 session_id: sessionId,
