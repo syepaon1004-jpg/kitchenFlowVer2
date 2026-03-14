@@ -44,6 +44,8 @@
   font-size: var(--font-xl);
   text-align: center;
   outline: none;
+  user-select: auto;
+  -webkit-user-select: auto;
 }
 
 .quantityInput:focus {

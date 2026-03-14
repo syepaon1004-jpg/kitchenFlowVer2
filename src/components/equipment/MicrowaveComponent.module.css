@@ -39,6 +39,8 @@
   color: var(--equip-text);
   border: 1px solid var(--equip-input-border);
   border-radius: 3px;
+  user-select: auto;
+  -webkit-user-select: auto;
 }
 
 .startBtn {
