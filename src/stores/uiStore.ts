@@ -183,10 +183,10 @@ export const useUiStore = create<UiState>((set, get) => ({
           next.set(zone.id, zone);
           if (zone.image_url) {
             const img = new Image();
-            img.onerror = () => {
-              console.warn(`[prefetch] 이미지 프리로드 실패: ${zone.image_url}`);
-            };
             img.src = zone.image_url;
+            img.decode().catch(() => {
+              console.warn(`[prefetch] 이미지 프리로드 실패: ${zone.image_url}`);
+            });
           }
         }
         set({ zoneCacheMap: next });

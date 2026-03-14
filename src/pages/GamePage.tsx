@@ -501,7 +501,7 @@ const GamePage = () => {
         const si = storeIngredientsMapRef.current.get(ingredientId);
         const unit = si?.unit;
         const defaultQty = si?.default_quantity ?? 1;
-        const isActionUnit = unit === 'spoon' || unit === 'portion' || unit === 'pinch' || unit === 'handful' || unit === 'ladle' || unit === 'spatula';
+        const isActionUnit = unit === 'spoon' || unit === 'portion' || unit === 'pinch' || unit === 'handful' || unit === 'spatula';
 
         // 같은 재료가 이미 hand에 있는지 검색
         const existing = ingredientInstances.find(
@@ -602,7 +602,7 @@ const GamePage = () => {
           const si = storeIngredientsMapRef.current.get(ingredientId);
           const unit = si?.unit;
           const defaultQty = si?.default_quantity ?? 1;
-          const isActionUnit = unit === 'spoon' || unit === 'portion' || unit === 'pinch' || unit === 'handful' || unit === 'ladle' || unit === 'spatula';
+          const isActionUnit = unit === 'spoon' || unit === 'portion' || unit === 'pinch' || unit === 'handful' || unit === 'spatula';
 
           // 같은 재료가 이미 같은 장비에 있는지 검색
           const existing = ingredientInstances.find(
@@ -674,7 +674,7 @@ const GamePage = () => {
           const si = storeIngredientsMapRef.current.get(ingredientId);
           const unit = si?.unit;
           const defaultQty = si?.default_quantity ?? 1;
-          const isActionUnit = unit === 'spoon' || unit === 'portion' || unit === 'pinch' || unit === 'handful' || unit === 'ladle' || unit === 'spatula';
+          const isActionUnit = unit === 'spoon' || unit === 'portion' || unit === 'pinch' || unit === 'handful' || unit === 'spatula';
 
           // 같은 재료가 이미 같은 컨테이너에 있는지 검색
           const existing = ingredientInstances.find(

@@ -40,6 +40,13 @@ export default function MainViewport({ getRecipeName, getRecipeNaturalText }: Pr
   const imgRef = useRef<HTMLImageElement>(null);
   const isSnappingRef = useRef(false);
 
+  // 이미지 로드 완료 시 정확한 너비 재측정 (ResizeObserver 보완)
+  const handleImageLoad = useCallback(() => {
+    if (imgRef.current) {
+      setImgWidth(imgRef.current.getBoundingClientRect().width);
+    }
+  }, []);
+
   // zone 로딩 + section_config 적용 (Step 14)
   useEffect(() => {
     resetZoneCache();
@@ -252,6 +259,7 @@ export default function MainViewport({ getRecipeName, getRecipeNaturalText }: Pr
               alt={zone.label}
               className={styles.zoneImage}
               draggable={false}
+              onLoad={handleImageLoad}
             />
             {currentZoneId && <HitboxLayer zoneId={currentZoneId} imageWidth={zone.image_width} imageHeight={zone.image_height} />}
             {billQueueAreas && billQueueAreas.length > 0 && getRecipeName && (
