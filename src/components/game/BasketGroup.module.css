@@ -11,7 +11,7 @@
   touch-action: manipulation;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1200px) {
   .basketToggle {
     display: block;
   }

@@ -82,8 +82,8 @@
   --equip-input-border: #666;
 }
 
-/* ===== Tablet (≤1024px) ===== */
-@media (max-width: 1024px) {
+/* ===== Tablet (≤1200px) ===== */
+@media (max-width: 1200px) {
   :root {
     /* Layout */
     --game-header-height: 36px;
