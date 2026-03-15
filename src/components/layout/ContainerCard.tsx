@@ -86,8 +86,8 @@ export default function ContainerCard({
   // mix 재료가 없는 레시피면 버튼 숨김 (bowl이 아니면 항상 false)
   const hasMixIngredients = isBowl && mixRecipeIngredients.length > 0;
 
-  // mix 대상 재료가 볼 안에 tolerance 범위 내 수량으로 있는지 확인
-  // evaluateContainer(evaluate.ts)와 동일한 quantity ± quantity_tolerance 기준
+  // mix 대상 재료가 볼 안에 정확한 수량으로 있는지 확인
+  // evaluateContainer(evaluate.ts)와 동일한 quantity 정확 매칭 기준
   const allMixIngredientsPresent = useMemo(() => {
     if (!hasMixIngredients) return false;
     // 같은 ingredient_id의 quantity를 합산
@@ -97,9 +97,7 @@ export default function ContainerCard({
     }
     return mixRecipeIngredients.every((ri) => {
       const qty = qtyMap.get(ri.ingredient_id) ?? 0;
-      const qtyMin = ri.quantity * (1 - ri.quantity_tolerance);
-      const qtyMax = ri.quantity * (1 + ri.quantity_tolerance);
-      return qty >= qtyMin && qty <= qtyMax;
+      return Math.abs(qty - ri.quantity) < 0.001;
     });
   }, [hasMixIngredients, mixRecipeIngredients, containerIngredients]);
 

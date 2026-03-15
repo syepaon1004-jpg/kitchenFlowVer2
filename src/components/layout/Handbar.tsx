@@ -1,11 +1,17 @@
 import { useMemo } from 'react';
 import { useDroppable, useDraggable } from '@dnd-kit/core';
 import { useGameStore } from '../../stores/gameStore';
-import type { GameIngredientInstance } from '../../types/db';
+import type { GameIngredientInstance, StoreIngredient } from '../../types/db';
 import type { DragMeta } from '../../types/game';
 import styles from './Handbar.module.css';
 
-function HandIngredientChip({ inst }: { inst: GameIngredientInstance }) {
+function HandIngredientChip({
+  inst,
+  storeIngredientsMap,
+}: {
+  inst: GameIngredientInstance;
+  storeIngredientsMap: Map<string, StoreIngredient>;
+}) {
   const { setNodeRef, listeners, attributes, isDragging } = useDraggable({
     id: `hand-ingredient-${inst.id}`,
     data: {
@@ -27,7 +33,7 @@ function HandIngredientChip({ inst }: { inst: GameIngredientInstance }) {
         touchAction: 'none',
       }}
     >
-      {inst.ingredient_id.slice(0, 8)}… (qty: {inst.quantity})
+      {storeIngredientsMap.get(inst.ingredient_id)?.display_name ?? '재료'} {inst.quantity}
     </div>
   );
 }
@@ -35,6 +41,7 @@ function HandIngredientChip({ inst }: { inst: GameIngredientInstance }) {
 export default function Handbar() {
   const { setNodeRef, isOver } = useDroppable({ id: 'handbar' });
   const ingredientInstances = useGameStore((s) => s.ingredientInstances);
+  const storeIngredientsMap = useGameStore((s) => s.storeIngredientsMap);
   const handIngredients = useMemo(
     () => ingredientInstances.filter((i) => i.location_type === 'hand'),
     [ingredientInstances],
@@ -50,7 +57,7 @@ export default function Handbar() {
         <span>재료를 여기에 드롭하세요</span>
       ) : (
         handIngredients.map((inst) => (
-          <HandIngredientChip key={inst.id} inst={inst} />
+          <HandIngredientChip key={inst.id} inst={inst} storeIngredientsMap={storeIngredientsMap} />
         ))
       )}
     </div>

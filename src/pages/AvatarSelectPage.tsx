@@ -67,7 +67,8 @@ const AvatarSelectPage = () => {
       const { data, error } = await supabase
         .from('store_users')
         .select('*')
-        .eq('store_id', selectedStore.id);
+        .eq('store_id', selectedStore.id)
+        .is('deleted_at', null);
 
       setFetchLoading(false);
 

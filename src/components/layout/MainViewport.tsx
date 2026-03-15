@@ -9,6 +9,7 @@ import type { KitchenZone } from '../../types/db';
 import HitboxLayer from '../game/HitboxLayer';
 import BillQueue from './BillQueue';
 import LeftSidebar from './LeftSidebar';
+import { useSwipeNavigation } from '../../hooks/useSwipeNavigation';
 import styles from './MainViewport.module.css';
 
 interface Props {
@@ -158,6 +159,19 @@ export default function MainViewport({ getRecipeName, getRecipeNaturalText }: Pr
     handleTurnResult(goTurnAction());
   }, [imgWidth, goTurnAction, handleTurnResult]);
 
+  // 스와이프 제스처 네비게이션
+  const NAV_COOLDOWN_MS = 500;
+  const orderSelectModalOpen = useUiStore((s) => s.orderSelectModalOpen);
+  const quantityModalOpen = useUiStore((s) => s.quantityModalOpen);
+  useSwipeNavigation({
+    containerRef,
+    onSwipeLeft: goNext,
+    onSwipeRight: goPrev,
+    onSwipeVertical: goTurn,
+    enabled: !orderSelectModalOpen && !quantityModalOpen,
+    cooldownMs: NAV_COOLDOWN_MS,
+  });
+
   // 드래그 중 버튼 호버 → 시점 이동 / 오른쪽 가장자리 → 사이드바 펼침
   const navLeftRef = useRef<HTMLButtonElement>(null);
   const navRightRef = useRef<HTMLButtonElement>(null);
@@ -172,7 +186,6 @@ export default function MainViewport({ getRecipeName, getRecipeNaturalText }: Pr
   const backTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const rightEdgeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastNavTimestampRef = useRef(0);
-  const NAV_COOLDOWN_MS = 500;
 
   const setRightSidebarOpen = useUiStore((s) => s.setRightSidebarOpen);
 

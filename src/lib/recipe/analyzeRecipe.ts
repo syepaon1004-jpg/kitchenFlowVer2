@@ -17,6 +17,7 @@ export interface AiIngredient {
   unit: 'g' | 'ml' | 'ea' | 'spoon' | 'portion' | 'pinch' | 'handful' | 'ladle' | 'spatula';
   required_actions: AiRequiredAction[];
   plate_order: number;
+  is_deco?: boolean;
   confidence: 'high' | 'medium' | 'low';
 }
 

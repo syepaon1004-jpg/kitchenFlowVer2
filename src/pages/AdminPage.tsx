@@ -54,6 +54,8 @@ const AdminPage = () => {
   const [adding, setAdding] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const replaceImageInputRef = useRef<HTMLInputElement>(null);
+  const [replacingImage, setReplacingImage] = useState(false);
 
   // Load reference data on mount
   useEffect(() => {
@@ -264,6 +266,40 @@ const AdminPage = () => {
     }
   };
 
+  const handleReplaceZoneImage = async (file: File) => {
+    if (!selectedZoneId) return;
+    setReplacingImage(true);
+    try {
+      const [imageUrl, dims] = await Promise.all([
+        uploadToStorage(file, 'zones'),
+        getImageDimensions(file),
+      ]);
+
+      const { error } = await supabase
+        .from('kitchen_zones')
+        .update({ image_url: imageUrl, image_width: dims.w, image_height: dims.h })
+        .eq('id', selectedZoneId);
+
+      if (error) {
+        alert(error.message);
+        return;
+      }
+
+      setZones((prev) =>
+        prev.map((z) =>
+          z.id === selectedZoneId
+            ? { ...z, image_url: imageUrl, image_width: dims.w, image_height: dims.h }
+            : z,
+        ),
+      );
+    } catch (err) {
+      alert(err instanceof Error ? err.message : '이미지 교체 실패');
+    } finally {
+      setReplacingImage(false);
+      if (replaceImageInputRef.current) replaceImageInputRef.current.value = '';
+    }
+  };
+
   const canSubmit = newZoneKey.trim() !== '' && newZoneLabel.trim() !== '' && newZoneFile !== null;
 
   // Bulk save all areas for the current zone
@@ -400,6 +436,16 @@ const AdminPage = () => {
         {/* Left: Zone list */}
         <div className={styles.zoneList}>
           <h3>Zones</h3>
+          <input
+            ref={replaceImageInputRef}
+            type="file"
+            accept="image/*"
+            style={{ display: 'none' }}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) handleReplaceZoneImage(file);
+            }}
+          />
           {zones.map((zone) => (
             <button
               key={zone.id}
@@ -410,14 +456,28 @@ const AdminPage = () => {
               }}
             >
               <span>{zone.label}</span>
-              <span
-                className={styles.zoneDeleteBtn}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDeleteZone(zone);
-                }}
-              >
-                ✕
+              <span className={styles.zoneActions}>
+                {zone.id === selectedZoneId && (
+                  <span
+                    className={styles.zoneReplaceBtn}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      replaceImageInputRef.current?.click();
+                    }}
+                    title="배경 이미지 교체"
+                  >
+                    {replacingImage ? '...' : '🔄'}
+                  </span>
+                )}
+                <span
+                  className={styles.zoneDeleteBtn}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteZone(zone);
+                  }}
+                >
+                  ✕
+                </span>
               </span>
             </button>
           ))}

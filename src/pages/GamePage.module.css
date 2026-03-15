@@ -51,6 +51,13 @@
   max-width: var(--handbar-max-width);
 }
 
+.dragOverlayWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+}
+
 .dragImage {
   object-fit: contain;
   pointer-events: none;
@@ -59,9 +66,10 @@
 .dragLabel {
   background: #333;
   color: #fff;
-  padding: 6px 12px;
+  padding: 4px 8px;
   border-radius: 4px;
-  font-size: var(--font-base);
+  font-size: var(--font-sm);
   pointer-events: none;
-  transform: translateY(-4px);
+  white-space: nowrap;
+  margin-bottom: 2px;
 }

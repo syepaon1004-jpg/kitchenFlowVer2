@@ -424,30 +424,34 @@ const GamePage = () => {
       const dragImg = data.dragImageUrl ?? null;
       if (dragImg) {
         setDragImageUrl(dragImg);
-        setActiveDragLabel(null);
       } else if (data.type === 'ingredient' && data.ingredientId) {
         const si = storeIngredientsMapRef.current.get(data.ingredientId);
         if (si?.image_url) {
           setDragImageUrl(si.image_url);
-          setActiveDragLabel(null);
         } else {
           setDragImageUrl(null);
-          setActiveDragLabel(si?.display_name ?? '재료');
         }
       } else if (data.type === 'container' && data.containerId) {
         const c = containersMap.get(data.containerId);
         if (c?.image_url) {
           setDragImageUrl(c.image_url);
-          setActiveDragLabel(null);
         } else {
           setDragImageUrl(null);
-          setActiveDragLabel(c?.name ?? '그릇');
         }
-      } else if (data.type === 'equipment') {
-        setDragImageUrl(null);
-        setActiveDragLabel(data.equipmentType === 'wok' ? 'Wok' : data.equipmentType === 'frying_basket' ? '튀김채' : data.equipmentType ?? '장비');
       } else {
         setDragImageUrl(null);
+      }
+
+      // 라벨은 항상 설정
+      if (data.type === 'ingredient' && data.ingredientId) {
+        const si = storeIngredientsMapRef.current.get(data.ingredientId);
+        setActiveDragLabel(si?.display_name ?? '재료');
+      } else if (data.type === 'container' && data.containerId) {
+        const c = containersMap.get(data.containerId);
+        setActiveDragLabel(c?.name ?? '그릇');
+      } else if (data.type === 'equipment') {
+        setActiveDragLabel(data.equipmentType === 'wok' ? 'Wok' : data.equipmentType === 'frying_basket' ? '튀김채' : data.equipmentType ?? '장비');
+      } else {
         setActiveDragLabel(null);
       }
 
@@ -975,16 +979,20 @@ const GamePage = () => {
         </div>
         <DragOverlay dropAnimation={null}>
           {dragImageUrl ? (
-            <img
-              src={dragImageUrl}
-              alt="drag"
-              className={styles.dragImage}
-              style={{
-                width: dragImageSize?.width ?? 48,
-                height: dragImageSize?.height ?? 48,
-                transform: `translateY(-${(dragImageSize?.height ?? 48) * 0.1}px)`,
-              }}
-            />
+            <div className={styles.dragOverlayWrapper}>
+              {activeDragLabel && (
+                <div className={styles.dragLabel}>{activeDragLabel}</div>
+              )}
+              <img
+                src={dragImageUrl}
+                alt="drag"
+                className={styles.dragImage}
+                style={{
+                  width: dragImageSize?.width ?? 48,
+                  height: dragImageSize?.height ?? 48,
+                }}
+              />
+            </div>
           ) : activeDragLabel ? (
             <div className={styles.dragLabel}>
               {activeDragLabel}

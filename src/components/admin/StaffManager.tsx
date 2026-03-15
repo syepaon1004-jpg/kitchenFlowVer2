@@ -52,6 +52,7 @@ const StaffManager = ({ storeId, currentUserId }: Props) => {
       .from('store_users')
       .select('*')
       .eq('store_id', storeId)
+      .is('deleted_at', null)
       .order('role', { ascending: true })
       .order('name', { ascending: true });
 
@@ -169,7 +170,8 @@ const StaffManager = ({ storeId, currentUserId }: Props) => {
     const { error: updateError } = await supabase
       .from('store_users')
       .update(updates)
-      .eq('id', user.id);
+      .eq('id', user.id)
+      .is('deleted_at', null);
 
     if (updateError) {
       setError(updateError.message);
@@ -187,7 +189,8 @@ const StaffManager = ({ storeId, currentUserId }: Props) => {
     const { error: updateError } = await supabase
       .from('store_users')
       .update({ auth_user_id: null })
-      .eq('id', user.id);
+      .eq('id', user.id)
+      .is('deleted_at', null);
 
     if (updateError) {
       setError(updateError.message);
@@ -217,7 +220,7 @@ const StaffManager = ({ storeId, currentUserId }: Props) => {
 
     const { error: deleteError } = await supabase
       .from('store_users')
-      .delete()
+      .update({ deleted_at: new Date().toISOString() })
       .eq('id', user.id);
 
     if (deleteError) {

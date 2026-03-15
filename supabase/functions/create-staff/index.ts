@@ -63,6 +63,7 @@ Deno.serve(async (req: Request) => {
       .eq("store_id", store_id)
       .eq("auth_user_id", caller.id)
       .eq("role", "admin")
+      .is("deleted_at", null)
       .limit(1)
       .single();
 

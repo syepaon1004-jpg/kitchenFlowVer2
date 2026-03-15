@@ -40,7 +40,8 @@ const JoinPage = () => {
         .from('store_users')
         .select('id')
         .ilike('invited_email', user.email!)
-        .is('auth_user_id', null);
+        .is('auth_user_id', null)
+        .is('deleted_at', null);
 
       if (pendingInvites && pendingInvites.length > 0) {
         const ids = pendingInvites.map((r) => r.id);
@@ -53,7 +54,8 @@ const JoinPage = () => {
       const { data, error: queryError } = await supabase
         .from('store_users')
         .select('*, stores(*)')
-        .eq('auth_user_id', user.id);
+        .eq('auth_user_id', user.id)
+        .is('deleted_at', null);
 
       if (queryError) {
         setError('매장 정보를 불러오지 못했습니다.');

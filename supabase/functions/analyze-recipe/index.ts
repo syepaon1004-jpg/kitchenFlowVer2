@@ -78,7 +78,11 @@ STEP 5 - action_type 결정:
 볶다→"stir", 튀기다→"fry", 삶다/끓이다→"boil", 데우다→"microwave",
 자르다→"cut", 올리다/놓다/뿌리다/담다→"place", 붓다→"pour", 섞다→"mix"
 
-STEP 6 - confidence 결정:
+STEP 6 - is_deco 판별:
+plate_order가 높고 투입 순서가 무관한 고명/데코/양념 마무리 재료(예: 참기름, 깨, 파슬리, 소스 뿌리기 등)는 is_deco: true로 설정한다.
+장비에서 조리되는 주재료나 순서가 중요한 재료는 is_deco: false.
+
+STEP 7 - confidence 결정:
 매칭 확실→"high", 추정→"medium", 불확실→"low"
 
 반드시 아래 JSON 형식만 반환하세요. 마크다운 코드블록이나 설명 텍스트 없이 순수 JSON만 반환하세요.
@@ -94,6 +98,7 @@ STEP 6 - confidence 결정:
         { "action_type": "stir/fry/boil/microwave/cut/place/pour/mix", "duration_min": 숫자_또는_null, "duration_max": 숫자_또는_null }
       ],
       "plate_order": 숫자,
+      "is_deco": true_또는_false,
       "confidence": "high/medium/low"
     }
   ],

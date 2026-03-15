@@ -90,6 +90,24 @@
   font-size: 13px;
 }
 
+.zoneActions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.zoneReplaceBtn {
+  font-size: 11px;
+  padding: 2px 4px;
+  border-radius: 3px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.zoneReplaceBtn:hover {
+  background: rgba(25, 118, 210, 0.1);
+}
+
 .zoneDeleteBtn {
   font-size: 11px;
   color: #999;

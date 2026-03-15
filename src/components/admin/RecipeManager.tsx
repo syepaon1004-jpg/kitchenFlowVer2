@@ -18,7 +18,7 @@ interface IngredientRow {
   key: number; // local key for React list
   ingredient_id: string;
   quantity: number;
-  quantity_tolerance: number;
+  is_deco: boolean;
   plate_order: number;
   target_container_id: string | null;
   actions: ActionRow[];
@@ -28,7 +28,7 @@ const emptyRow = (key: number): IngredientRow => ({
   key,
   ingredient_id: '',
   quantity: 1,
-  quantity_tolerance: 0.1,
+  is_deco: false,
   plate_order: 1,
   target_container_id: null,
   actions: [],
@@ -110,7 +110,7 @@ const RecipeManager = ({ storeId, ingredients, containers }: Props) => {
           key: rowKey,
           ingredient_id: ri.ingredient_id,
           quantity: ri.quantity,
-          quantity_tolerance: ri.quantity_tolerance,
+          is_deco: ri.is_deco,
           plate_order: ri.plate_order,
           target_container_id: ri.target_container_id,
           actions,
@@ -247,7 +247,7 @@ const RecipeManager = ({ storeId, ingredients, containers }: Props) => {
           key: rowKey,
           ingredient_id: ai.matched_ingredient_id ?? '',
           quantity: ai.quantity,
-          quantity_tolerance: 0.1,
+          is_deco: ai.is_deco ?? false,
           plate_order: ai.plate_order,
           target_container_id: null,
           actions,
@@ -384,7 +384,7 @@ const RecipeManager = ({ storeId, ingredients, containers }: Props) => {
           recipe_id: newRecipe.id,
           ingredient_id: r.ingredient_id,
           quantity: r.quantity,
-          quantity_tolerance: r.quantity_tolerance,
+          is_deco: r.is_deco,
           plate_order: r.plate_order,
           target_container_id: r.target_container_id,
           required_actions: r.actions.length > 0
@@ -448,7 +448,7 @@ const RecipeManager = ({ storeId, ingredients, containers }: Props) => {
           recipe_id: selectedId,
           ingredient_id: r.ingredient_id,
           quantity: r.quantity,
-          quantity_tolerance: r.quantity_tolerance,
+          is_deco: r.is_deco,
           plate_order: r.plate_order,
           target_container_id: r.target_container_id,
           required_actions: r.actions.length > 0
@@ -601,7 +601,7 @@ const RecipeManager = ({ storeId, ingredients, containers }: Props) => {
                     <tr>
                       <th>재료</th>
                       <th>수량</th>
-                      <th>허용오차</th>
+                      <th>데코</th>
                       <th>순서</th>
                       <th>그릇</th>
                       <th>조리 액션</th>
@@ -648,19 +648,17 @@ const RecipeManager = ({ storeId, ingredients, containers }: Props) => {
                             row.quantity
                           )}
                         </td>
-                        <td>
+                        <td style={{ textAlign: 'center' }}>
                           {isEditing ? (
                             <input
-                              type="number"
-                              min={0}
-                              step="0.01"
-                              value={row.quantity_tolerance}
+                              type="checkbox"
+                              checked={row.is_deco}
                               onChange={(e) =>
-                                updateRow(row.key, 'quantity_tolerance', Number(e.target.value))
+                                updateRow(row.key, 'is_deco', e.target.checked)
                               }
                             />
                           ) : (
-                            row.quantity_tolerance
+                            row.is_deco ? '✓' : ''
                           )}
                         </td>
                         <td>

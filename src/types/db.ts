@@ -19,6 +19,7 @@ export interface StoreUser {
   role: 'admin' | 'staff';
   auth_user_id: string | null;
   invited_email: string | null;
+  deleted_at: string | null;
 }
 
 export interface SectionConfig {
@@ -113,7 +114,7 @@ export interface RecipeIngredient {
   recipe_id: string;
   ingredient_id: string;
   quantity: number;
-  quantity_tolerance: number; // default 0.1
+  is_deco: boolean;
   plate_order: number;
   target_container_id: string | null;
   required_actions: RequiredAction[] | null;

@@ -83,11 +83,11 @@
   transform: translate(-50%, -50%);
 }
 
-/* 현재 섹션 하단 가운데 */
+/* 핸드바 위 왼쪽 하단 */
 .navBack {
-  left: 50%;
+  left: var(--spacing-sm);
   bottom: var(--nav-back-bottom);
-  transform: translateX(-50%);
+  transform: none;
   width: auto;
   height: auto;
   border-radius: 12px;
@@ -95,7 +95,7 @@
 }
 
 @media (max-width: 1500px) {
-  .navBack {
-    min-height: var(--game-nav-size);
+  .navBtn {
+    display: none;
   }
 }

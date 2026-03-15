@@ -6,7 +6,7 @@
   --billqueue-left: 52px;
   --billqueue-right-reserve: 220px;
   --handbar-max-width: 500px;
-  --handbar-left: calc(50% - 250px);
+  --handbar-left: var(--spacing-sm);
   --handbar-min-height: 72px;
 
   /* ===== Font Sizes ===== */
@@ -92,7 +92,7 @@
     --billqueue-left: 44px;
     --billqueue-right-reserve: 180px;
     --handbar-max-width: 420px;
-    --handbar-left: calc(50% - 210px);
+    --handbar-left: var(--spacing-sm);
     --handbar-min-height: 64px;
 
     /* Font Sizes */
