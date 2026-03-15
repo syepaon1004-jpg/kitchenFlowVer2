@@ -181,10 +181,14 @@ export default function MainViewport({ getRecipeName, getRecipeNaturalText }: Pr
   const isOverRightRef = useRef(false);
   const isOverBackRef = useRef(false);
   const isOverRightEdgeRef = useRef(false);
+  const isOverTopEdgeRef = useRef(false);
+  const isOverBottomEdgeRef = useRef(false);
   const leftTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const rightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const backTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const rightEdgeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const topEdgeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const bottomEdgeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastNavTimestampRef = useRef(0);
 
   const setRightSidebarOpen = useUiStore((s) => s.setRightSidebarOpen);
@@ -195,6 +199,8 @@ export default function MainViewport({ getRecipeName, getRecipeNaturalText }: Pr
       [isOverRightRef, rightTimerRef],
       [isOverBackRef, backTimerRef],
       [isOverRightEdgeRef, rightEdgeTimerRef],
+      [isOverTopEdgeRef, topEdgeTimerRef],
+      [isOverBottomEdgeRef, bottomEdgeTimerRef],
     ];
     for (const [flagRef, timerRef] of pairs) {
       flagRef.current = false;
@@ -247,11 +253,21 @@ export default function MainViewport({ getRecipeName, getRecipeNaturalText }: Pr
       // 뒤돌기 버튼 호버 → 0.5s → goTurn
       checkHover(isInsideEl(navBackRef.current), isOverBackRef, backTimerRef, goTurn, 500, true);
 
-      // 오른쪽 가장자리(10%) → 0.2s → 사이드바 펼침 (쿨다운 미적용)
+      // 가장자리 호버 (뷰포트 기준)
       if (containerRef.current) {
         const vpRect = containerRef.current.getBoundingClientRect();
+
+        // 오른쪽 가장자리(10%) → 0.2s → 사이드바 펼침 (쿨다운 미적용)
         const rightEdge = pointerX > vpRect.right - vpRect.width * 0.1;
         checkHover(rightEdge, isOverRightEdgeRef, rightEdgeTimerRef, () => setRightSidebarOpen(true), 200);
+
+        // 상단 가장자리(10%) → 0.2s → goTurn (쿨다운 적용)
+        const topEdge = pointerY < vpRect.top + vpRect.height * 0.1;
+        checkHover(topEdge, isOverTopEdgeRef, topEdgeTimerRef, goTurn, 200, true);
+
+        // 하단 가장자리(10%) → 0.2s → goTurn (쿨다운 적용)
+        const bottomEdge = pointerY > vpRect.bottom - vpRect.height * 0.1;
+        checkHover(bottomEdge, isOverBottomEdgeRef, bottomEdgeTimerRef, goTurn, 200, true);
       }
     },
     onDragEnd() { resetAllDragHover(); },
