@@ -959,7 +959,7 @@ const GamePage = () => {
         onDragEnd={handleDragEnd}
       >
         <div className={styles.gamePage}>
-          <div className={styles.gameArea}>
+          <div className={styles.gameArea} onContextMenu={(e) => e.preventDefault()}>
             <GameHeader />
             <div className={styles.mainViewport}>
               <MainViewport getRecipeName={getRecipeName} getRecipeNaturalText={getRecipeNaturalText} />
