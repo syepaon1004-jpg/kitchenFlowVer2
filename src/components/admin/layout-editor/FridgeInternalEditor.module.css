@@ -1,0 +1,218 @@
+/* ── 폴드냉장고 내부 편집기 ── */
+
+.root {
+  width: 100%;
+  max-width: 900px;
+  margin-top: 16px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+  padding: 16px;
+}
+
+.title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 12px;
+}
+
+/* ── 패널 영역 ── */
+
+.panelSection {
+  margin-bottom: 16px;
+}
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.panelLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: #555;
+}
+
+.addBtn {
+  padding: 2px 8px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.addBtn:hover {
+  background: #eee;
+}
+
+.panelArea {
+  position: relative;
+  width: 100%;
+  height: 200px;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+/* ── 내부 아이템 ── */
+
+.fridgeItem {
+  position: absolute;
+  pointer-events: auto;
+  cursor: grab;
+  box-sizing: border-box;
+  background: #ffffff;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  user-select: none;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.fridgeItem:hover {
+  border-color: #999;
+}
+
+.fridgeItemSelected {
+  border: 2px solid var(--color-primary, #1976d2);
+  z-index: 3;
+}
+
+.fridgeItemBasket {
+  border-style: dashed;
+}
+
+.fridgeItemLabel {
+  font-size: 9px;
+  color: #555;
+  text-align: center;
+  pointer-events: none;
+  user-select: none;
+  padding: 2px;
+  line-height: 1.2;
+  word-break: keep-all;
+  overflow: hidden;
+}
+
+.fridgeItemLabelUnlinked {
+  color: #aaa;
+  font-style: italic;
+}
+
+/* ── 리사이즈 코너 ── */
+
+.resizeCorner {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: var(--color-primary, #1976d2);
+  border: 1px solid #fff;
+  border-radius: 1px;
+  z-index: 4;
+  pointer-events: auto;
+}
+
+.resize_nw { top: -4px; left: -4px; cursor: nw-resize; }
+.resize_ne { top: -4px; right: -4px; cursor: ne-resize; }
+.resize_sw { bottom: -4px; left: -4px; cursor: sw-resize; }
+.resize_se { bottom: -4px; right: -4px; cursor: se-resize; }
+
+/* ── 아이템 액션 ── */
+
+.itemActions {
+  position: absolute;
+  top: -24px;
+  right: 0;
+  display: flex;
+  gap: 2px;
+  z-index: 5;
+}
+
+.actionBtn {
+  width: 20px;
+  height: 20px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 11px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.actionBtn:hover {
+  background: #eee;
+}
+
+.actionBtnDanger:hover {
+  background: #fdd;
+  border-color: var(--color-error, #d32f2f);
+  color: var(--color-error, #d32f2f);
+}
+
+/* ── FK 연결 / 바구니 편집 섹션 ── */
+
+.detailSection {
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 1px solid #eee;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.fkSelect {
+  padding: 4px 6px;
+  font-size: 11px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  background: #fff;
+  min-width: 120px;
+}
+
+.fkUnlinkBtn {
+  padding: 4px 6px;
+  font-size: 11px;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  background: #f8f8f8;
+  cursor: pointer;
+  color: #888;
+}
+
+.fkUnlinkBtn:hover {
+  background: #fdd;
+  border-color: var(--color-error, #d32f2f);
+  color: var(--color-error, #d32f2f);
+}
+
+.basketEditBtn {
+  padding: 4px 10px;
+  font-size: 11px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.basketEditBtn:hover {
+  background: var(--color-primary-light, #e3f2fd);
+  border-color: var(--color-primary, #1976d2);
+}
+
+.detailLabel {
+  font-size: 11px;
+  color: #555;
+}

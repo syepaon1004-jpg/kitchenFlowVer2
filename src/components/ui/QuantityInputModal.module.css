@@ -26,49 +26,26 @@
   text-align: center;
 }
 
-.inputRow {
+.presetRow {
   display: flex;
-  align-items: center;
   gap: var(--spacing-sm);
   justify-content: center;
   margin-bottom: var(--spacing-lg);
 }
 
-.quantityInput {
-  width: var(--quantity-input-width);
-  padding: var(--spacing-sm) var(--spacing-md);
-  border: 1px solid var(--game-border-strong);
-  border-radius: 6px;
-  background: #f8f8f8;
-  color: var(--game-text-primary);
-  font-size: var(--font-xl);
-  text-align: center;
-  outline: none;
-  user-select: auto;
-  -webkit-user-select: auto;
-}
-
-.quantityInput:focus {
-  border-color: var(--color-primary);
-}
-
-.unitLabel {
-  color: var(--game-text-secondary);
-  font-size: var(--font-md);
-}
-
-.confirmButton {
-  width: 100%;
+.presetButton {
+  flex: 1;
+  padding: 10px var(--spacing-md);
   background: var(--color-primary);
   border: none;
   border-radius: 6px;
-  padding: 10px var(--spacing-lg);
   color: #fff;
   font-size: var(--font-md);
   cursor: pointer;
+  min-width: 0;
 }
 
-.confirmButton:hover {
+.presetButton:hover {
   background: var(--color-primary-hover);
 }
 

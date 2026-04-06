@@ -163,6 +163,7 @@ export interface GameEquipmentState {
   session_id: string;
   equipment_type: EquipmentType;
   equipment_index: number;
+  panel_equipment_id: string | null;
   // 웍
   wok_status: WokStatus | null;
   wok_temp: number | null;
@@ -204,6 +205,12 @@ export interface GameContainerInstance {
   is_served: boolean;
   current_plate_order: number;
   is_dirty: boolean;
+  /** 올려놓인 장비 panel_equipment.id (Zustand 런타임 전용) */
+  placed_equipment_id: string | null;
+  /** 장비 내 로컬 X (0~1) */
+  placed_local_x: number | null;
+  /** 장비 내 로컬 Y (0~1) */
+  placed_local_y: number | null;
 }
 
 // ——— 점수/로그 계층 ———————————————————————————————
@@ -213,7 +220,11 @@ export type ActionLogType =
   | 'navigate_open' | 'drag_start' | 'drop_success'
   | 'stir'
   | 'basket_down' | 'basket_up'
-  | 'serve' | 'dispose' | 'wok_burned';
+  | 'serve' | 'dispose' | 'wok_burned'
+  | 'click_add_ingredient'
+  | 'click_place_container' | 'click_move_container'
+  | 'click_pour' | 'click_merge_containers'
+  | 'click_dispose';
 
 export interface GameActionLog {
   id: string;
@@ -272,5 +283,53 @@ export interface GameAiFeedback {
   id: string;
   session_id: string;
   feedback_text: string;
+  created_at: string;
+}
+
+// ——— 패널 시스템 계층 ————————————————————————————
+
+export type PanelEquipmentType = 'drawer' | 'fold_fridge' | 'basket' | 'burner' | 'sink' | 'worktop' | 'shelf';
+
+export interface PanelLayout {
+  id: string;
+  store_id: string;
+  background_image_url: string | null;
+  panel_heights: number[];
+  perspective_deg: number;
+  preview_y_offset: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PanelEquipment {
+  id: string;
+  layout_id: string;
+  panel_number: 1 | 2 | 3;
+  equipment_type: PanelEquipmentType;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  equipment_index: number;
+  config: Record<string, unknown>;
+  placeable: boolean;
+  sort_order: number;
+  created_at: string;
+}
+
+export type PanelItemType = 'ingredient' | 'container';
+
+export interface PanelItem {
+  id: string;
+  layout_id: string;
+  panel_number: 1 | 2 | 3;
+  item_type: PanelItemType;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  ingredient_id: string | null;
+  container_id: string | null;
+  sort_order: number;
   created_at: string;
 }

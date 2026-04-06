@@ -21,7 +21,10 @@ interface GameState {
   addOrder: (order: GameOrder) => void;
   addIngredientInstance: (instance: GameIngredientInstance) => void;
   incrementIngredientQuantity: (instanceId: string, amount: number) => void;
+  decrementIngredientQuantity: (instanceId: string, amount: number) => void;
   moveIngredient: (instanceId: string, updates: Partial<GameIngredientInstance>) => void;
+  bulkMoveIngredients: (instanceIds: string[], updates: Partial<GameIngredientInstance>) => void;
+  moveContainer: (instanceId: string, updates: Partial<GameContainerInstance>) => void;
   addContainerInstance: (instance: GameContainerInstance) => void;
   assignOrderToContainer: (containerInstanceId: string, orderId: string) => void;
   markContainerComplete: (containerInstanceId: string) => void;
@@ -59,10 +62,30 @@ export const useGameStore = create<GameState>((set, get) => ({
         i.id === instanceId ? { ...i, quantity: i.quantity + amount } : i
       ),
     })),
+  decrementIngredientQuantity: (instanceId, amount) =>
+    set((s) => ({
+      ingredientInstances: s.ingredientInstances
+        .map((i) => (i.id === instanceId ? { ...i, quantity: i.quantity - amount } : i))
+        .filter((i) => i.quantity > 0),
+    })),
   moveIngredient: (instanceId, updates) =>
     set((s) => ({
       ingredientInstances: s.ingredientInstances.map((i) =>
         i.id === instanceId ? { ...i, ...updates } : i
+      ),
+    })),
+  bulkMoveIngredients: (instanceIds, updates) => {
+    const idSet = new Set(instanceIds);
+    set((s) => ({
+      ingredientInstances: s.ingredientInstances.map((i) =>
+        idSet.has(i.id) ? { ...i, ...updates } : i
+      ),
+    }));
+  },
+  moveContainer: (instanceId, updates) =>
+    set((s) => ({
+      containerInstances: s.containerInstances.map((c) =>
+        c.id === instanceId ? { ...c, ...updates } : c
       ),
     })),
   addContainerInstance: (instance) =>

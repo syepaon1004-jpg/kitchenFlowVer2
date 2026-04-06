@@ -1,0 +1,314 @@
+.kitchenViewRoot {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+}
+
+.billQueueArea {
+  flex-shrink: 0;
+  padding: 4px 8px;
+  z-index: 5;
+}
+
+.kitchenSceneArea {
+  flex: 1;
+  position: relative;
+  min-height: 0;
+}
+
+/* 배경 이미지 */
+.backgroundImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  user-select: none;
+  pointer-events: none;
+}
+
+.placeholderBg {
+  width: 100%;
+  height: 100%;
+  background: #333;
+}
+
+/* 패널 오버레이 */
+.panelOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* CSS 3D scene */
+.scene {
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+}
+
+.panelGroup {
+  transform-style: preserve-3d;
+}
+
+.panelWrapper {
+  position: relative;
+  width: 100%;
+  transform-style: preserve-3d;
+}
+
+.panelAnchor {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  transform-style: preserve-3d;
+}
+
+.panelFace {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  pointer-events: auto;
+  transform-style: preserve-3d;
+}
+
+/* 장비 레이어 */
+.equipmentLayer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  transform-style: preserve-3d;
+}
+
+/* 아이템 레이어 (장비 위) */
+.itemLayer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.panelItem {
+  position: absolute;
+  box-sizing: border-box;
+  background: #ffffff;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.itemLabel {
+  font-size: 9px;
+  color: #555;
+  text-align: center;
+  user-select: none;
+  padding: 2px;
+  line-height: 1.2;
+  word-break: keep-all;
+  overflow: hidden;
+}
+
+/* 장비 아이템 */
+.eqItem {
+  position: absolute;
+  transform-style: preserve-3d;
+  pointer-events: auto;
+  box-sizing: border-box;
+}
+
+/* 장비 외형: 손잡이 바 */
+.eqHandleBar {
+  position: absolute;
+  left: 20%;
+  width: 60%;
+  height: 4px;
+  background: #222;
+  border-radius: 2px;
+}
+
+/* 장비 라벨 */
+.eqTypeLabel {
+  position: absolute;
+  bottom: 2px;
+  left: 3px;
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.7);
+  pointer-events: none;
+  user-select: none;
+}
+
+/* 서랍/폴드냉장고 3D 컨테이너 */
+.drawerContainer,
+.fridgeContainer,
+.basketContainer {
+  transform-style: preserve-3d;
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.drawerFace,
+.fridgeFace {
+  position: absolute;
+  inset: 0;
+  border-radius: 2px;
+  transition: transform 0.3s ease;
+}
+
+.drawerInner {
+  position: absolute;
+  inset: 0;
+  border-radius: 2px;
+  transition: transform 0.3s ease, opacity 0.15s ease;
+}
+
+/* 바구니 셀 */
+.basketCell {
+  position: absolute;
+  transform-style: preserve-3d;
+  transition: transform 0.3s ease;
+}
+
+.basketCellFace {
+  background: #eee;
+  border: 1px solid #999;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+/* 인터랙션 버튼 */
+.eqInteractionBtn {
+  padding: 2px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.4);
+  color: #fff;
+  font-size: 10px;
+  cursor: pointer;
+  z-index: 2;
+  white-space: nowrap;
+}
+
+.eqInteractionBtn:hover {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.eqInteractionBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 홀로그램 */
+.hologram {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.hologramContents {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding: var(--spacing-2xs);
+  overflow: hidden;
+}
+
+.hologramItem {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: var(--font-2xs);
+  line-height: 1.3;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  max-width: 100%;
+  text-align: center;
+}
+
+/* 올��놓인 그릇 */
+.placedContainer {
+  pointer-events: none;
+  background: rgba(255, 255, 255, 0.9);
+  border: 2px solid var(--game-border);
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  z-index: 10;
+}
+
+.placedContainerLabel {
+  font-size: var(--font-sm);
+  color: var(--game-text-primary);
+  text-align: center;
+  user-select: none;
+  line-height: 1.2;
+  word-break: keep-all;
+}
+
+.placedContainerContents {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 9px;
+  color: var(--game-text-secondary);
+  line-height: 1.3;
+}
+
+/* 폴드냉장고 내부 패널 */
+.fridgeInternalPanel {
+  position: absolute;
+  background: #fff;
+  border: 1px solid #ddd;
+  transform-style: preserve-3d;
+}
+
+/* 선반 ⊓형 */
+.shelfLeft {
+  width: 10px;
+  flex-shrink: 0;
+  background: #888;
+}
+
+.shelfMiddle {
+  flex: 1;
+  border-top: 4px solid #888;
+}
+
+.shelfRight {
+  width: 10px;
+  flex-shrink: 0;
+  background: #888;
+}
+
+/* 볶기 진행률 바 */
+.stirProgressBar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.3);
+  pointer-events: none;
+}
+
+.stirProgressLabel {
+  position: relative;
+  pointer-events: none;
+}

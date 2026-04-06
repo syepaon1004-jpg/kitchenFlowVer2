@@ -270,3 +270,14 @@
   overflow-y: auto;
   background: #f8f8f8;
 }
+
+.disabledTabNotice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  color: #888;
+  font-size: 14px;
+  gap: 4px;
+}

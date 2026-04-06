@@ -13,6 +13,7 @@
   box-shadow: var(--game-shadow-md);
   backdrop-filter: blur(10px);
   border: 1px solid var(--game-border);
+  cursor: pointer;
 }
 
 .ingredientChip {
@@ -23,4 +24,12 @@
   font-size: var(--font-sm);
   color: var(--game-text-primary);
   white-space: nowrap;
+  cursor: grab;
+}
+
+.ingredientChip.chipSelected {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+  background: var(--color-primary);
+  color: #fff;
 }

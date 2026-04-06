@@ -32,7 +32,6 @@
   --quantity-input-width: 100px;
   --toggle-button-padding-v: 12px;
   --toggle-button-padding-h: 4px;
-  --drag-overlay-size: 60px;
 
   /* === 브랜드 컬러 === */
   --color-primary: #4a90d9;
@@ -118,7 +117,6 @@
     --quantity-input-width: 80px;
     --toggle-button-padding-v: 10px;
     --toggle-button-padding-h: 3px;
-    --drag-overlay-size: 48px;
     --game-nav-size: 48px;
     --equip-btn-min-size: 44px;
   }
@@ -147,7 +145,6 @@
     --quantity-input-width: 70px;
     --toggle-button-padding-v: 8px;
     --toggle-button-padding-h: 2px;
-    --drag-overlay-size: 40px;
     --game-nav-size: 44px;
     --equip-btn-min-size: 44px;
   }

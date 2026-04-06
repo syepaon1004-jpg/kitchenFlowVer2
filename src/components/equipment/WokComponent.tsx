@@ -1,5 +1,4 @@
 import { useMemo, useState, useRef, useCallback } from 'react';
-import { useDroppable, useDraggable } from '@dnd-kit/core';
 import { useEquipmentStore } from '../../stores/equipmentStore';
 import { useGameStore } from '../../stores/gameStore';
 import type { GameEquipmentState } from '../../types/db';
@@ -8,9 +7,6 @@ import styles from './WokComponent.module.css';
 interface Props {
   equipmentState: GameEquipmentState;
   atSink?: boolean;
-  skipDroppable?: boolean;
-  skipDraggable?: boolean;
-  overlayImageUrl?: string | null;
 }
 
 const WASH_DURATION = 3000; // 3초
@@ -18,9 +14,8 @@ const WASH_INTERVAL = 50; // 50ms 간격 업데이트
 const STIR_DURATION = 30000; // 30초
 const STIR_INTERVAL = 100; // 100ms 간격 업데이트
 
-export default function WokComponent({ equipmentState, atSink = false, skipDroppable = false, skipDraggable = false, overlayImageUrl }: Props) {
+export default function WokComponent({ equipmentState, atSink = false }: Props) {
   const updateEquipment = useEquipmentStore((s) => s.updateEquipment);
-  const isWashing = useEquipmentStore((s) => s.washing_equipment_ids.has(equipmentState.id));
   const isStirring = useEquipmentStore((s) => s.stirring_equipment_ids.has(equipmentState.id));
   const addStirring = useEquipmentStore((s) => s.addStirring);
   const removeStirring = useEquipmentStore((s) => s.removeStirring);
@@ -47,30 +42,6 @@ export default function WokComponent({ equipmentState, atSink = false, skipDropp
     () => wokIngredients.some((i) => waterIngredientIds.has(i.ingredient_id)),
     [wokIngredients, waterIngredientIds],
   );
-
-  // 드롭 타겟: 씽크에 있으면 비활성화
-  const { setNodeRef: dropRef, isOver } = useDroppable({
-    id: `equipment-wok-${equipmentState.id}`,
-    data: { equipmentStateId: equipmentState.id, equipmentType: 'wok' },
-    disabled:
-      skipDroppable ||
-      atSink ||
-      equipmentState.wok_status === 'dirty' ||
-      equipmentState.wok_status === 'burned' ||
-      isWashing,
-  });
-
-  // 드래그 소스
-  const { setNodeRef: dragRef, listeners, attributes } = useDraggable({
-    id: `wok-drag-${equipmentState.id}`,
-    data: {
-      type: 'equipment' as const,
-      equipmentType: 'wok',
-      equipmentStateId: equipmentState.id,
-      dragImageUrl: overlayImageUrl ?? undefined,
-    },
-    disabled: isWashing || skipDraggable,
-  });
 
   const handleBurnerChange = (level: 0 | 1 | 2 | 3) => {
     updateEquipment(equipmentState.id, { burner_level: level });
@@ -112,7 +83,7 @@ export default function WokComponent({ equipmentState, atSink = false, skipDropp
     setWashProgress(0);
   }, []);
 
-  // 볶기 홀드 시작
+  // 볶��� 홀드 시���
   const startStir = useCallback(
     (e: React.PointerEvent) => {
       e.stopPropagation();
@@ -160,14 +131,9 @@ export default function WokComponent({ equipmentState, atSink = false, skipDropp
 
   return (
     <div
-      ref={(node) => {
-        if (!skipDroppable) dropRef(node);
-        if (!skipDraggable) dragRef(node);
-      }}
-      {...(!skipDraggable ? { ...listeners, ...attributes } : {})}
       className={styles.container}
       style={{
-        background: isOver ? 'rgba(76,175,80,0.15)' : 'var(--equip-bg)',
+        background: 'var(--equip-bg)',
         border: `2px solid ${atSink ? 'var(--color-sink)' : statusColor}`,
       }}
     >
@@ -261,7 +227,7 @@ export default function WokComponent({ equipmentState, atSink = false, skipDropp
               }}
             />
             <span className={styles.progressLabel}>
-              {washProgress > 0 ? `세척중 ${Math.round(washPercent)}%` : '세척 (꾹 누르기)'}
+              {washProgress > 0 ? `세척중 ${Math.round(washPercent)}%` : '세�� (꾹 누르기)'}
             </span>
           </button>
         </div>
@@ -269,7 +235,7 @@ export default function WokComponent({ equipmentState, atSink = false, skipDropp
 
       {atSink && equipmentState.wok_status === 'clean' && (
         <div className={styles.cleanStatus}>
-          세척 완료 — 원래 자리로 드래그
+          세척 완료
         </div>
       )}
     </div>

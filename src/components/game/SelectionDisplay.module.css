@@ -1,0 +1,27 @@
+.selectionDisplay {
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  white-space: nowrap;
+  transition: opacity 0.15s ease, visibility 0.15s ease;
+}
+
+.selectionDisplay.hidden {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.selectionType {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.6);
+  margin-right: 6px;
+}
+
+.selectionLabel {
+  font-weight: 600;
+}

@@ -1,9 +1,7 @@
 import { useState, useMemo } from 'react';
-import { useDroppable, useDraggable } from '@dnd-kit/core';
 import { useEquipmentStore } from '../../stores/equipmentStore';
 import { useGameStore } from '../../stores/gameStore';
 import type { GameEquipmentState, GameIngredientInstance } from '../../types/db';
-import type { DragMeta } from '../../types/game';
 import styles from './MicrowaveComponent.module.css';
 
 interface MwChipProps {
@@ -11,30 +9,14 @@ interface MwChipProps {
   isRunning: boolean;
   ingredientName: string;
   ingredientUnit: string;
-  dragImageUrl: string | null;
 }
 
-function MwIngredientChip({ inst, isRunning, ingredientName, ingredientUnit, dragImageUrl }: MwChipProps) {
-  const { setNodeRef, listeners, attributes, isDragging } = useDraggable({
-    id: `mw-ingredient-${inst.id}`,
-    data: {
-      type: 'ingredient',
-      ingredientId: inst.ingredient_id,
-      ingredientInstanceId: inst.id,
-      dragImageUrl,
-    } satisfies DragMeta,
-    disabled: isRunning,
-  });
-
+function MwIngredientChip({ inst, isRunning, ingredientName, ingredientUnit }: MwChipProps) {
   return (
     <div
-      ref={setNodeRef}
-      {...listeners}
-      {...attributes}
       className={styles.ingredientChip}
       style={{
-        cursor: isRunning ? 'not-allowed' : isDragging ? 'grabbing' : 'grab',
-        opacity: isDragging ? 0.5 : 1,
+        cursor: isRunning ? 'not-allowed' : 'default',
       }}
     >
       {ingredientName} ({inst.quantity}{ingredientUnit})
@@ -44,10 +26,9 @@ function MwIngredientChip({ inst, isRunning, ingredientName, ingredientUnit, dra
 
 interface Props {
   equipmentState: GameEquipmentState;
-  skipDroppable?: boolean;
 }
 
-export default function MicrowaveComponent({ equipmentState, skipDroppable = false }: Props) {
+export default function MicrowaveComponent({ equipmentState }: Props) {
   const updateEquipment = useEquipmentStore((s) => s.updateEquipment);
   const ingredientInstances = useGameStore((s) => s.ingredientInstances);
   const storeIngredientsMap = useGameStore((s) => s.storeIngredientsMap);
@@ -63,12 +44,6 @@ export default function MicrowaveComponent({ equipmentState, skipDroppable = fal
 
   const isRunning = equipmentState.mw_status === 'running';
   const isDone = equipmentState.mw_status === 'done';
-
-  const { setNodeRef, isOver } = useDroppable({
-    id: `equipment-mw-${equipmentState.id}`,
-    data: { equipmentStateId: equipmentState.id, equipmentType: 'microwave' },
-    disabled: skipDroppable || isRunning,
-  });
 
   const handleStart = () => {
     if (!isRunning && inputSec > 0) {
@@ -90,10 +65,9 @@ export default function MicrowaveComponent({ equipmentState, skipDroppable = fal
 
   return (
     <div
-      ref={skipDroppable ? undefined : setNodeRef}
       className={styles.container}
       style={{
-        background: isOver ? 'rgba(76,175,80,0.15)' : 'var(--equip-bg)',
+        background: 'var(--equip-bg)',
         border: `2px solid ${statusColor}`,
       }}
     >
@@ -150,7 +124,6 @@ export default function MicrowaveComponent({ equipmentState, skipDroppable = fal
                 isRunning={isRunning}
                 ingredientName={si?.display_name ?? '재료'}
                 ingredientUnit={si?.unit ?? ''}
-                dragImageUrl={si?.image_url ?? null}
               />
             );
           })}

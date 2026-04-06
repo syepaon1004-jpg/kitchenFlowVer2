@@ -35,9 +35,6 @@ interface UiState {
   leftSidebarOpen: boolean;         // CSS 슬라이드 열림/닫힘
   leftSidebarAnchor: { x: number; y: number; w: number; h: number } | null;
 
-  // 오른쪽 사이드바
-  rightSidebarOpen: boolean;
-
   // 모달
   orderSelectModalOpen: boolean;
   orderSelectContainerInstanceId: string | null;
@@ -45,7 +42,7 @@ interface UiState {
   // 수량 입력 모달
   quantityModalOpen: boolean;
   quantityModalUnit: string | null;
-  quantityModalDefaultQty: number;
+  quantityModalPresets: number[];
   quantityModalCallback: ((qty: number) => void) | null;
 
   // Zone 프리로드 캐시
@@ -62,12 +59,10 @@ interface UiState {
   toggleLeftSidebar: () => void;
   setLeftSidebarZone: (zoneId: string | null, anchor?: { x: number; y: number; w: number; h: number }) => void;
   clearLeftSidebarAnchor: () => void;
-  setRightSidebarOpen: (open: boolean) => void;
-  toggleRightSidebar: () => void;
   openOrderSelectModal: (containerInstanceId: string) => void;
   closeOrderSelectModal: () => void;
   setBillQueueAreas: (areas: BillQueueArea[] | null) => void;
-  openQuantityModal: (unit: string, defaultQty: number, callback: (qty: number) => void) => void;
+  openQuantityModal: (unit: string, presets: number[], callback: (qty: number) => void) => void;
   closeQuantityModal: () => void;
   prefetchZones: (zoneIds: string[]) => Promise<void>;
   resetZoneCache: () => void;
@@ -82,12 +77,11 @@ export const useUiStore = create<UiState>((set, get) => ({
   leftSidebarZoneId: null,
   leftSidebarOpen: false,
   leftSidebarAnchor: null,
-  rightSidebarOpen: false,
   orderSelectModalOpen: false,
   orderSelectContainerInstanceId: null,
   quantityModalOpen: false,
   quantityModalUnit: null,
-  quantityModalDefaultQty: 1,
+  quantityModalPresets: [],
   quantityModalCallback: null,
   zoneCacheMap: new Map(),
   _prefetchingIds: new Set(),
@@ -155,18 +149,15 @@ export const useUiStore = create<UiState>((set, get) => ({
     }
   },
   clearLeftSidebarAnchor: () => set({ leftSidebarAnchor: null }),
-  setRightSidebarOpen: (open) => set({ rightSidebarOpen: open }),
   setBillQueueAreas: (areas) => set({ billQueueAreas: areas }),
-  toggleRightSidebar: () => set((s) => ({ rightSidebarOpen: !s.rightSidebarOpen })),
   openOrderSelectModal: (containerInstanceId) =>
     set({ orderSelectModalOpen: true, orderSelectContainerInstanceId: containerInstanceId }),
   closeOrderSelectModal: () =>
     set({ orderSelectModalOpen: false, orderSelectContainerInstanceId: null }),
-  openQuantityModal: (unit, defaultQty, callback) =>
-    set({ quantityModalOpen: true, quantityModalUnit: unit, quantityModalDefaultQty: defaultQty, quantityModalCallback: callback }),
+  openQuantityModal: (unit, presets, callback) =>
+    set({ quantityModalOpen: true, quantityModalUnit: unit, quantityModalPresets: presets, quantityModalCallback: callback }),
   closeQuantityModal: () =>
-    set({ quantityModalOpen: false, quantityModalUnit: null, quantityModalDefaultQty: 1, quantityModalCallback: null }),
-
+    set({ quantityModalOpen: false, quantityModalUnit: null, quantityModalPresets: [], quantityModalCallback: null }),
   prefetchZones: async (zoneIds) => {
     const { zoneCacheMap, _prefetchingIds } = get();
     const missing = zoneIds.filter(

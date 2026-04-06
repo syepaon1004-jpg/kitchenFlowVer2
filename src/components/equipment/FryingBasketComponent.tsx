@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import { useDroppable, useDraggable } from '@dnd-kit/core';
 import { useEquipmentStore } from '../../stores/equipmentStore';
 import { useGameStore } from '../../stores/gameStore';
 import { useScoringStore } from '../../stores/scoringStore';
@@ -8,10 +7,9 @@ import styles from './FryingBasketComponent.module.css';
 
 interface Props {
   equipmentState: GameEquipmentState;
-  skipDroppable?: boolean;
 }
 
-export default function FryingBasketComponent({ equipmentState, skipDroppable = false }: Props) {
+export default function FryingBasketComponent({ equipmentState }: Props) {
   const updateEquipment = useEquipmentStore((s) => s.updateEquipment);
   const ingredientInstances = useGameStore((s) => s.ingredientInstances);
   const sessionId = useGameStore((s) => s.sessionId);
@@ -24,22 +22,6 @@ export default function FryingBasketComponent({ equipmentState, skipDroppable = 
       ),
     [ingredientInstances, equipmentState.id],
   );
-
-  const { setNodeRef: dropRef, isOver } = useDroppable({
-    id: `equipment-basket-${equipmentState.id}`,
-    data: { equipmentStateId: equipmentState.id, equipmentType: 'frying_basket' },
-    disabled: skipDroppable,
-  });
-
-  const { setNodeRef: dragRef, listeners, attributes } = useDraggable({
-    id: `basket-drag-${equipmentState.id}`,
-    data: {
-      type: 'equipment' as const,
-      equipmentType: 'frying_basket',
-      equipmentStateId: equipmentState.id,
-    },
-    disabled: basketIngredients.length === 0 || equipmentState.basket_status === 'down',
-  });
 
   const toggleBasket = () => {
     const newStatus = equipmentState.basket_status === 'up' ? 'down' : 'up';
@@ -58,17 +40,11 @@ export default function FryingBasketComponent({ equipmentState, skipDroppable = 
 
   return (
     <div
-      ref={(node) => {
-        if (!skipDroppable) dropRef(node);
-        dragRef(node);
-      }}
-      {...listeners}
-      {...attributes}
       className={styles.container}
       style={{
-        background: isOver ? 'rgba(76,175,80,0.15)' : 'var(--equip-bg)',
+        background: 'var(--equip-bg)',
         border: `2px solid ${isDown ? 'var(--color-warning)' : 'var(--color-success)'}`,
-        cursor: basketIngredients.length > 0 ? 'grab' : 'default',
+        cursor: 'default',
       }}
     >
       <div className={styles.titleRow}>

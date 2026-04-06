@@ -32,44 +32,15 @@
   pointer-events: none;
 }
 
-.rightSidebar {
+.topLeftHud {
   position: absolute;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  width: 30%;
-  z-index: 20;
-  pointer-events: none;
-}
-
-.handbar {
-  position: absolute;
-  bottom: var(--spacing-sm);
-  left: var(--handbar-left);
-  z-index: 10;
+  top: var(--spacing-sm);
+  left: var(--spacing-sm);
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
   pointer-events: none;
   max-width: var(--handbar-max-width);
 }
 
-.dragOverlayWrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  pointer-events: none;
-}
-
-.dragImage {
-  object-fit: contain;
-  pointer-events: none;
-}
-
-.dragLabel {
-  background: #333;
-  color: #fff;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: var(--font-sm);
-  pointer-events: none;
-  white-space: nowrap;
-  margin-bottom: 2px;
-}
