@@ -64,17 +64,16 @@ interface GridEditorProps {
   equipmentId: string;
   equipmentType: 'drawer' | 'basket';
   config: Record<string, unknown>;
-  /** 패널 비율(0..1)의 장비 가로. drawer 동기화용 */
+  /** 패널 비율(0..1)의 장비 가로 = 서랍판 가로. drawer 동기화용 */
   equipmentWidth?: number;
-  /** 패널 비율(0..1)의 장비 세로(= 서랍 깊이). drawer 동기화용 */
-  equipmentHeight?: number;
+  /** 서랍판 높이 = 서랍 깊이 (0..1). config.depth와 연동. drawer 동기화용.
+   *  주의: eq.height(서랍 face 세로)와는 다름. */
+  equipmentDepth?: number;
   /** 가로 변경 시 클램프 상한 (0..1, 패널 끝 기준) */
   maxWidth?: number;
-  /** 세로 변경 시 클램프 상한 (0..1, 패널 끝 기준) */
-  maxHeight?: number;
   ingredients: StoreIngredient[];
   onConfigChange: (id: string, newConfig: Record<string, unknown>) => void;
-  onDimensionsChange?: (id: string, dims: { width?: number; height?: number }) => void;
+  onDimensionsChange?: (id: string, dims: { width?: number; depth?: number }) => void;
 }
 
 /** 하단 그리드 표시 영역의 기준 픽셀 (1.0 = BASE_PX) */
@@ -88,9 +87,8 @@ const GridEditor = ({
   equipmentType,
   config,
   equipmentWidth,
-  equipmentHeight,
+  equipmentDepth,
   maxWidth = 1,
-  maxHeight = 1,
   ingredients,
   onConfigChange,
   onDimensionsChange,
@@ -124,11 +122,13 @@ const GridEditor = ({
   );
 
   // ——— 서랍판 외곽 리사이즈 (drawer 전용) ———
-  // 우변/하변/SE 코너를 드래그하면 equipmentWidth / equipmentHeight가 실시간 변경되어
-  // 편집탭의 서랍 모양도 동기화된다. 서랍 깊이(openZ)는 eq.height로 통일됨.
+  // 우변(E) → equipmentWidth(eq.width) 변경
+  // 하변(S) → equipmentDepth(config.depth, 서랍 깊이) 변경
+  // SE 코너 → 둘 다 변경
+  // GridEditor 박스의 (width × depth)는 위에서 본 서랍판 footprint와 동일 비율.
   const showDimResize =
     equipmentType === 'drawer' && onDimensionsChange !== undefined &&
-    typeof equipmentWidth === 'number' && typeof equipmentHeight === 'number';
+    typeof equipmentWidth === 'number' && typeof equipmentDepth === 'number';
 
   const startDimResize = useCallback(
     (axis: 'x' | 'y' | 'xy') => (e: React.MouseEvent) => {
@@ -138,17 +138,17 @@ const GridEditor = ({
       const startClientX = e.clientX;
       const startClientY = e.clientY;
       const startW = equipmentWidth ?? 0.5;
-      const startH = equipmentHeight ?? 0.5;
+      const startD = equipmentDepth ?? 0.5;
 
       const onMove = (me: MouseEvent) => {
         const dx = (me.clientX - startClientX) / GRID_BASE_PX;
         const dy = (me.clientY - startClientY) / GRID_BASE_PX;
-        const dims: { width?: number; height?: number } = {};
+        const dims: { width?: number; depth?: number } = {};
         if (axis === 'x' || axis === 'xy') {
           dims.width = Math.max(MIN_DIM, Math.min(maxWidth, startW + dx));
         }
         if (axis === 'y' || axis === 'xy') {
-          dims.height = Math.max(MIN_DIM, Math.min(maxHeight, startH + dy));
+          dims.depth = Math.max(MIN_DIM, Math.min(1, startD + dy));
         }
         onDimensionsChange(equipmentId, dims);
       };
@@ -159,7 +159,7 @@ const GridEditor = ({
       document.addEventListener('mousemove', onMove);
       document.addEventListener('mouseup', onUp);
     },
-    [equipmentId, equipmentWidth, equipmentHeight, maxWidth, maxHeight, onDimensionsChange],
+    [equipmentId, equipmentWidth, equipmentDepth, maxWidth, onDimensionsChange],
   );
 
   // 선택된 셀 객체
@@ -442,7 +442,7 @@ const GridEditor = ({
       </div>
 
       {/* 그리드 영역 (서랍이면 외곽 리사이즈로 폭/깊이 동기화).
-          서랍판은 위에서 본 모양 = eq.width × eq.height 비율 그대로 표시. */}
+          서랍판은 위에서 본 모양 = eq.width × depth 비율 그대로 표시. */}
       <div
         className={styles.gridResizeWrapper}
         style={
@@ -450,7 +450,7 @@ const GridEditor = ({
             ? {
                 position: 'relative',
                 width: `${(equipmentWidth ?? 0.5) * GRID_BASE_PX}px`,
-                height: `${(equipmentHeight ?? 0.5) * GRID_BASE_PX}px`,
+                height: `${(equipmentDepth ?? 0.5) * GRID_BASE_PX}px`,
                 maxWidth: '100%',
                 minWidth: 80,
                 minHeight: 80,

@@ -713,6 +713,7 @@ function renderEquipment(eq: LocalEquipment, state: EquipmentInteractionState, p
         eqId={eq.id}
         isOpen={state.drawers[eq.id]?.isOpen ?? false}
         config={eq.config}
+        eqHeight={eq.height}
         ingredientLabelsMap={ingredientLabelsMap}
         selection={selection}
       />
@@ -729,11 +730,12 @@ interface GameDrawerVisualProps {
   eqId: string;
   isOpen: boolean;
   config: Record<string, unknown>;
+  eqHeight: number;
   ingredientLabelsMap: Map<string, string>;
   selection?: SelectionState | null;
 }
 
-function GameDrawerVisual({ eqId, isOpen, config, ingredientLabelsMap, selection }: GameDrawerVisualProps) {
+function GameDrawerVisual({ eqId, isOpen, config, eqHeight, ingredientLabelsMap, selection }: GameDrawerVisualProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [measuredH, setMeasuredH] = useState(0);
 
@@ -747,15 +749,22 @@ function GameDrawerVisual({ eqId, isOpen, config, ingredientLabelsMap, selection
     return () => ro.disconnect();
   }, []);
 
-  const openZ = isOpen ? measuredH : 0;
+  const depth = typeof (config as Record<string, unknown>).depth === 'number'
+    ? ((config as Record<string, unknown>).depth as number)
+    : 0.5;
+  const safeEqH = eqHeight > 0 ? eqHeight : 0.05;
+  const depthRatio = depth / safeEqH;
+  const openZ = isOpen ? measuredH * depthRatio : 0;
   const grid = resolveGrid(config, 'drawer');
   const cellW = 1 / grid.cols;
   const cellH = 1 / grid.rows;
 
   return (
     <div ref={containerRef} className={styles.drawerContainer}>
-      {/* 외부: top center 기준 -90deg 세우기 */}
+      {/* 외부: top center 기준 -90deg 세우기. inner height = depth/eqHeight 비율 */}
       <div className={styles.drawerInner} style={{
+        height: `${depthRatio * 100}%`,
+        bottom: 'auto',
         transform: `translateZ(${openZ}px) rotateX(-90deg)`,
         transformOrigin: 'top center', background: '#ddd',
         opacity: isOpen ? 1 : 0,
