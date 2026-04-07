@@ -327,7 +327,6 @@
 
 .equipmentSelected {
   border: 2px solid var(--color-primary, #1976d2);
-  background: rgba(25, 118, 210, 0.12);
   box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.25);
   z-index: 3;
 }
@@ -564,7 +563,6 @@
 
 .panelItemSelected {
   border: 2px solid var(--color-primary, #1976d2);
-  background: rgba(25, 118, 210, 0.18);
   box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.25);
   z-index: 7;
 }
