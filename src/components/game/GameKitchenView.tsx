@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { PanelEquipmentType } from '../../types/db';
 import type { EquipmentInteractionState, FridgeInternalItem, ClickTarget, SelectionState } from '../../types/game';
 import { useEquipmentStore } from '../../stores/equipmentStore';
@@ -708,7 +708,15 @@ function BurnerPanel({ stateId, fireLevel, stirProgress }: BurnerPanelProps) {
 
 function renderEquipment(eq: LocalEquipment, state: EquipmentInteractionState, panelIndex: number, ingredientLabelsMap: Map<string, string>, burnerLevel: 0 | 1 | 2 = 0, stateId?: string, stirProgress = 0, selection?: SelectionState | null) {
   switch (eq.equipmentType) {
-    case 'drawer': return renderDrawer(state.drawers[eq.id]?.isOpen ?? false, eq.id, eq.config, ingredientLabelsMap, selection);
+    case 'drawer': return (
+      <GameDrawerVisual
+        eqId={eq.id}
+        isOpen={state.drawers[eq.id]?.isOpen ?? false}
+        config={eq.config}
+        ingredientLabelsMap={ingredientLabelsMap}
+        selection={selection}
+      />
+    );
     case 'burner': return <BurnerPanel stateId={stateId} fireLevel={burnerLevel} stirProgress={stirProgress} />;
     case 'basket': return renderBasket(state.baskets[eq.id]?.isExpanded ?? false, eq.id, panelIndex, eq.config, ingredientLabelsMap, selection);
     case 'fold_fridge': return renderFoldFridge(state.foldFridges[eq.id]?.isOpen ?? false, eq.id, eq.config, ingredientLabelsMap, state.baskets, selection);
@@ -717,17 +725,35 @@ function renderEquipment(eq: LocalEquipment, state: EquipmentInteractionState, p
   }
 }
 
-function renderDrawer(isOpen: boolean, eqId: string, config: Record<string, unknown>, ingredientLabelsMap: Map<string, string>, selection?: SelectionState | null) {
-  const depth = typeof (config as Record<string, unknown>).depth === 'number'
-    ? ((config as Record<string, unknown>).depth as number)
-    : 0.5;
-  const openZ = isOpen ? Math.round(40 + depth * 80) : 0;
+interface GameDrawerVisualProps {
+  eqId: string;
+  isOpen: boolean;
+  config: Record<string, unknown>;
+  ingredientLabelsMap: Map<string, string>;
+  selection?: SelectionState | null;
+}
+
+function GameDrawerVisual({ eqId, isOpen, config, ingredientLabelsMap, selection }: GameDrawerVisualProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [measuredH, setMeasuredH] = useState(0);
+
+  useLayoutEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const measure = () => setMeasuredH(el.offsetHeight);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const openZ = isOpen ? measuredH : 0;
   const grid = resolveGrid(config, 'drawer');
   const cellW = 1 / grid.cols;
   const cellH = 1 / grid.rows;
 
   return (
-    <div className={styles.drawerContainer}>
+    <div ref={containerRef} className={styles.drawerContainer}>
       {/* 외부: top center 기준 -90deg 세우기 */}
       <div className={styles.drawerInner} style={{
         transform: `translateZ(${openZ}px) rotateX(-90deg)`,
