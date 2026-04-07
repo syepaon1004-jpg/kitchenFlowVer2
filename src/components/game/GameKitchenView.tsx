@@ -694,7 +694,10 @@ function renderEquipment(eq: LocalEquipment, state: EquipmentInteractionState, p
 }
 
 function renderDrawer(isOpen: boolean, eqId: string, config: Record<string, unknown>, ingredientLabelsMap: Map<string, string>) {
-  const openZ = isOpen ? 50 : 0;
+  const depth = typeof (config as Record<string, unknown>).depth === 'number'
+    ? ((config as Record<string, unknown>).depth as number)
+    : 0.5;
+  const openZ = isOpen ? Math.round(40 + depth * 80) : 0;
   const grid = resolveGrid(config, 'drawer');
   const cellW = 1 / grid.cols;
   const cellH = 1 / grid.rows;
@@ -746,9 +749,16 @@ function renderDrawer(isOpen: boolean, eqId: string, config: Record<string, unkn
           })}
         </div>
       </div>
-      <div className={styles.drawerFace} style={{
-        transform: `translateZ(${openZ}px)`, background: EQUIPMENT_COLORS.drawer,
-      }}>
+      <div
+        className={styles.drawerFace}
+        data-equipment-id={eqId}
+        data-equipment-type="drawer"
+        data-click-target="equipment-toggle"
+        data-click-meta={JSON.stringify({ equipmentId: eqId, equipmentType: 'drawer' })}
+        style={{
+          transform: `translateZ(${openZ}px)`, background: EQUIPMENT_COLORS.drawer,
+        }}
+      >
         <div className={styles.eqHandleBar} style={{ bottom: 4 }} />
         <span className={styles.eqTypeLabel}>{EQUIPMENT_LABELS.drawer}</span>
       </div>

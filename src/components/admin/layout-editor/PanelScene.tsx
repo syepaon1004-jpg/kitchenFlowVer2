@@ -139,17 +139,31 @@ const PanelScene = ({
       const { clientX, clientY } = e;
 
       // hit-test: data-equipment-id 요소의 투영 rect와 비교
+      // 서랍 face/inner는 translateZ로 투영 위치가 변하므로 자식(face/inner) 우선,
+      // 없으면 컨테이너로 폴백한다. 가장 작은 면적의 적중을 우선해 가장 구체적인 레이어를 선택.
       const eqElements = sceneEl.querySelectorAll('[data-equipment-id]');
+      type Hit = { id: string; type: string; area: number; isLayer: boolean };
+      const hits: Hit[] = [];
       for (const el of eqElements) {
         const rect = el.getBoundingClientRect();
         if (clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom) {
-          const eqId = (el as HTMLElement).dataset.equipmentId!;
-          const eqType = (el as HTMLElement).dataset.equipmentType!;
-          e.preventDefault();
-          e.stopPropagation();
-          handleEquipmentInteraction(eqId, eqType);
-          return;
+          const id = (el as HTMLElement).dataset.equipmentId!;
+          const type = (el as HTMLElement).dataset.equipmentType!;
+          const isLayer = !!(el as HTMLElement).dataset.eqHitLayer;
+          hits.push({ id, type, area: rect.width * rect.height, isLayer });
         }
+      }
+      if (hits.length > 0) {
+        // face/inner 레이어 우선, 없으면 컨테이너. 동일 카테고리에선 면적 작은 순.
+        hits.sort((a, b) => {
+          if (a.isLayer !== b.isLayer) return a.isLayer ? -1 : 1;
+          return a.area - b.area;
+        });
+        const top = hits[0];
+        e.preventDefault();
+        e.stopPropagation();
+        handleEquipmentInteraction(top.id, top.type);
+        return;
       }
 
       // 장비 미히트 → Y 드래그

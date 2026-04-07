@@ -72,7 +72,7 @@ function getBasketCorrection(panelIndex: number): string {
 function renderPreviewVisual(eq: LocalEquipment, state: EquipmentInteractionState, panelIndex: number, ingredients: StoreIngredient[]) {
   switch (eq.equipmentType) {
     case 'drawer':
-      return renderDrawer(state.drawers[eq.id]?.isOpen ?? false, eq.config, ingredients);
+      return renderDrawer(eq.id, state.drawers[eq.id]?.isOpen ?? false, eq.config, ingredients);
     case 'burner':
       return renderBurner(state.burners[eq.id]?.fireLevel ?? 0);
     case 'basket':
@@ -87,8 +87,12 @@ function renderPreviewVisual(eq: LocalEquipment, state: EquipmentInteractionStat
 }
 
 /** 서랍: 컨테이너(preserve-3d) > 내부 판(translateZ + rotateX(-90deg) 고정) + face(translateZ) */
-function renderDrawer(isOpen: boolean, config: Record<string, unknown>, ingredients: StoreIngredient[]) {
-  const openZ = isOpen ? 50 : 0;
+function renderDrawer(eqId: string, isOpen: boolean, config: Record<string, unknown>, ingredients: StoreIngredient[]) {
+  const depth = typeof (config as Record<string, unknown>).depth === 'number'
+    ? ((config as Record<string, unknown>).depth as number)
+    : 0.5;
+  // 깊이 0..1 → 40~120px translateZ 범위
+  const openZ = isOpen ? Math.round(40 + depth * 80) : 0;
   const grid = resolveGrid(config, 'drawer');
   const cellW = 1 / grid.cols;
   const cellH = 1 / grid.rows;
@@ -98,6 +102,9 @@ function renderDrawer(isOpen: boolean, config: Record<string, unknown>, ingredie
       {/* 외부: top center 기준 -90deg 세우기 */}
       <div
         className={styles.drawerInner}
+        data-equipment-id={eqId}
+        data-equipment-type="drawer"
+        data-eq-hit-layer="inner"
         style={{
           transform: `translateZ(${openZ}px) rotateX(-90deg)`,
           transformOrigin: 'top center',
@@ -145,6 +152,9 @@ function renderDrawer(isOpen: boolean, config: Record<string, unknown>, ingredie
       </div>
       <div
         className={styles.drawerFace}
+        data-equipment-id={eqId}
+        data-equipment-type="drawer"
+        data-eq-hit-layer="face"
         style={{
           transform: `translateZ(${openZ}px)`,
           background: EQUIPMENT_COLORS.drawer,
