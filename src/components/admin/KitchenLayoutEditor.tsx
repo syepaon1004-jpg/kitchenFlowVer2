@@ -502,12 +502,9 @@ const KitchenLayoutEditor = ({ storeId, ingredients, containers }: Props) => {
               equipmentType={gridEditTarget.equipmentType as 'drawer' | 'basket'}
               config={gridEditTarget.config}
               equipmentWidth={gridEditTarget.width}
-              equipmentDepth={
-                typeof (gridEditTarget.config as Record<string, unknown>).depth === 'number'
-                  ? ((gridEditTarget.config as Record<string, unknown>).depth as number)
-                  : 0.5
-              }
+              equipmentHeight={gridEditTarget.height}
               maxWidth={Math.max(0.05, 1 - gridEditTarget.x)}
+              maxHeight={Math.max(0.05, 1 - gridEditTarget.y)}
               ingredients={ingredients}
               onConfigChange={(id, newConfig) => handleEquipmentChange(id, { config: newConfig })}
               onDimensionsChange={(id, dims) => {
@@ -517,10 +514,9 @@ const KitchenLayoutEditor = ({ storeId, ingredients, containers }: Props) => {
                   const clamped = Math.max(0.05, Math.min(1 - eq.x, dims.width));
                   handleEquipmentChange(id, { width: clamped });
                 }
-                if (dims.depth !== undefined) {
-                  handleEquipmentChange(id, {
-                    config: { ...eq.config, depth: dims.depth },
-                  });
+                if (dims.height !== undefined) {
+                  const clamped = Math.max(0.05, Math.min(1 - eq.y, dims.height));
+                  handleEquipmentChange(id, { height: clamped });
                 }
               }}
             />

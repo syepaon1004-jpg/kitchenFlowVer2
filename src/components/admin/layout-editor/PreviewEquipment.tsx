@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef, useState } from 'react';
 import type { LocalEquipment, PanelEquipmentType } from './types';
 import type { EquipmentInteractionState, GridCell, GridConfig, FridgeInternalItem } from '../../../types/game';
 import { isGridConfig, isFoldFridgeConfig, getBindAnchor } from '../../../types/game';
@@ -72,7 +73,14 @@ function getBasketCorrection(panelIndex: number): string {
 function renderPreviewVisual(eq: LocalEquipment, state: EquipmentInteractionState, panelIndex: number, ingredients: StoreIngredient[]) {
   switch (eq.equipmentType) {
     case 'drawer':
-      return renderDrawer(eq.id, state.drawers[eq.id]?.isOpen ?? false, eq.config, ingredients);
+      return (
+        <PreviewDrawerVisual
+          eqId={eq.id}
+          isOpen={state.drawers[eq.id]?.isOpen ?? false}
+          config={eq.config}
+          ingredients={ingredients}
+        />
+      );
     case 'burner':
       return renderBurner(state.burners[eq.id]?.fireLevel ?? 0);
     case 'basket':
@@ -86,19 +94,36 @@ function renderPreviewVisual(eq: LocalEquipment, state: EquipmentInteractionStat
   }
 }
 
-/** 서랍: 컨테이너(preserve-3d) > 내부 판(translateZ + rotateX(-90deg) 고정) + face(translateZ) */
-function renderDrawer(eqId: string, isOpen: boolean, config: Record<string, unknown>, ingredients: StoreIngredient[]) {
-  const depth = typeof (config as Record<string, unknown>).depth === 'number'
-    ? ((config as Record<string, unknown>).depth as number)
-    : 0.5;
-  // 깊이 0..1 → 40~120px translateZ 범위
-  const openZ = isOpen ? Math.round(40 + depth * 80) : 0;
+/** 서랍: 컨테이너(preserve-3d) > 내부 판(translateZ + rotateX(-90deg) 고정) + face(translateZ).
+ *  openZ는 컨테이너의 픽셀 높이와 정확히 같다 (= eq.height × panelPxHeight). */
+interface PreviewDrawerVisualProps {
+  eqId: string;
+  isOpen: boolean;
+  config: Record<string, unknown>;
+  ingredients: StoreIngredient[];
+}
+
+function PreviewDrawerVisual({ eqId, isOpen, config, ingredients }: PreviewDrawerVisualProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [measuredH, setMeasuredH] = useState(0);
+
+  useLayoutEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const measure = () => setMeasuredH(el.offsetHeight);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const openZ = isOpen ? measuredH : 0;
   const grid = resolveGrid(config, 'drawer');
   const cellW = 1 / grid.cols;
   const cellH = 1 / grid.rows;
 
   return (
-    <div className={styles.drawerContainer}>
+    <div ref={containerRef} className={styles.drawerContainer}>
       {/* 외부: top center 기준 -90deg 세우기 */}
       <div
         className={styles.drawerInner}

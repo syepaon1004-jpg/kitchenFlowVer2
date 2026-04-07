@@ -48,8 +48,6 @@ export interface GridConfig {
 
 export interface DrawerConfig {
   grid: GridConfig;
-  /** 0..1, 열렸을 때 translateZ 비율. 기본 0.5 */
-  depth?: number;
 }
 
 export interface BasketConfig {
