@@ -78,6 +78,7 @@ function renderPreviewVisual(eq: LocalEquipment, state: EquipmentInteractionStat
           eqId={eq.id}
           isOpen={state.drawers[eq.id]?.isOpen ?? false}
           config={eq.config}
+          eqHeight={eq.height}
           ingredients={ingredients}
         />
       );
@@ -94,16 +95,22 @@ function renderPreviewVisual(eq: LocalEquipment, state: EquipmentInteractionStat
   }
 }
 
-/** 서랍: 컨테이너(preserve-3d) > 내부 판(translateZ + rotateX(-90deg) 고정) + face(translateZ).
- *  openZ는 컨테이너의 픽셀 높이와 정확히 같다 (= eq.height × panelPxHeight). */
+/** 서랍 시각화: container(face 영역) + inner(서랍판) + face.
+ *  - face는 eq.width × eq.height(panel 비율). 시각적 정면.
+ *  - inner는 서랍판 = "위에서 본" 영역. 가로는 eq.width와 동일, 세로는 depth(0..1).
+ *    inner CSS height = (depth/eqHeight)*100%로 지정하면 픽셀 깊이 = depth × panelPxH.
+ *  - rotateX(-90deg) top center 후 inner의 forward 길이 = inner pixel height = depth × panelPxH.
+ *  - face는 그 forward 끝(z = depth × panelPxH)으로 translateZ → 정확히 inner 끝에 안착. */
 interface PreviewDrawerVisualProps {
   eqId: string;
   isOpen: boolean;
   config: Record<string, unknown>;
+  /** eq.height (face 세로, panel 비율 0..1). depth를 면 높이로 정규화하기 위해 필요. */
+  eqHeight: number;
   ingredients: StoreIngredient[];
 }
 
-function PreviewDrawerVisual({ eqId, isOpen, config, ingredients }: PreviewDrawerVisualProps) {
+function PreviewDrawerVisual({ eqId, isOpen, config, eqHeight, ingredients }: PreviewDrawerVisualProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [measuredH, setMeasuredH] = useState(0);
 
@@ -117,20 +124,28 @@ function PreviewDrawerVisual({ eqId, isOpen, config, ingredients }: PreviewDrawe
     return () => ro.disconnect();
   }, []);
 
-  const openZ = isOpen ? measuredH : 0;
+  const depth = typeof (config as Record<string, unknown>).depth === 'number'
+    ? ((config as Record<string, unknown>).depth as number)
+    : 0.5;
+  const safeEqH = eqHeight > 0 ? eqHeight : 0.05;
+  const depthRatio = depth / safeEqH; // inner height/depth를 face height 기준으로 정규화
+  const openZ = isOpen ? measuredH * depthRatio : 0;
   const grid = resolveGrid(config, 'drawer');
   const cellW = 1 / grid.cols;
   const cellH = 1 / grid.rows;
 
   return (
     <div ref={containerRef} className={styles.drawerContainer}>
-      {/* 외부: top center 기준 -90deg 세우기 */}
+      {/* 외부: top center 기준 -90deg 세우기. inner의 height를 depth 비율로 강제. */}
       <div
         className={styles.drawerInner}
         data-equipment-id={eqId}
         data-equipment-type="drawer"
         data-eq-hit-layer="inner"
         style={{
+          // .drawerInner 의 inset:0 을 height 로 덮어쓰기 (top:0 + 명시 height)
+          height: `${depthRatio * 100}%`,
+          bottom: 'auto',
           transform: `translateZ(${openZ}px) rotateX(-90deg)`,
           transformOrigin: 'top center',
           background: '#ddd',
