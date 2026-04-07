@@ -819,6 +819,7 @@ const GamePage = () => {
               wokContentsMap={wokContentsMap}
               placedContainers={placedContainers}
               hasSelection={!!selection}
+              selection={selection}
               panelToStateIdMap={panelToStateIdMap}
               onSceneClick={handleSceneClick}
             >

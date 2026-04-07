@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { PanelEquipmentType } from '../../types/db';
-import type { EquipmentInteractionState, FridgeInternalItem, ClickTarget } from '../../types/game';
+import type { EquipmentInteractionState, FridgeInternalItem, ClickTarget, SelectionState } from '../../types/game';
 import { useEquipmentStore } from '../../stores/equipmentStore';
 import { useGameStore } from '../../stores/gameStore';
 import { useShallow } from 'zustand/react/shallow';
@@ -138,9 +138,27 @@ interface Props {
   wokContentsMap?: Map<string, WokContentEntry[]>;
   placedContainers?: PlacedContainerEntry[];
   hasSelection?: boolean;
+  /** 선택 상태 (선택된 요소 시각 강조용) */
+  selection?: SelectionState | null;
   panelToStateIdMap?: Map<string, string>;
   onSceneClick?: (target: ClickTarget) => void;
   children?: React.ReactNode; // BillQueue slot
+}
+
+/** 선택 매칭 헬퍼: 게임 내 요소가 현재 선택과 일치하는지 */
+function isIngredientSelected(selection: SelectionState | null | undefined, ingredientId: string | null | undefined): boolean {
+  if (!selection || !ingredientId) return false;
+  return selection.type === 'ingredient' && selection.ingredientId === ingredientId;
+}
+
+function isContainerSourceSelected(selection: SelectionState | null | undefined, containerId: string | null | undefined): boolean {
+  if (!selection || !containerId) return false;
+  return selection.type === 'container' && selection.containerId === containerId && !selection.containerInstanceId;
+}
+
+function isPlacedContainerSelected(selection: SelectionState | null | undefined, instanceId: string | null | undefined): boolean {
+  if (!selection || !instanceId) return false;
+  return selection.type === 'placed-container' && selection.containerInstanceId === instanceId;
 }
 
 function degToPerspectivePx(deg: number, h: number): number {
@@ -155,7 +173,7 @@ function getBasketCorrection(panelIndex: number): string {
 // ——— 컴포넌트 ———
 
 const GameKitchenView = ({
-  panelHeights, perspectiveDeg, previewYOffset, backgroundImageUrl, equipment, items, ingredientLabelsMap, wokContentsMap, placedContainers, hasSelection, panelToStateIdMap, onSceneClick, children,
+  panelHeights, perspectiveDeg, previewYOffset, backgroundImageUrl, equipment, items, ingredientLabelsMap, wokContentsMap, placedContainers, hasSelection, selection, panelToStateIdMap, onSceneClick, children,
 }: Props) => {
   const sceneRef = useRef<HTMLDivElement>(null);
   const [containerHeight, setContainerHeight] = useState(0);
@@ -436,7 +454,7 @@ const GameKitchenView = ({
                     height: `${eq.height * 100}%`,
                   }}
                 >
-                  {renderEquipment(eq, interactionState, index, ingredientLabelsMap, burnerLevelsRecord[eq.id] ?? 0, panelToStateIdMap?.get(eq.id), stirProgressMap.get(panelToStateIdMap?.get(eq.id) ?? '') ?? 0)}
+                  {renderEquipment(eq, interactionState, index, ingredientLabelsMap, burnerLevelsRecord[eq.id] ?? 0, panelToStateIdMap?.get(eq.id), stirProgressMap.get(panelToStateIdMap?.get(eq.id) ?? '') ?? 0, selection)}
                 </div>
               );
             })}
@@ -444,26 +462,31 @@ const GameKitchenView = ({
 
           {/* 아이템 레이어 (장비 위) */}
           <div className={styles.itemLayer}>
-            {items.filter((it) => it.panelIndex === index).map((item) => (
-              <div
-                key={item.id}
-                className={styles.panelItem}
-                data-click-target={item.itemType === 'container' ? 'container-source' : 'ingredient-source'}
-                data-click-meta={JSON.stringify(
-                  item.itemType === 'container'
-                    ? { containerId: item.containerId }
-                    : { ingredientId: item.ingredientId },
-                )}
-                style={{
-                  left: `${item.x * 100}%`,
-                  top: `${item.y * 100}%`,
-                  width: `${item.width * 100}%`,
-                  height: `${item.height * 100}%`,
-                }}
-              >
-                <span className={styles.itemLabel}>{item.label}</span>
-              </div>
-            ))}
+            {items.filter((it) => it.panelIndex === index).map((item) => {
+              const isSel = item.itemType === 'container'
+                ? isContainerSourceSelected(selection, item.containerId)
+                : isIngredientSelected(selection, item.ingredientId);
+              return (
+                <div
+                  key={item.id}
+                  className={`${styles.panelItem} ${isSel ? styles.gameSelected : ''}`}
+                  data-click-target={item.itemType === 'container' ? 'container-source' : 'ingredient-source'}
+                  data-click-meta={JSON.stringify(
+                    item.itemType === 'container'
+                      ? { containerId: item.containerId }
+                      : { ingredientId: item.ingredientId },
+                  )}
+                  style={{
+                    left: `${item.x * 100}%`,
+                    top: `${item.y * 100}%`,
+                    width: `${item.width * 100}%`,
+                    height: `${item.height * 100}%`,
+                  }}
+                >
+                  <span className={styles.itemLabel}>{item.label}</span>
+                </div>
+              );
+            })}
           </div>
 
           {/* 올려놓인 그릇: 해당 패널 장비에 속한 것만 렌더링 */}
@@ -475,10 +498,11 @@ const GameKitchenView = ({
               const absY = eq.y + pc.localY * eq.height;
               const sizeVh = PLACED_CONTAINER_SIZE_VH;
 
+              const isPcSel = isPlacedContainerSelected(selection, pc.instanceId);
               return (
                 <div
                   key={pc.instanceId}
-                  className={styles.placedContainer}
+                  className={`${styles.placedContainer} ${isPcSel ? styles.gameSelected : ''}`}
                   data-click-target="placed-container"
                   data-click-meta={JSON.stringify({ containerInstanceId: pc.instanceId })}
                   style={{
@@ -682,18 +706,18 @@ function BurnerPanel({ stateId, fireLevel, stirProgress }: BurnerPanelProps) {
 
 // ——— 장비 렌더링 ———
 
-function renderEquipment(eq: LocalEquipment, state: EquipmentInteractionState, panelIndex: number, ingredientLabelsMap: Map<string, string>, burnerLevel: 0 | 1 | 2 = 0, stateId?: string, stirProgress = 0) {
+function renderEquipment(eq: LocalEquipment, state: EquipmentInteractionState, panelIndex: number, ingredientLabelsMap: Map<string, string>, burnerLevel: 0 | 1 | 2 = 0, stateId?: string, stirProgress = 0, selection?: SelectionState | null) {
   switch (eq.equipmentType) {
-    case 'drawer': return renderDrawer(state.drawers[eq.id]?.isOpen ?? false, eq.id, eq.config, ingredientLabelsMap);
+    case 'drawer': return renderDrawer(state.drawers[eq.id]?.isOpen ?? false, eq.id, eq.config, ingredientLabelsMap, selection);
     case 'burner': return <BurnerPanel stateId={stateId} fireLevel={burnerLevel} stirProgress={stirProgress} />;
-    case 'basket': return renderBasket(state.baskets[eq.id]?.isExpanded ?? false, eq.id, panelIndex, eq.config, ingredientLabelsMap);
-    case 'fold_fridge': return renderFoldFridge(state.foldFridges[eq.id]?.isOpen ?? false, eq.id, eq.config, ingredientLabelsMap, state.baskets);
+    case 'basket': return renderBasket(state.baskets[eq.id]?.isExpanded ?? false, eq.id, panelIndex, eq.config, ingredientLabelsMap, selection);
+    case 'fold_fridge': return renderFoldFridge(state.foldFridges[eq.id]?.isOpen ?? false, eq.id, eq.config, ingredientLabelsMap, state.baskets, selection);
     case 'sink': return renderSink();
     default: return renderSimple(eq.equipmentType);
   }
 }
 
-function renderDrawer(isOpen: boolean, eqId: string, config: Record<string, unknown>, ingredientLabelsMap: Map<string, string>) {
+function renderDrawer(isOpen: boolean, eqId: string, config: Record<string, unknown>, ingredientLabelsMap: Map<string, string>, selection?: SelectionState | null) {
   const depth = typeof (config as Record<string, unknown>).depth === 'number'
     ? ((config as Record<string, unknown>).depth as number)
     : 0.5;
@@ -718,9 +742,11 @@ function renderDrawer(isOpen: boolean, eqId: string, config: Record<string, unkn
         }}>
           {grid.cells.map((cell) => {
             const label = cell.ingredientId ? (ingredientLabelsMap.get(cell.ingredientId) ?? '') : '';
+            const isSel = isIngredientSelected(selection, cell.ingredientId);
             return (
               <div
                 key={`${cell.row}-${cell.col}`}
+                className={isSel ? styles.gameSelected : undefined}
                 {...(cell.ingredientId ? {
                   'data-click-target': 'ingredient-source',
                   'data-click-meta': JSON.stringify({ ingredientId: cell.ingredientId }),
@@ -767,7 +793,7 @@ function renderDrawer(isOpen: boolean, eqId: string, config: Record<string, unkn
 }
 
 
-function renderBasket(isExpanded: boolean, eqId: string, panelIndex: number, config: Record<string, unknown>, ingredientLabelsMap: Map<string, string>) {
+function renderBasket(isExpanded: boolean, eqId: string, panelIndex: number, config: Record<string, unknown>, ingredientLabelsMap: Map<string, string>, selection?: SelectionState | null) {
   const grid = resolveGrid(config, 'basket');
   const maxRow = grid.rows - 1;
   const cellW = 1 / grid.cols;
@@ -783,9 +809,10 @@ function renderBasket(isExpanded: boolean, eqId: string, panelIndex: number, con
       ? `${((anchor.row + anchor.rowSpan - cell.row) / cell.rowSpan) * 100}%`
       : '100%';
     const label = cell.ingredientId ? (ingredientLabelsMap.get(cell.ingredientId) ?? '') : '';
+    const isSel = isIngredientSelected(selection, cell.ingredientId);
 
     return (
-      <div key={`${cell.row}-${cell.col}`} className={styles.basketCell}
+      <div key={`${cell.row}-${cell.col}`} className={`${styles.basketCell} ${isSel ? styles.gameSelected : ''}`}
         {...(cell.ingredientId ? {
           'data-click-target': 'ingredient-source',
           'data-click-meta': JSON.stringify({ ingredientId: cell.ingredientId }),
@@ -829,14 +856,17 @@ function renderFridgeItem(
   level: 1 | 2,
   ingredientLabelsMap: Map<string, string>,
   basketStates: Record<string, { isExpanded: boolean }>,
+  selection?: SelectionState | null,
 ) {
   if (item.type === 'ingredient') {
     const label = item.ingredientId
       ? ingredientLabelsMap.get(item.ingredientId) ?? ''
       : '';
+    const isSel = isIngredientSelected(selection, item.ingredientId);
     return (
       <div
         key={`ing-${idx}`}
+        className={isSel ? styles.gameSelected : undefined}
         {...(item.ingredientId ? {
           'data-click-target': 'ingredient-source',
           'data-click-meta': JSON.stringify({ ingredientId: item.ingredientId }),
@@ -908,10 +938,11 @@ function renderFridgeItem(
         const cellLabel = cell.ingredientId
           ? ingredientLabelsMap.get(cell.ingredientId) ?? ''
           : '';
+        const isCellSel = isIngredientSelected(selection, cell.ingredientId);
         return (
           <div
             key={`${cell.row}-${cell.col}`}
-            className={styles.basketCell}
+            className={`${styles.basketCell} ${isCellSel ? styles.gameSelected : ''}`}
             {...(cell.ingredientId ? {
               'data-click-target': 'ingredient-source',
               'data-click-meta': JSON.stringify({ ingredientId: cell.ingredientId }),
@@ -963,6 +994,7 @@ function renderFoldFridge(
   config: Record<string, unknown>,
   ingredientLabelsMap: Map<string, string>,
   basketStates: Record<string, { isExpanded: boolean }>,
+  selection?: SelectionState | null,
 ) {
   const parsed = isFoldFridgeConfig(config) ? config : null;
   const panels = parsed?.panels ?? [];
@@ -976,14 +1008,14 @@ function renderFoldFridge(
         transformOrigin: 'center', transform: 'rotateX(90deg)',
         opacity: isOpen ? 1 : 0, transition: 'opacity 0.3s ease',
       }}>
-        {level1Items.map((item, idx) => renderFridgeItem(item, idx, eqId, 1, ingredientLabelsMap, basketStates))}
+        {level1Items.map((item, idx) => renderFridgeItem(item, idx, eqId, 1, ingredientLabelsMap, basketStates, selection))}
       </div>
       <div className={styles.fridgeInternalPanel} style={{
         bottom: '50%', left: '2%', width: '96%', height: '48%',
         transformOrigin: 'center', transform: 'rotateX(90deg)',
         opacity: isOpen ? 1 : 0, transition: 'opacity 0.3s ease',
       }}>
-        {level2Items.map((item, idx) => renderFridgeItem(item, idx, eqId, 2, ingredientLabelsMap, basketStates))}
+        {level2Items.map((item, idx) => renderFridgeItem(item, idx, eqId, 2, ingredientLabelsMap, basketStates, selection))}
       </div>
       <div className={styles.fridgeFace} style={{
         background: EQUIPMENT_COLORS.fold_fridge,
