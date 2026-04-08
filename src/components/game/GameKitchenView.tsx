@@ -280,9 +280,11 @@ const GameKitchenView = ({
     });
   }, []);
 
-  const handleSceneMouseDown = useCallback((e: React.MouseEvent) => {
+  const handleScenePointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     const sceneEl = sceneRef.current;
     if (!sceneEl) return;
+    // hold 패턴(볶기 등) 안정화: 손가락이 약간 움직여도 같은 요소가 계속 이벤트 수신
+    e.currentTarget.setPointerCapture(e.pointerId);
     const { clientX, clientY } = e;
 
     // 1. data-click-target 요소 전체 수집 + 히트 판별
@@ -428,7 +430,7 @@ const GameKitchenView = ({
     onSceneClick?.({ type: 'empty-area' });
   }, [handleInteraction, interactionState, hasSelection, onSceneClick, panelToStateIdMap, startSceneStir]);
 
-  const handleSceneMouseUp = useCallback(() => {
+  const handleScenePointerUp = useCallback(() => {
     for (const stateId of stirTimersRef.current.keys()) {
       stopSceneStir(stateId);
     }
@@ -624,9 +626,10 @@ const GameKitchenView = ({
             ref={sceneRef}
             className={styles.scene}
             style={{ perspective: `${perspectivePx}px`, cursor: 'pointer' }}
-            onMouseDown={handleSceneMouseDown}
-            onMouseUp={handleSceneMouseUp}
-            onMouseLeave={handleSceneMouseUp}
+            onPointerDown={handleScenePointerDown}
+            onPointerUp={handleScenePointerUp}
+            onPointerCancel={handleScenePointerUp}
+            onPointerLeave={handleScenePointerUp}
           >
             <div className={styles.panelGroup} style={{ transform: `translateY(${translateY}px)` }}>
               {renderPanel(0)}
