@@ -283,8 +283,19 @@ const GameKitchenView = ({
   const handleScenePointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     const sceneEl = sceneRef.current;
     if (!sceneEl) return;
-    // 주의: setPointerCapture는 stir hold 시작 시점에서만 호출(아래 burner 분기).
-    // 무조건 호출하면 모바일에서 후속 터치 라우팅(모달 버튼 등)이 교란됨.
+    // hold 패턴(볶기 등) 안정화: 손가락이 약간 움직여도 같은 요소가 계속 이벤트 수신
+    // iOS Safari는 setPointerCapture를 preventDefault 이전, 핸들러 진입 직후에 호출해야 안정 동작.
+    // hold 가 아닌 일반 탭의 경우 핸들러 종료 직전 release(아래 keepCapture 분기 참조).
+    const sceneCurrent = e.currentTarget;
+    const capturedPointerId = e.pointerId;
+    sceneCurrent.setPointerCapture(capturedPointerId);
+    let keepCapture = false;
+    const releaseIfNotHeld = () => {
+      if (!keepCapture && sceneCurrent.hasPointerCapture(capturedPointerId)) {
+        sceneCurrent.releasePointerCapture(capturedPointerId);
+      }
+    };
+
     const { clientX, clientY } = e;
 
     // 1. data-click-target 요소 전체 수집 + 히트 판별
@@ -375,6 +386,7 @@ const GameKitchenView = ({
           equipmentId: eqId,
           equipmentType: eqType,
         });
+        releaseIfNotHeld();
         return;
       }
 
@@ -389,14 +401,13 @@ const GameKitchenView = ({
 
         if (!hasSelection) {
           if (isStirHalf) {
-            // 하단 절반 → stir 시작
+            // 하단 절반 → stir 시작 (hold 패턴 — 핸들러 종료 후에도 capture 유지)
             const stateId = panelToStateIdMap?.get(eqId);
             if (stateId) {
-              // hold 패턴 안정화: 손가락이 약간 움직여도 같은 요소가 계속 이벤트 수신
-              // (stir hold 시작 시점에만 capture — 무조건 호출하면 모달 등 후속 터치를 교란)
-              e.currentTarget.setPointerCapture(e.pointerId);
               startSceneStir(stateId);
+              keepCapture = true;
             }
+            releaseIfNotHeld();
             return;
           } else {
             // 상단 절반 → 불 단계 순환
@@ -420,6 +431,7 @@ const GameKitchenView = ({
             y: (clientY - rect.top) / rect.height,
           },
         });
+        releaseIfNotHeld();
         return;
       }
 
@@ -448,11 +460,13 @@ const GameKitchenView = ({
       }
 
       onSceneClick?.(clickTarget);
+      releaseIfNotHeld();
       return;
     }
 
     // 히트 없음 → empty-area
     onSceneClick?.({ type: 'empty-area' });
+    releaseIfNotHeld();
   }, [handleInteraction, interactionState, hasSelection, onSceneClick, panelToStateIdMap, startSceneStir]);
 
   const handleScenePointerUp = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
