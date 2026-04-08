@@ -283,8 +283,8 @@ const GameKitchenView = ({
   const handleScenePointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     const sceneEl = sceneRef.current;
     if (!sceneEl) return;
-    // hold 패턴(볶기 등) 안정화: 손가락이 약간 움직여도 같은 요소가 계속 이벤트 수신
-    e.currentTarget.setPointerCapture(e.pointerId);
+    // 주의: setPointerCapture는 stir hold 시작 시점에서만 호출(아래 burner 분기).
+    // 무조건 호출하면 모바일에서 후속 터치 라우팅(모달 버튼 등)이 교란됨.
     const { clientX, clientY } = e;
 
     // 1. data-click-target 요소 전체 수집 + 히트 판별
@@ -300,6 +300,8 @@ const GameKitchenView = ({
 
     // 2. 정렬: open equipment-toggle 우선 → 그 외 면적 오름차순
     //    (열린 서랍 face는 perspective 투영으로 면적이 커져 닫힌 인접 서랍에 우선권을 빼앗기는 버그 방지)
+    //    단, "열린 toggle의 *자기 자신의 자식* hit"이 함께 잡혔다면 그 toggle은 우선권을 잃어야 한다
+    //    (그렇지 않으면 열린 서랍 face가 자기 안의 ingredient cell을 덮어 닫혀버림 — 모바일 viewport에서 발생).
     const isOpenEquipmentToggle = (el: HTMLElement): boolean => {
       if (el.dataset.clickTarget !== 'equipment-toggle') return false;
       const eqId = el.dataset.equipmentId;
@@ -310,7 +312,25 @@ const GameKitchenView = ({
       if (eqType === 'fold_fridge') return interactionState.foldFridges[eqId]?.isOpen ?? false;
       return false;
     };
-    hits.sort((a, b) => {
+
+    // Pre-filter: 자식 hit이 함께 잡힌 열린 toggle은 hits에서 제거
+    // (자식 = parentEquipmentId/Type이 해당 toggle의 equipmentId/Type과 일치하는 hit)
+    const childParentKeys = new Set<string>();
+    for (const hit of hits) {
+      const pid = hit.el.dataset.parentEquipmentId;
+      const ptype = hit.el.dataset.parentEquipmentType;
+      if (pid && ptype) childParentKeys.add(`${ptype}:${pid}`);
+    }
+    const filteredHits = hits.filter((hit) => {
+      if (!isOpenEquipmentToggle(hit.el)) return true;
+      const eqId = hit.el.dataset.equipmentId;
+      const eqType = hit.el.dataset.equipmentType;
+      if (!eqId || !eqType) return true;
+      // 이 열린 toggle의 자식이 함께 잡혔다면 toggle 자체는 제외
+      return !childParentKeys.has(`${eqType}:${eqId}`);
+    });
+
+    filteredHits.sort((a, b) => {
       const aOpen = isOpenEquipmentToggle(a.el);
       const bOpen = isOpenEquipmentToggle(b.el);
       if (aOpen !== bOpen) return aOpen ? -1 : 1;
@@ -319,7 +339,7 @@ const GameKitchenView = ({
 
     // 3. 닫힌 장비 내부 셀 필터링 + 최우선 타겟 선택
     let selectedHit: HTMLElement | null = null;
-    for (const hit of hits) {
+    for (const hit of filteredHits) {
       const parentEqId = hit.el.dataset.parentEquipmentId;
       if (parentEqId) {
         const parentEqType = hit.el.dataset.parentEquipmentType;
@@ -371,7 +391,12 @@ const GameKitchenView = ({
           if (isStirHalf) {
             // 하단 절반 → stir 시작
             const stateId = panelToStateIdMap?.get(eqId);
-            if (stateId) startSceneStir(stateId);
+            if (stateId) {
+              // hold 패턴 안정화: 손가락이 약간 움직여도 같은 요소가 계속 이벤트 수신
+              // (stir hold 시작 시점에만 capture — 무조건 호출하면 모달 등 후속 터치를 교란)
+              e.currentTarget.setPointerCapture(e.pointerId);
+              startSceneStir(stateId);
+            }
             return;
           } else {
             // 상단 절반 → 불 단계 순환
@@ -430,7 +455,10 @@ const GameKitchenView = ({
     onSceneClick?.({ type: 'empty-area' });
   }, [handleInteraction, interactionState, hasSelection, onSceneClick, panelToStateIdMap, startSceneStir]);
 
-  const handleScenePointerUp = useCallback(() => {
+  const handleScenePointerUp = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    }
     for (const stateId of stirTimersRef.current.keys()) {
       stopSceneStir(stateId);
     }
