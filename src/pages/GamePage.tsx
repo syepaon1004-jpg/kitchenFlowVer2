@@ -321,10 +321,7 @@ const GamePage = () => {
 
     if (action.type === 'place-container') {
       const { containerId, equipmentId, localRatio } = action;
-      if (!containerId || !equipmentId || !localRatio) {
-        console.warn('[place-container] guard 실패', { containerId, equipmentId, localRatio });
-        return;
-      }
+      if (!containerId || !equipmentId || !localRatio) return;
 
       const containerInstance: GameContainerInstance = {
         id: crypto.randomUUID(),
@@ -340,16 +337,7 @@ const GamePage = () => {
         placed_local_y: localRatio.y,
       };
 
-      console.log('[place-container] 추가', containerInstance);
       addContainerInstance(containerInstance);
-      // 추가 직후 store 상태 검증
-      const afterCount = useGameStore.getState().containerInstances.length;
-      console.log('[place-container] containerInstances 수:', afterCount, '(추가 후 즉시)');
-      // 다음 마이크로태스크에 다시 확인 (state flush 후)
-      queueMicrotask(() => {
-        const later = useGameStore.getState().containerInstances.length;
-        console.log('[place-container] containerInstances 수:', later, '(microtask)');
-      });
 
       // 그릇을 올린 직후 주문 선택 모달 자동 호출 (그릇 → 주문 매핑)
       openOrderSelectModal(containerInstance.id);

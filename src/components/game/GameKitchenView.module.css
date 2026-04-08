@@ -51,6 +51,13 @@
   touch-action: none;
 }
 
+/* touch-action은 inherit되지 않는다. scene 내부 자식이 default(auto) 상태이면
+   자식 위에서 시작된 터치를 브라우저 panning으로 가로채 pointercancel 발사 →
+   화구 hold(볶기)가 손가락 미세 움직임에 끊긴다. 모든 자식 강제 차단. */
+.scene * {
+  touch-action: none;
+}
+
 .panelGroup {
   transform-style: preserve-3d;
 }
@@ -259,7 +266,7 @@
   text-align: center;
 }
 
-/* 올��놓인 그릇 */
+/* 올려놓인 그릇 */
 .placedContainer {
   pointer-events: none;
   background: rgba(255, 255, 255, 0.9);
@@ -271,6 +278,11 @@
   justify-content: center;
   overflow: hidden;
   z-index: 10;
+  /* iOS Safari가 부모(rotateX 90deg) + 자기(rotateX -90deg) 합성에서
+     normal vector를 viewer 반대로 판정해 컬링하는 사례 차단.
+     hit-test rect는 정상이나 픽셀이 그려지지 않는 모바일 전용 증상. */
+  backface-visibility: visible;
+  -webkit-backface-visibility: visible;
 }
 
 .placedContainerLabel {
