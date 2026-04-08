@@ -36,11 +36,13 @@
   position: absolute;
   top: var(--spacing-sm);
   left: var(--spacing-sm);
+  right: var(--billqueue-right-reserve);
   z-index: 30;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: stretch;
   gap: var(--spacing-sm);
   pointer-events: none;
-  max-width: var(--handbar-max-width);
 }
 

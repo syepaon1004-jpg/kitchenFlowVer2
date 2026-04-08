@@ -1,6 +1,6 @@
 import { useRef, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import { evaluateContainer } from '../lib/recipe/evaluate';
+import { evaluateContainer, evaluateActionAttempt, type AttemptingItem, type ActionAttemptResult } from '../lib/recipe/evaluate';
 import { useGameStore } from '../stores/gameStore';
 import { useScoringStore } from '../stores/scoringStore';
 import type { Recipe, RecipeIngredient } from '../types/db';
@@ -139,5 +139,31 @@ export function useRecipeEval(storeId: string) {
     return cacheRef.current.recipes.get(recipeId)?.target_container_id ?? null;
   }, []);
 
-  return { loadRecipes, evaluate, evaluateAll, getRecipeName, getRecipeIngredients, getRecipeNaturalText, getRecipeTargetContainerId };
+  /** 액션 단위 dry-run 평가. assigned_order_id가 없거나 캐시 미로드면 null. */
+  const evaluateAttempt = useCallback(
+    (containerInstanceId: string, attemptingItems: AttemptingItem[]): ActionAttemptResult | null => {
+      if (!cacheRef.current.loaded) return null;
+      const { containerInstances, ingredientInstances, orders } = useGameStore.getState();
+      const ci = containerInstances.find((c) => c.id === containerInstanceId);
+      if (!ci || !ci.assigned_order_id) return null;
+      const order = orders.find((o) => o.id === ci.assigned_order_id);
+      if (!order) return null;
+      const recipe = cacheRef.current.recipes.get(order.recipe_id);
+      if (!recipe) return null;
+      const recipeIngredients = cacheRef.current.recipeIngredients.get(order.recipe_id) ?? [];
+      const inContainer = ingredientInstances.filter(
+        (i) => i.location_type === 'container' && i.container_instance_id === containerInstanceId,
+      );
+      const attemptPlateOrder = ci.current_plate_order + 1;
+      return evaluateActionAttempt(inContainer, attemptingItems, attemptPlateOrder, recipeIngredients, recipe, ci.container_id);
+    },
+    [],
+  );
+
+  const getRecipe = useCallback(
+    (recipeId: string) => cacheRef.current.recipes.get(recipeId),
+    [],
+  );
+
+  return { loadRecipes, evaluate, evaluateAll, getRecipeName, getRecipeIngredients, getRecipeNaturalText, getRecipeTargetContainerId, evaluateAttempt, getRecipe };
 }

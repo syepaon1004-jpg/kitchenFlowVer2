@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { SectionConfig, BillQueueArea, KitchenZone } from '../types/db';
+import type { RejectionInfo, WokBlockedReason } from '../types/game';
 import { supabase } from '../lib/supabase';
 
 export const DEFAULT_SECTION_CONFIG: SectionConfig = {
@@ -39,6 +40,14 @@ interface UiState {
   orderSelectModalOpen: boolean;
   orderSelectContainerInstanceId: string | null;
 
+  // 액션 거부 팝업
+  rejectionPopupOpen: boolean;
+  rejectionInfo: RejectionInfo | null;
+
+  // 웍 사용 차단 팝업
+  wokBlockedPopupOpen: boolean;
+  wokBlockedReason: WokBlockedReason | null;
+
   // 수량 입력 모달
   quantityModalOpen: boolean;
   quantityModalUnit: string | null;
@@ -64,6 +73,10 @@ interface UiState {
   setBillQueueAreas: (areas: BillQueueArea[] | null) => void;
   openQuantityModal: (unit: string, presets: number[], callback: (qty: number) => void) => void;
   closeQuantityModal: () => void;
+  openRejectionPopup: (info: RejectionInfo) => void;
+  closeRejectionPopup: () => void;
+  openWokBlockedPopup: (reason: WokBlockedReason) => void;
+  closeWokBlockedPopup: () => void;
   prefetchZones: (zoneIds: string[]) => Promise<void>;
   resetZoneCache: () => void;
 }
@@ -83,6 +96,10 @@ export const useUiStore = create<UiState>((set, get) => ({
   quantityModalUnit: null,
   quantityModalPresets: [],
   quantityModalCallback: null,
+  rejectionPopupOpen: false,
+  rejectionInfo: null,
+  wokBlockedPopupOpen: false,
+  wokBlockedReason: null,
   zoneCacheMap: new Map(),
   _prefetchingIds: new Set(),
 
@@ -158,6 +175,10 @@ export const useUiStore = create<UiState>((set, get) => ({
     set({ quantityModalOpen: true, quantityModalUnit: unit, quantityModalPresets: presets, quantityModalCallback: callback }),
   closeQuantityModal: () =>
     set({ quantityModalOpen: false, quantityModalUnit: null, quantityModalPresets: [], quantityModalCallback: null }),
+  openRejectionPopup: (info) => set({ rejectionPopupOpen: true, rejectionInfo: info }),
+  closeRejectionPopup: () => set({ rejectionPopupOpen: false, rejectionInfo: null }),
+  openWokBlockedPopup: (reason) => set({ wokBlockedPopupOpen: true, wokBlockedReason: reason }),
+  closeWokBlockedPopup: () => set({ wokBlockedPopupOpen: false, wokBlockedReason: null }),
   prefetchZones: async (zoneIds) => {
     const { zoneCacheMap, _prefetchingIds } = get();
     const missing = zoneIds.filter(

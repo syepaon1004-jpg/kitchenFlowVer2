@@ -6,6 +6,7 @@ import { useGameStore } from '../../stores/gameStore';
 import { useShallow } from 'zustand/react/shallow';
 import { PLACED_CONTAINER_SIZE_VH } from '../../lib/interaction/constants';
 import { isGridConfig, isFoldFridgeConfig, getBindAnchor } from '../../types/game';
+import WokComponent from '../equipment/WokComponent';
 import styles from './GameKitchenView.module.css';
 
 // ——— 타입/상수 (admin/layout-editor/types.ts와 동일, 컴포넌트 공유 금지이므로 복제) ———
@@ -73,13 +74,10 @@ function resolveGrid(config: Record<string, unknown>, eqType: 'drawer' | 'basket
 
 const EQUIPMENT_COLORS: Record<PanelEquipmentType, string> = {
   drawer: '#C0C0C0', fold_fridge: '#C0C0C0', basket: 'transparent',
-  burner: '#888888', sink: '#6699CC', worktop: '#A0845C', shelf: '#8B7355',
+  burner: '#888888', sink: '#6699CC', worktop: '#C0C0C0', shelf: '#8B7355',
 };
 
-const EQUIPMENT_LABELS: Record<PanelEquipmentType, string> = {
-  drawer: '서랍', fold_fridge: '폴드 냉장고', basket: '바구니',
-  burner: '화구', sink: '씽크대', worktop: '작업대', shelf: '선반',
-};
+const EQUIP_RADIUS = 6;
 
 const BURNER_COLORS: Record<0 | 1 | 2, string> = { 0: '#888888', 1: '#E8820C', 2: '#CC2200' };
 const STIR_DURATION = 30000;
@@ -125,6 +123,12 @@ export interface PlacedContainerEntry {
   localY: number;
   label: string;
   contents: string[];
+  /** 레시피 평가 결과: 모든 재료/액션 매칭 → true */
+  isComplete: boolean;
+  /** 매핑된 주문 id (서빙 버튼 트리거용). 미할당 그릇은 null */
+  orderId: string | null;
+  /** 같은 주문의 모든 그릇이 완료된 상태(= 서빙 가능). false면 체크만 표시 */
+  canServe: boolean;
 }
 
 interface Props {
@@ -292,8 +296,24 @@ const GameKitchenView = ({
       }
     }
 
-    // 2. 면적 오름차순 정렬 (가장 구체적인 타겟 우선)
-    hits.sort((a, b) => a.area - b.area);
+    // 2. 정렬: open equipment-toggle 우선 → 그 외 면적 오름차순
+    //    (열린 서랍 face는 perspective 투영으로 면적이 커져 닫힌 인접 서랍에 우선권을 빼앗기는 버그 방지)
+    const isOpenEquipmentToggle = (el: HTMLElement): boolean => {
+      if (el.dataset.clickTarget !== 'equipment-toggle') return false;
+      const eqId = el.dataset.equipmentId;
+      const eqType = el.dataset.equipmentType;
+      if (!eqId || !eqType) return false;
+      if (eqType === 'drawer') return interactionState.drawers[eqId]?.isOpen ?? false;
+      if (eqType === 'basket') return interactionState.baskets[eqId]?.isExpanded ?? false;
+      if (eqType === 'fold_fridge') return interactionState.foldFridges[eqId]?.isOpen ?? false;
+      return false;
+    };
+    hits.sort((a, b) => {
+      const aOpen = isOpenEquipmentToggle(a.el);
+      const bOpen = isOpenEquipmentToggle(b.el);
+      if (aOpen !== bOpen) return aOpen ? -1 : 1;
+      return a.area - b.area;
+    });
 
     // 3. 닫힌 장비 내부 셀 필터링 + 최우선 타겟 선택
     let selectedHit: HTMLElement | null = null;
@@ -388,6 +408,7 @@ const GameKitchenView = ({
         containerId: meta.containerId,
         containerInstanceId: meta.containerInstanceId,
         equipmentStateId: meta.equipmentStateId,
+        orderId: meta.orderId,
       };
 
       // worktop/burner/sink: 장비 내 로컬 비율 계산 (그릇 올려놓기 좌표)
@@ -499,10 +520,11 @@ const GameKitchenView = ({
               const sizeVh = PLACED_CONTAINER_SIZE_VH;
 
               const isPcSel = isPlacedContainerSelected(selection, pc.instanceId);
+              const completeClass = pc.isComplete ? ` ${styles.placedContainerComplete}` : '';
               return (
                 <div
                   key={pc.instanceId}
-                  className={`${styles.placedContainer} ${isPcSel ? styles.gameSelected : ''}`}
+                  className={`${styles.placedContainer}${completeClass} ${isPcSel ? styles.gameSelected : ''}`}
                   data-click-target="placed-container"
                   data-click-meta={JSON.stringify({ containerInstanceId: pc.instanceId })}
                   style={{
@@ -523,6 +545,21 @@ const GameKitchenView = ({
                         <span key={i}>{c}</span>
                       ))}
                     </div>
+                  )}
+                  {pc.isComplete && (
+                    <>
+                      <span className={styles.placedContainerCheck}>✓</span>
+                      {pc.canServe && pc.orderId && (
+                        <button
+                          type="button"
+                          className={styles.serveButton}
+                          data-click-target="serve-button"
+                          data-click-meta={JSON.stringify({ orderId: pc.orderId })}
+                        >
+                          서빙
+                        </button>
+                      )}
+                    </>
                   )}
                 </div>
               );
@@ -653,18 +690,18 @@ function BurnerPanel({ stateId, fireLevel, stirProgress }: BurnerPanelProps) {
   return (
     <div style={{
       position: 'absolute', inset: 0, background: statusBg,
-      borderRadius: 4, transition: 'background 0.2s',
+      borderRadius: EQUIP_RADIUS, transition: 'background 0.2s',
       display: 'flex', flexDirection: 'column', padding: 0, gap: 1,
     }}>
       {/* 온도 오버레이 */}
       {wokTemp !== null && (
-        <span style={{ position: 'absolute', top: 1, right: 3, fontSize: 8, color: 'rgba(255,255,255,0.8)', pointerEvents: 'none', zIndex: 3 }}>
+        <span style={{ position: 'absolute', top: 1, right: 3, fontSize: 'var(--font-game-cell)', color: 'rgba(255,255,255,0.8)', pointerEvents: 'none', zIndex: 3 }}>
           {wokTemp}°C
         </span>
       )}
       {/* BURNED 오버레이 */}
       {wokStatus === 'burned' && (
-        <span style={{ position: 'absolute', bottom: 1, left: 0, width: '100%', textAlign: 'center', fontSize: 8, color: '#fff', fontWeight: 'bold', pointerEvents: 'none', zIndex: 3 }}>
+        <span style={{ position: 'absolute', bottom: 1, left: 0, width: '100%', textAlign: 'center', fontSize: 'var(--font-game-cell)', color: '#fff', fontWeight: 'bold', pointerEvents: 'none', zIndex: 3 }}>
           BURNED
         </span>
       )}
@@ -721,9 +758,52 @@ function renderEquipment(eq: LocalEquipment, state: EquipmentInteractionState, p
     case 'burner': return <BurnerPanel stateId={stateId} fireLevel={burnerLevel} stirProgress={stirProgress} />;
     case 'basket': return renderBasket(state.baskets[eq.id]?.isExpanded ?? false, eq.id, panelIndex, eq.config, ingredientLabelsMap, selection);
     case 'fold_fridge': return renderFoldFridge(state.foldFridges[eq.id]?.isOpen ?? false, eq.id, eq.config, ingredientLabelsMap, state.baskets, selection);
-    case 'sink': return renderSink();
+    case 'sink': return <SinkArea sinkPanelId={eq.id} />;
     default: return renderSimple(eq.equipmentType);
   }
+}
+
+// ——— SinkArea: 웍이 매핑되어 있을 때 WokComponent 렌더, 아니면 disabled 버튼 ———
+
+interface SinkAreaProps {
+  sinkPanelId: string;
+}
+
+function SinkArea({ sinkPanelId }: SinkAreaProps) {
+  // wok_at_sink Map에서 자기 sink로 매핑된 wok stateId 검색
+  const wokStateId = useEquipmentStore((s) => {
+    for (const [wokId, sinkId] of s.wok_at_sink) {
+      if (sinkId === sinkPanelId) return wokId;
+    }
+    return null;
+  });
+  const wokEquipment = useEquipmentStore((s) =>
+    wokStateId ? s.equipments.find((e) => e.id === wokStateId) ?? null : null,
+  );
+  const clearWokAtSink = useEquipmentStore((s) => s.clearWokAtSink);
+
+  // 세척 완료(wok_status === 'clean') 감지 → 자동으로 burner 복귀
+  useEffect(() => {
+    if (wokStateId && wokEquipment?.wok_status === 'clean') {
+      clearWokAtSink(wokStateId);
+    }
+  }, [wokStateId, wokEquipment?.wok_status, clearWokAtSink]);
+
+  if (wokEquipment) {
+    return (
+      <div style={{ position: 'absolute', inset: 0 }}>
+        <WokComponent equipmentState={wokEquipment} atSink />
+      </div>
+    );
+  }
+  return (
+    <div style={{
+      position: 'absolute', inset: 0, background: EQUIPMENT_COLORS.sink,
+      borderRadius: EQUIP_RADIUS, display: 'flex', alignItems: 'center', justifyContent: 'center',
+    }}>
+      <button className={styles.eqInteractionBtn} disabled>씻기</button>
+    </div>
+  );
 }
 
 interface GameDrawerVisualProps {
@@ -781,7 +861,7 @@ function GameDrawerVisual({ eqId, isOpen, config, eqHeight, ingredientLabelsMap,
             return (
               <div
                 key={`${cell.row}-${cell.col}`}
-                className={isSel ? styles.gameSelected : undefined}
+                className={`${styles.drawerCell} ${isSel ? styles.gameSelected : ''}`}
                 {...(cell.ingredientId ? {
                   'data-click-target': 'ingredient-source',
                   'data-click-meta': JSON.stringify({ ingredientId: cell.ingredientId }),
@@ -789,22 +869,13 @@ function GameDrawerVisual({ eqId, isOpen, config, eqHeight, ingredientLabelsMap,
                   'data-parent-equipment-type': 'drawer',
                 } : {})}
                 style={{
-                  position: 'absolute',
                   left: `${cell.col * cellW * 100}%`,
                   top: `${cell.row * cellH * 100}%`,
                   width: `${cell.colSpan * cellW * 100}%`,
                   height: `${cell.rowSpan * cellH * 100}%`,
-                  border: '1px solid rgba(0,0,0,0.15)',
-                  boxSizing: 'border-box',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: 8,
-                  color: '#555',
-                  overflow: 'hidden',
                 }}
               >
-                {label}
+                <span>{label}</span>
               </div>
             );
           })}
@@ -821,7 +892,6 @@ function GameDrawerVisual({ eqId, isOpen, config, eqHeight, ingredientLabelsMap,
         }}
       >
         <div className={styles.eqHandleBar} style={{ bottom: 4 }} />
-        <span className={styles.eqTypeLabel}>{EQUIPMENT_LABELS.drawer}</span>
       </div>
     </div>
   );
@@ -862,7 +932,7 @@ function renderBasket(isExpanded: boolean, eqId: string, panelIndex: number, con
         }}>
         <div className={styles.basketCellFace}>
           {label && (
-            <span style={{ fontSize: 8, color: '#555', pointerEvents: 'none', userSelect: 'none' }}>
+            <span style={{ fontSize: 'var(--font-game-cell)', color: '#555', pointerEvents: 'none', userSelect: 'none' }}>
               {label}
             </span>
           )}
@@ -922,7 +992,7 @@ function renderFridgeItem(
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          fontSize: 8,
+          fontSize: 'var(--font-game-cell)',
           color: '#555',
           overflow: 'hidden',
         }}
@@ -995,7 +1065,7 @@ function renderFridgeItem(
           >
             <div className={styles.basketCellFace}>
               {cellLabel && (
-                <span style={{ fontSize: 8, color: '#555', pointerEvents: 'none', userSelect: 'none' }}>
+                <span style={{ fontSize: 'var(--font-game-cell)', color: '#555', pointerEvents: 'none', userSelect: 'none' }}>
                   {cellLabel}
                 </span>
               )}
@@ -1057,19 +1127,7 @@ function renderFoldFridge(
         opacity: isOpen ? 0 : 1, transition: 'opacity 0.3s ease',
       }}>
         <div className={styles.eqHandleBar} style={{ top: 4 }} />
-        <span className={styles.eqTypeLabel}>{EQUIPMENT_LABELS.fold_fridge}</span>
       </div>
-    </div>
-  );
-}
-
-function renderSink() {
-  return (
-    <div style={{
-      position: 'absolute', inset: 0, background: EQUIPMENT_COLORS.sink,
-      borderRadius: 3, display: 'flex', alignItems: 'center', justifyContent: 'center',
-    }}>
-      <button className={styles.eqInteractionBtn} disabled>씻기</button>
     </div>
   );
 }
@@ -1077,15 +1135,13 @@ function renderSink() {
 function renderSimple(type: PanelEquipmentType) {
   if (type === 'shelf') {
     return (
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', borderRadius: 2 }}>
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', borderRadius: EQUIP_RADIUS, overflow: 'hidden' }}>
         <div className={styles.shelfLeft} /><div className={styles.shelfMiddle} /><div className={styles.shelfRight} />
       </div>
     );
   }
   return (
-    <div style={{ position: 'absolute', inset: 0, background: EQUIPMENT_COLORS[type], borderRadius: 2 }}>
-      <span className={styles.eqTypeLabel}>{EQUIPMENT_LABELS[type]}</span>
-    </div>
+    <div style={{ position: 'absolute', inset: 0, background: EQUIPMENT_COLORS[type], borderRadius: EQUIP_RADIUS }} />
   );
 }
 

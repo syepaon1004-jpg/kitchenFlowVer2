@@ -25,6 +25,12 @@ export function resolveAction(
     };
   }
 
+  // 서빙 버튼: 선택 상태와 무관하게 항상 서빙 처리
+  if (target.type === 'serve-button') {
+    if (!target.orderId) return null;
+    return { type: 'serve-order', orderId: target.orderId };
+  }
+
   // ——— 선택 없는 상태 ———
 
   if (!currentSelection) {
@@ -128,6 +134,14 @@ export function resolveAction(
             locationType: 'container',
             containerInstanceId: target.containerInstanceId,
           },
+        };
+      }
+      if (target.type === 'sink') {
+        if (!currentSelection.equipmentStateId || !target.equipmentId) return { type: 'deselect' };
+        return {
+          type: 'move-wok-to-sink',
+          equipmentStateId: currentSelection.equipmentStateId,
+          equipmentId: target.equipmentId,
         };
       }
       return { type: 'deselect' };

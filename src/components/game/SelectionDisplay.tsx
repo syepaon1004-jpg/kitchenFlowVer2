@@ -14,16 +14,15 @@ interface Props {
 }
 
 const SelectionDisplay = ({ selection, onDeselect }: Props) => {
-  const isHidden = !selection;
-  const className = `${styles.selectionDisplay} ${isHidden ? styles.hidden : ''}`;
-
   return (
-    <div className={className} onClick={onDeselect}>
-      {selection && (
-        <>
-          <span className={styles.selectionType}>{TYPE_LABELS[selection.type]}</span>
-          <span className={styles.selectionLabel}>{selection.sourceLabel ?? ''}</span>
-        </>
+    <div className={styles.selectionDisplay} onClick={selection ? onDeselect : undefined}>
+      {selection ? (
+        <div className={styles.chip}>
+          <span className={styles.chipType}>{TYPE_LABELS[selection.type]}</span>
+          <span className={styles.chipLabel}>{selection.sourceLabel ?? ''}</span>
+        </div>
+      ) : (
+        <span className={styles.empty}>선택된 요소 없음</span>
       )}
     </div>
   );

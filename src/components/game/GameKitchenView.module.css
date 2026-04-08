@@ -108,7 +108,7 @@
 }
 
 .itemLabel {
-  font-size: 9px;
+  font-size: var(--font-game-cell);
   color: #555;
   text-align: center;
   user-select: none;
@@ -136,15 +136,29 @@
   border-radius: 2px;
 }
 
-/* 장비 라벨 */
-.eqTypeLabel {
+/* 서랍 셀 — radius + gap (시각만, 클릭 hit-test는 외곽 그대로) */
+.drawerCell {
   position: absolute;
-  bottom: 2px;
-  left: 3px;
-  font-size: 9px;
-  color: rgba(255, 255, 255, 0.7);
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #555;
+  overflow: hidden;
+  font-size: var(--font-game-cell);
+}
+.drawerCell::before {
+  content: '';
+  position: absolute;
+  inset: var(--drawer-cell-gap, 3px);
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.55);
   pointer-events: none;
-  user-select: none;
+}
+.drawerCell > * {
+  position: relative;
+  z-index: 1;
 }
 
 /* 서랍/폴드냉장고 3D 컨테이너 */
@@ -161,14 +175,14 @@
 .fridgeFace {
   position: absolute;
   inset: 0;
-  border-radius: 2px;
+  border-radius: 6px;
   transition: transform 0.3s ease;
 }
 
 .drawerInner {
   position: absolute;
   inset: 0;
-  border-radius: 2px;
+  border-radius: 6px;
   transition: transform 0.3s ease, opacity 0.15s ease;
 }
 
@@ -182,19 +196,23 @@
 .basketCellFace {
   background: #eee;
   border: 1px solid #999;
+  border-radius: 4px;
   width: 100%;
   height: 100%;
   box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* 인터랙션 버튼 */
 .eqInteractionBtn {
-  padding: 2px 6px;
+  padding: 4px 8px;
   border: 1px solid rgba(255, 255, 255, 0.5);
   border-radius: 3px;
   background: rgba(0, 0, 0, 0.4);
   color: #fff;
-  font-size: 10px;
+  font-size: var(--font-game-label);
   cursor: pointer;
   z-index: 2;
   white-space: nowrap;
@@ -231,7 +249,7 @@
 
 .hologramItem {
   color: rgba(255, 255, 255, 0.9);
-  font-size: var(--font-2xs);
+  font-size: var(--font-game-cell);
   line-height: 1.3;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -255,7 +273,7 @@
 }
 
 .placedContainerLabel {
-  font-size: var(--font-sm);
+  font-size: var(--font-game-label);
   color: var(--game-text-primary);
   text-align: center;
   user-select: none;
@@ -267,9 +285,47 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  font-size: 9px;
+  font-size: var(--font-game-cell);
   color: var(--game-text-secondary);
   line-height: 1.3;
+}
+
+/* 완성된 그릇: 초록색 강조 + 체크 + 서빙 버튼 */
+.placedContainerComplete {
+  background: rgba(76, 175, 80, 0.25);
+  border-color: var(--color-success, #4caf50);
+}
+
+.placedContainerCheck {
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  font-size: 14px;
+  color: var(--color-success, #4caf50);
+  font-weight: bold;
+  pointer-events: none;
+  user-select: none;
+}
+
+.serveButton {
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--color-success, #4caf50);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 12px;
+  font-size: var(--font-game-label);
+  cursor: pointer;
+  pointer-events: auto;
+  z-index: 11;
+  white-space: nowrap;
+}
+
+.serveButton:hover {
+  filter: brightness(1.1);
 }
 
 /* 폴드냉장고 내부 패널 */

@@ -26,6 +26,10 @@ export function useOrderGenerator() {
       const currentRecipeIds = activeRecipeIdsRef.current;
       if (currentRecipeIds.length === 0) return;
 
+      // 설정한 총 주문 수에 도달했으면 더 이상 생성하지 않음
+      const totalOrderCount = useGameStore.getState().totalOrderCount;
+      if (totalOrderCount > 0 && currentOrders.length >= totalOrderCount) return;
+
       const pendingCount = currentOrders.filter(
         (o) => o.status !== 'completed' && o.status !== 'failed',
       ).length;

@@ -15,7 +15,7 @@ const PANEL_COLORS = [
 
 const PANEL_LABELS = ['패널 1 (상부 벽면)', '패널 2 (작업면)', '패널 3 (하부 전면)'];
 
-const HANDLE_TOTAL_HEIGHT = 16;
+export const HANDLE_TOTAL_HEIGHT = 16;
 
 interface Props {
   mode: PanelMode;
@@ -41,6 +41,8 @@ interface Props {
   onSelectItem: (id: string | null) => void;
   onDeleteItem: (id: string) => void;
   onDuplicateItem: (id: string) => void;
+  /** scene 컨테이너 픽셀 크기 변경 콜백. GridEditor의 패널 종횡비 동기화 용도. */
+  onSceneSize?: (size: { width: number; height: number }) => void;
 }
 
 function degToPerspectivePx(deg: number, containerHeight: number): number {
@@ -72,6 +74,7 @@ const PanelScene = ({
   onSelectItem,
   onDeleteItem,
   onDuplicateItem,
+  onSceneSize,
 }: Props) => {
   const sceneRef = useRef<HTMLDivElement>(null);
   const [containerHeight, setContainerHeight] = useState(0);
@@ -79,12 +82,17 @@ const PanelScene = ({
   useEffect(() => {
     const el = sceneRef.current?.parentElement;
     if (!el) return;
-    const measure = () => setContainerHeight(el.clientHeight);
+    const measure = () => {
+      const w = el.clientWidth;
+      const h = el.clientHeight;
+      setContainerHeight(h);
+      onSceneSize?.({ width: w, height: h });
+    };
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     return () => ro.disconnect();
-  }, []);
+  }, [onSceneSize]);
 
   const isPreview = mode === 'preview';
   const panelAreaHeight = containerHeight - (isPreview ? 0 : HANDLE_TOTAL_HEIGHT);

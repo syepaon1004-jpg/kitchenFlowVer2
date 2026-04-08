@@ -18,6 +18,11 @@
   --font-lg: 16px;
   --font-xl: 18px;
 
+  /* === 인게임 월드 텍스트 (서랍/바구니/냉장고 셀 + 그릇 내용) === */
+  --font-game-cell: 14px;
+  --font-game-label: 16px;
+  --drawer-cell-gap: 3px;
+
   /* ===== Spacing ===== */
   --spacing-2xs: 2px;
   --spacing-xs: 4px;
@@ -102,6 +107,9 @@
     --font-md: 13px;
     --font-lg: 14px;
     --font-xl: 16px;
+    --font-game-cell: 13px;
+    --font-game-label: 15px;
+    --drawer-cell-gap: 3px;
 
     /* Spacing */
     --spacing-2xs: 2px;
@@ -134,6 +142,9 @@
     --font-md: 12px;
     --font-lg: 13px;
     --font-xl: 14px;
+    --font-game-cell: 13px;
+    --font-game-label: 14px;
+    --drawer-cell-gap: 2px;
     --spacing-2xs: 2px;
     --spacing-xs: 3px;
     --spacing-sm: 6px;

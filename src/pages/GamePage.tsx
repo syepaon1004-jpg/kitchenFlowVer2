@@ -20,12 +20,17 @@ import type {
   EquipmentType,
 } from '../types/db';
 import type { ResolvedAction } from '../types/game';
+import type { AttemptingItem } from '../lib/recipe/evaluate';
+import RejectionPopup from '../components/game/RejectionPopup';
+import WokBlockedPopup from '../components/game/WokBlockedPopup';
 import { INSTANT_UNITS } from '../lib/interaction/constants';
+import { SCORE_CONFIG } from '../lib/scoring/constants';
 import { generatePresets } from '../lib/interaction/generatePresets';
 import BillQueue from '../components/layout/BillQueue';
 
 import GameKitchenView from '../components/game/GameKitchenView';
 import SelectionDisplay from '../components/game/SelectionDisplay';
+import type { FeedbackState } from '../components/game/SessionResultOverlay';
 import { useClickInteraction } from '../hooks/useClickInteraction';
 import { useSelectionStore } from '../stores/selectionStore';
 import type { PanelLayout, PanelEquipment, PanelItem, PanelEquipmentType } from '../types/db';
@@ -62,12 +67,20 @@ const GamePage = () => {
   const setContainerDirty = useGameStore((s) => s.setContainerDirty);
   const bulkMoveIngredients = useGameStore((s) => s.bulkMoveIngredients);
   const openQuantityModal = useUiStore((s) => s.openQuantityModal);
+  const openRejectionPopup = useUiStore((s) => s.openRejectionPopup);
+  const openOrderSelectModal = useUiStore((s) => s.openOrderSelectModal);
+  const openWokBlockedPopup = useUiStore((s) => s.openWokBlockedPopup);
 
   const setEquipments = useEquipmentStore((s) => s.setEquipments);
   const updateEquipment = useEquipmentStore((s) => s.updateEquipment);
+  const setWokAtSink = useEquipmentStore((s) => s.setWokAtSink);
   const ingredientInstances = useGameStore((s) => s.ingredientInstances);
   const containerInstances = useGameStore((s) => s.containerInstances);
   const setOrders = useGameStore((s) => s.setOrders);
+  const markContainerServed = useGameStore((s) => s.markContainerServed);
+  const updateOrderStatus = useGameStore((s) => s.updateOrderStatus);
+  const addScoreEvent = useScoringStore((s) => s.addScoreEvent);
+  const addRecipeResult = useScoringStore((s) => s.addRecipeResult);
 
   // 물리엔진 tick 활성화
   useGameTick();
@@ -76,7 +89,36 @@ const GamePage = () => {
   useOrderGenerator();
 
   // 레시피 판별
-  const { loadRecipes, evaluateAll, getRecipeName, getRecipeIngredients, getRecipeNaturalText } = useRecipeEval(storeId);
+  const { loadRecipes, evaluateAll, getRecipeName, getRecipeIngredients, getRecipeNaturalText, evaluateAttempt, getRecipe } = useRecipeEval(storeId);
+
+  /** 액션 단위 dry-run → 차단되면 거부 팝업 표시. true 반환 시 호출자가 액션을 즉시 중단해야 함. */
+  const tryRejectAndShowPopup = useCallback(
+    (containerInstanceId: string, attemptingItems: AttemptingItem[]): boolean => {
+      const result = evaluateAttempt(containerInstanceId, attemptingItems);
+      if (!result || !result.blocked) return false;
+      const ci = useGameStore.getState().containerInstances.find((c) => c.id === containerInstanceId);
+      const order = ci?.assigned_order_id
+        ? useGameStore.getState().orders.find((o) => o.id === ci.assigned_order_id)
+        : null;
+      if (!ci || !order) return true;
+      const recipe = getRecipe(order.recipe_id);
+      openRejectionPopup({
+        recipeName: recipe?.name ?? '레시피',
+        attemptingItems: attemptingItems.map((it) => ({
+          ingredientId: it.ingredientId,
+          quantity: it.quantity,
+        })),
+        errorsByIngredientId: result.errorsByIngredientId,
+        blockReason: result.blockReason!,
+        missingForThisAction: result.missingForThisAction,
+        correctRecipe: [...result.filteredRecipeIngredients].sort(
+          (a, b) => a.plate_order - b.plate_order,
+        ),
+      });
+      return true;
+    },
+    [evaluateAttempt, getRecipe, openRejectionPopup],
+  );
 
   // recipes + game_orders 1회 로딩
   useEffect(() => {
@@ -145,9 +187,33 @@ const GamePage = () => {
         if (!destination.equipmentId) return;
         equipmentStateId = panelToStateIdMap.get(destination.equipmentId) ?? null;
         if (!equipmentStateId) return;
+
+        // 웍이면 sink/dirty/burned 상태 차단 + 팝업
+        const equip = useEquipmentStore.getState().equipments.find((e) => e.id === equipmentStateId);
+        if (equip?.equipment_type === 'wok') {
+          const wokAtSink = useEquipmentStore.getState().wok_at_sink;
+          if (wokAtSink.has(equipmentStateId)) {
+            openWokBlockedPopup('at_sink');
+            return;
+          }
+          if (equip.wok_status === 'dirty' || equip.wok_status === 'burned') {
+            openWokBlockedPopup(equip.wok_status);
+            return;
+          }
+        }
       } else if (locationType === 'container') {
         containerInstanceId = destination.containerInstanceId ?? null;
         if (!containerInstanceId) return;
+      }
+
+      // 사전 검증 (액션 단위 dry-run): 컨테이너에 잘못된 재료 추가 거부 + 팝업 표시
+      if (locationType === 'container' && containerInstanceId) {
+        const rejected = tryRejectAndShowPopup(containerInstanceId, [{
+          ingredientId,
+          quantity: 0, // 차단 결정에 quantity는 사용하지 않음 (수량 오류는 비차단)
+          actionHistory: [],
+        }]);
+        if (rejected) return;
       }
 
       // StoreIngredient 조회
@@ -172,6 +238,10 @@ const GamePage = () => {
           if (existing) {
             incrementIngredientQuantity(existing.id, clamped);
           } else {
+            const newPlateOrder =
+              locationType === 'container' && containerInstanceId
+                ? incrementContainerPlateOrder(containerInstanceId)
+                : null;
             addIngredientInstance({
               id: crypto.randomUUID(),
               session_id: sessionId!,
@@ -182,7 +252,7 @@ const GamePage = () => {
               equipment_state_id: equipmentStateId,
               container_instance_id: containerInstanceId,
               action_history: [],
-              plate_order: null,
+              plate_order: newPlateOrder,
             });
           }
           decrementIngredientQuantity(instanceId, clamped);
@@ -207,6 +277,10 @@ const GamePage = () => {
           if (existing) {
             incrementIngredientQuantity(existing.id, qty);
           } else {
+            const newPlateOrder =
+              locationType === 'container' && containerInstanceId
+                ? incrementContainerPlateOrder(containerInstanceId)
+                : null;
             addIngredientInstance({
               id: crypto.randomUUID(),
               session_id: sessionId!,
@@ -217,7 +291,7 @@ const GamePage = () => {
               equipment_state_id: equipmentStateId,
               container_instance_id: containerInstanceId,
               action_history: [],
-              plate_order: null,
+              plate_order: newPlateOrder,
             });
           }
         };
@@ -265,6 +339,9 @@ const GamePage = () => {
 
       addContainerInstance(containerInstance);
 
+      // 그릇을 올린 직후 주문 선택 모달 자동 호출 (그릇 → 주문 매핑)
+      openOrderSelectModal(containerInstance.id);
+
       addActionLog({
         session_id: sessionId!,
         action_type: 'click_place_container',
@@ -305,13 +382,21 @@ const GamePage = () => {
       const { source, destination } = action;
       if (!source || !destination) return;
 
-      // destination이 equipment(웍)일 때 dirty/burned 차단
+      // destination이 equipment(웍)일 때 sink/dirty/burned 차단 + 팝업
       if (destination.locationType === 'equipment') {
         const destStateId = panelToStateIdMap.get(destination.equipmentId!) ?? null;
         if (!destStateId) return;
         const destEquip = useEquipmentStore.getState().equipments.find((e) => e.id === destStateId);
-        if (destEquip?.equipment_type === 'wok' && (destEquip.wok_status === 'dirty' || destEquip.wok_status === 'burned')) {
-          return;
+        if (destEquip?.equipment_type === 'wok') {
+          const wokAtSink = useEquipmentStore.getState().wok_at_sink;
+          if (wokAtSink.has(destStateId)) {
+            openWokBlockedPopup('at_sink');
+            return;
+          }
+          if (destEquip.wok_status === 'dirty' || destEquip.wok_status === 'burned') {
+            openWokBlockedPopup(destEquip.wok_status);
+            return;
+          }
         }
       }
 
@@ -329,6 +414,17 @@ const GamePage = () => {
         );
       }
       if (sourceIngredients.length === 0) return;
+
+      // 1.5. destination이 container인 경우 액션 단위 dry-run 검증
+      if (destination.locationType === 'container' && destination.containerInstanceId) {
+        const attemptingItems: AttemptingItem[] = sourceIngredients.map((i) => ({
+          ingredientId: i.ingredient_id,
+          quantity: i.quantity,
+          actionHistory: i.action_history,
+        }));
+        const rejected = tryRejectAndShowPopup(destination.containerInstanceId, attemptingItems);
+        if (rejected) return;
+      }
 
       // 2. destination 업데이트 구성
       const instanceIds = sourceIngredients.map((i) => i.id);
@@ -416,7 +512,115 @@ const GamePage = () => {
         metadata: { container_instance_id: containerInstanceId },
       });
     }
-  }, [sessionId, addIngredientInstance, incrementIngredientQuantity, decrementIngredientQuantity, addContainerInstance, moveContainer, openQuantityModal, addActionLog, findRecipeQuantity, bulkMoveIngredients, incrementContainerPlateOrder, updateEquipment, setContainerDirty, removeContainerInstance, panelToStateIdMap]);
+
+    if (action.type === 'move-wok-to-sink') {
+      const wokStateId = action.equipmentStateId;
+      const sinkPanelId = action.equipmentId;
+      if (!wokStateId || !sinkPanelId) return;
+
+      // 1. 웍 안 재료 모두 dispose
+      const wokIngs = useGameStore.getState().ingredientInstances.filter(
+        (i) => i.location_type === 'equipment' && i.equipment_state_id === wokStateId,
+      );
+      if (wokIngs.length > 0) {
+        bulkMoveIngredients(wokIngs.map((i) => i.id), {
+          location_type: 'disposed',
+          equipment_state_id: null,
+          container_instance_id: null,
+          zone_id: null,
+          plate_order: null,
+        });
+      }
+
+      // 2. wok_at_sink 매핑 등록 (key = wok stateId, value = sink panel id)
+      setWokAtSink(wokStateId, sinkPanelId);
+
+      // 3. 화구 강제 OFF + 웍 dirty 화면 (이미 dirty면 그대로)
+      const wokState = useEquipmentStore.getState().equipments.find((e) => e.id === wokStateId);
+      if (wokState && wokState.wok_status !== 'dirty') {
+        updateEquipment(wokStateId, { wok_status: 'dirty', wok_temp: 25, burner_level: 0 });
+      } else if (wokState) {
+        updateEquipment(wokStateId, { burner_level: 0 });
+      }
+
+      // 4. 선택 해제
+      useSelectionStore.getState().deselect();
+    }
+
+    if (action.type === 'serve-order') {
+      const { orderId } = action;
+      if (!orderId) return;
+      const order = useGameStore.getState().orders.find((o) => o.id === orderId);
+      if (!order || order.status === 'completed') return;
+
+      // 1. 같은 주문의 모든 컨테이너
+      const targetContainers = useGameStore.getState().containerInstances.filter(
+        (c) => c.assigned_order_id === orderId,
+      );
+      if (targetContainers.length === 0) return;
+
+      // 2. 모두 is_complete여야 함 (안전장치)
+      if (!targetContainers.every((c) => c.is_complete)) return;
+
+      // 3. 서빙 시간 계산
+      const createdAt = new Date(order.created_at).getTime();
+      const now = Date.now();
+      const serveTimeMs = now - createdAt;
+
+      // 4. 서빙 시간 점수 (기존 SCORE_CONFIG 연결)
+      let scoreEventType: 'fast_serve' | 'slow_serve' | 'very_slow_serve' | null = null;
+      let scorePoints = 0;
+      if (serveTimeMs < SCORE_CONFIG.FAST_SERVE_THRESHOLD) {
+        scoreEventType = 'fast_serve';
+        scorePoints = SCORE_CONFIG.FAST_SERVE;
+      } else if (serveTimeMs >= SCORE_CONFIG.VERY_SLOW_SERVE_THRESHOLD) {
+        scoreEventType = 'very_slow_serve';
+        scorePoints = SCORE_CONFIG.VERY_SLOW_SERVE;
+      } else if (serveTimeMs >= SCORE_CONFIG.SLOW_SERVE_THRESHOLD) {
+        scoreEventType = 'slow_serve';
+        scorePoints = SCORE_CONFIG.SLOW_SERVE;
+      }
+      if (scoreEventType) {
+        addScoreEvent({
+          session_id: sessionId!,
+          event_type: scoreEventType,
+          points: scorePoints,
+          timestamp_ms: now,
+          metadata: { order_id: orderId, serve_time_ms: serveTimeMs },
+        });
+      }
+
+      // 5. RecipeResult 기록
+      const errorCount = useScoringStore.getState().recipeErrors.filter(
+        (e) => e.order_id === orderId,
+      ).length;
+      addRecipeResult({
+        session_id: sessionId!,
+        order_id: orderId,
+        recipe_id: order.recipe_id,
+        is_success: true,
+        error_count: errorCount,
+        serve_time_ms: serveTimeMs,
+        created_at: new Date(now).toISOString(),
+      });
+
+      // 6. 모든 컨테이너 markContainerServed
+      for (const c of targetContainers) {
+        markContainerServed(c.id);
+      }
+
+      // 7. 주문 상태 갱신
+      updateOrderStatus(orderId, 'completed');
+
+      // 8. action log
+      addActionLog({
+        session_id: sessionId!,
+        action_type: 'serve',
+        timestamp_ms: now,
+        metadata: { order_id: orderId, serve_time_ms: serveTimeMs, container_count: targetContainers.length },
+      });
+    }
+  }, [sessionId, addIngredientInstance, incrementIngredientQuantity, decrementIngredientQuantity, addContainerInstance, moveContainer, openQuantityModal, addActionLog, findRecipeQuantity, bulkMoveIngredients, incrementContainerPlateOrder, updateEquipment, setContainerDirty, removeContainerInstance, panelToStateIdMap, tryRejectAndShowPopup, openOrderSelectModal, openWokBlockedPopup, setWokAtSink, markContainerServed, updateOrderStatus, addScoreEvent, addRecipeResult]);
 
   // 클릭/선택 인터랙션 시스템
   const { selection, handleSceneClick, deselect } = useClickInteraction({
@@ -452,6 +656,18 @@ const GamePage = () => {
 
   // 올려놓인 그릇 파생 데이터
   const placedContainers = useMemo(() => {
+    // 주문별 "모든 그릇 완료" 여부 사전 계산 (서빙 버튼 표시 조건)
+    const orderAllComplete = new Map<string, boolean>();
+    for (const ci of containerInstances) {
+      if (!ci.assigned_order_id || ci.is_served) continue;
+      if (orderAllComplete.has(ci.assigned_order_id)) continue;
+      const peers = containerInstances.filter(
+        (c) => c.assigned_order_id === ci.assigned_order_id && !c.is_served,
+      );
+      const allDone = peers.length > 0 && peers.every((c) => c.is_complete);
+      orderAllComplete.set(ci.assigned_order_id, allDone);
+    }
+
     return containerInstances
       .filter((ci) => ci.placed_equipment_id !== null && !ci.is_served)
       .map((ci) => {
@@ -462,6 +678,7 @@ const GamePage = () => {
             const si = storeIngredientsMapRef.current.get(ii.ingredient_id);
             return `${si?.display_name ?? '재료'} ${ii.quantity}${si?.unit ?? ''}`;
           });
+        const canServe = !!ci.assigned_order_id && (orderAllComplete.get(ci.assigned_order_id) ?? false);
         return {
           instanceId: ci.id,
           equipmentId: ci.placed_equipment_id!,
@@ -469,6 +686,9 @@ const GamePage = () => {
           localY: ci.placed_local_y!,
           label: container?.name ?? '그릇',
           contents,
+          isComplete: ci.is_complete,
+          orderId: ci.assigned_order_id,
+          canServe,
         };
       });
   }, [containerInstances, ingredientInstances, containersMap]);
@@ -598,10 +818,25 @@ const GamePage = () => {
   const [sessionResult, setSessionResult] = useState<{
     score: number;
     scoreEvents: GameScoreEvent[];
-    feedbackText: string | null;
   } | null>(null);
+  const [feedbackState, setFeedbackState] = useState<FeedbackState>('idle');
 
-  const handleSessionEnd = useCallback(async () => {
+  // unmount 후 setState 가드
+  const mountedRef = useRef(true);
+  useEffect(() => () => { mountedRef.current = false; }, []);
+
+  const onRequestFeedback = useCallback(() => {
+    setFeedbackState((prev) => {
+      if (typeof prev === 'object') return prev;   // 이미 텍스트 있음
+      if (prev === 'failed') return prev;
+      return 'loading';
+    });
+  }, []);
+
+  // 종료 플래그 (중복 호출 방지)
+  const sessionEndTriggered = useRef(false);
+
+  const persistAndFetchFeedback = useCallback(async () => {
     try {
       const { actionLogs, scoreEvents, recipeErrors, recipeResults, currentScore }
         = useScoringStore.getState();
@@ -735,26 +970,36 @@ const GamePage = () => {
         console.warn('[GamePage] AI 피드백 호출 실패:', err);
       }
 
-      // 8. 결과 오버레이 표시
-      setSessionResult({
-        score: currentScore,
-        scoreEvents,
-        feedbackText,
-      });
+      // 8. 피드백 상태 갱신 (오버레이는 이미 떠 있음)
+      if (!mountedRef.current) return;
+      if (feedbackText) {
+        setFeedbackState({ text: feedbackText });
+      } else {
+        setFeedbackState('failed');
+      }
     } catch (err) {
-      console.error('[GamePage] handleSessionEnd 실패:', err);
-      setSessionResult({
-        score: useScoringStore.getState().currentScore,
-        scoreEvents: useScoringStore.getState().scoreEvents,
-        feedbackText: null,
-      });
+      console.error('[GamePage] persistAndFetchFeedback 실패:', err);
+      if (mountedRef.current) {
+        setFeedbackState('failed');
+      }
     }
   }, [sessionId, getRecipeName]);
+
+  const handleSessionEnd = useCallback(() => {
+    if (sessionEndTriggered.current) return;
+    sessionEndTriggered.current = true;
+
+    // 1. 즉시 점수 스냅샷으로 오버레이 등장
+    const { currentScore, scoreEvents } = useScoringStore.getState();
+    setSessionResult({ score: currentScore, scoreEvents });
+
+    // 2. 백그라운드 저장 + AI 호출 (await 안 함)
+    void persistAndFetchFeedback();
+  }, [persistAndFetchFeedback]);
 
   // 게임 자동 종료 감지
   const orders = useGameStore((s) => s.orders);
   const totalOrderCount = useGameStore((s) => s.totalOrderCount);
-  const sessionEndTriggered = useRef(false);
 
   useEffect(() => {
     if (orders.length === 0) return;
@@ -763,7 +1008,6 @@ const GamePage = () => {
     const completedCount = orders.filter((o) => o.status === 'completed').length;
     if (completedCount < totalOrderCount) return;
 
-    sessionEndTriggered.current = true;
     handleSessionEnd();
   }, [orders, totalOrderCount, handleSessionEnd]);
 
@@ -844,11 +1088,14 @@ const GamePage = () => {
       </div>
       <OrderSelectModal getRecipeName={getRecipeName} />
       <QuantityInputModal />
+      <RejectionPopup storeIngredientsMap={storeIngredientsMapRef.current} />
+      <WokBlockedPopup />
       {sessionResult && (
         <SessionResultOverlay
           score={sessionResult.score}
           scoreEvents={sessionResult.scoreEvents}
-          feedbackText={sessionResult.feedbackText}
+          feedbackState={feedbackState}
+          onRequestFeedback={onRequestFeedback}
           onFeed={() => navigate('/feed')}
           onClose={() => navigate('/game/setup')}
         />

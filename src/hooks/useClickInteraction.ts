@@ -63,8 +63,14 @@ export function useClickInteraction(options: UseClickInteractionOptions = {}) {
       case 'move-container':
       case 'merge-containers':
       case 'dispose':
+      case 'move-wok-to-sink':
         options.onAction?.(action);
         deselect();
+        break;
+
+      case 'serve-order':
+        // 서빙 버튼은 선택 상태와 무관 — 선택 해제 없이 액션만 위임
+        options.onAction?.(action);
         break;
 
       default:

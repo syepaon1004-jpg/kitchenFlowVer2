@@ -1,4 +1,4 @@
-import type { RecipeErrorType, LocationType } from './db';
+import type { RecipeErrorType, LocationType, RecipeIngredient } from './db';
 
 // 뷰포트 시점 위치
 export type ViewPosition = 'left' | 'center' | 'right';
@@ -14,6 +14,27 @@ export interface RecipeError {
   type: RecipeErrorType;
   ingredient_id?: string;
   details: Record<string, unknown>;
+}
+
+/** 웍 사용 차단 사유 (sink/dirty/burned) */
+export type WokBlockedReason = 'at_sink' | 'dirty' | 'burned';
+
+/** 그릇 투입 액션 거부 시 팝업이 표시할 정보 */
+export interface RejectionInfo {
+  recipeName: string;
+  /** 이번 액션에서 그릇으로 들어가려던 재료 묶음 (UI 표시용) */
+  attemptingItems: Array<{
+    ingredientId: string;
+    quantity: number;
+  }>;
+  /** ingredient_id → 오류 목록 */
+  errorsByIngredientId: Map<string, RecipeError[]>;
+  /** 차단성 사유 (헤더 메시지 결정) */
+  blockReason: 'wrong_container' | 'unexpected_ingredient' | 'plate_order_mismatch';
+  /** 콜아웃에 표시할 누락 재료 (이번 액션 plate_order 그룹) */
+  missingForThisAction: RecipeIngredient[];
+  /** 비교용: 이 그릇에 들어가야 할 올바른 레시피 (필터링 결과, plate_order 오름차순) */
+  correctRecipe: RecipeIngredient[];
 }
 
 // ——— 패널 시스템 ————————————————————————————————
@@ -146,6 +167,7 @@ export type ClickTargetType =
   | 'worktop'
   | 'burner'
   | 'sink'
+  | 'serve-button'
   | 'equipment-toggle'
   | 'empty-area'
   | 'hud-area';
@@ -159,6 +181,8 @@ export interface ClickTarget {
   containerId?: string;
   equipmentStateId?: string;
   localRatio?: { x: number; y: number };
+  /** serve-button 전용: 서빙할 주문 id */
+  orderId?: string;
 }
 
 export type ResolvedActionType =
@@ -170,7 +194,9 @@ export type ResolvedActionType =
   | 'place-container'
   | 'move-container'
   | 'merge-containers'
-  | 'dispose';
+  | 'dispose'
+  | 'move-wok-to-sink'
+  | 'serve-order';
 
 export interface ResolvedAction {
   type: ResolvedActionType;
@@ -198,6 +224,8 @@ export interface ResolvedAction {
     equipmentStateId?: string;
     containerInstanceId?: string;
   };
+  /** serve-order 전용: 서빙할 주문 id */
+  orderId?: string;
 }
 
 // ——— bindGroup 유틸 ————————————————————————————

@@ -1,10 +1,13 @@
 import type { GameScoreEvent } from '../../types/db';
 import styles from './SessionResultOverlay.module.css';
 
+export type FeedbackState = 'idle' | 'loading' | 'failed' | { text: string };
+
 interface SessionResultOverlayProps {
   score: number;
   scoreEvents: GameScoreEvent[];
-  feedbackText: string | null;
+  feedbackState: FeedbackState;
+  onRequestFeedback: () => void;
   onFeed: () => void;
   onClose: () => void;
 }
@@ -23,7 +26,8 @@ const EVENT_TYPE_LABELS: Record<string, string> = {
 export default function SessionResultOverlay({
   score,
   scoreEvents,
-  feedbackText,
+  feedbackState,
+  onRequestFeedback,
   onFeed,
   onClose,
 }: SessionResultOverlayProps) {
@@ -42,6 +46,28 @@ export default function SessionResultOverlay({
       });
     }
   }
+
+  const renderFeedback = () => {
+    if (typeof feedbackState === 'object') {
+      return <div className={styles.feedbackText}>{feedbackState.text}</div>;
+    }
+    if (feedbackState === 'failed') {
+      return <div className={styles.feedbackLoading}>피드백을 생성하지 못했습니다</div>;
+    }
+    if (feedbackState === 'loading') {
+      return (
+        <div className={styles.feedbackLoadingMsg}>
+          AI 코치가 분석 중입니다<span className={styles.dots} />
+        </div>
+      );
+    }
+    // idle
+    return (
+      <button type="button" className={styles.requestFeedbackBtn} onClick={onRequestFeedback}>
+        AI 피드백 받아보기
+      </button>
+    );
+  };
 
   return (
     <div className={styles.overlay}>
@@ -81,11 +107,7 @@ export default function SessionResultOverlay({
 
         <div className={styles.feedbackSection}>
           <div className={styles.sectionTitle}>AI 코치 피드백</div>
-          {feedbackText ? (
-            <div className={styles.feedbackText}>{feedbackText}</div>
-          ) : (
-            <div className={styles.feedbackLoading}>피드백을 생성하지 못했습니다</div>
-          )}
+          {renderFeedback()}
         </div>
 
         <div className={styles.actions}>

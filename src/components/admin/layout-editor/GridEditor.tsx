@@ -69,6 +69,10 @@ interface GridEditorProps {
   /** 서랍판 높이 = 서랍 깊이 (0..1). config.depth와 연동. drawer 동기화용.
    *  주의: eq.height(서랍 face 세로)와는 다름. */
   equipmentDepth?: number;
+  /** 드로어가 속한 패널의 픽셀 너비. 박스 종횡비 = in-game 일치용. drawer 동기화 전용. */
+  panelPxW?: number;
+  /** 드로어가 속한 패널의 픽셀 높이. drawer 동기화 전용. */
+  panelPxH?: number;
   /** 가로 변경 시 클램프 상한 (0..1, 패널 끝 기준) */
   maxWidth?: number;
   ingredients: StoreIngredient[];
@@ -88,6 +92,8 @@ const GridEditor = ({
   config,
   equipmentWidth,
   equipmentDepth,
+  panelPxW,
+  panelPxH,
   maxWidth = 1,
   ingredients,
   onConfigChange,
@@ -442,18 +448,27 @@ const GridEditor = ({
       </div>
 
       {/* 그리드 영역 (서랍이면 외곽 리사이즈로 폭/깊이 동기화).
-          서랍판은 위에서 본 모양 = eq.width × depth 비율 그대로 표시. */}
+          박스 = in-game 서랍판 top-down 모양 (eq.width × panelPxW : depth × panelPxH).
+          panelPxW/panelPxH 미측정(0)이면 정사각형 fallback (eq.width × GRID_BASE_PX, depth × GRID_BASE_PX). */}
+      {(() => {
+        const naturalW = (equipmentWidth ?? 0.5) * (panelPxW ?? 0);
+        const naturalH = (equipmentDepth ?? 0.5) * (panelPxH ?? 0);
+        const natMax = Math.max(naturalW, naturalH);
+        const useAspect = natMax > 0;
+        const aspectScale = useAspect ? GRID_BASE_PX / natMax : 1;
+        const boxW = useAspect ? naturalW * aspectScale : (equipmentWidth ?? 0.5) * GRID_BASE_PX;
+        const boxH = useAspect ? naturalH * aspectScale : (equipmentDepth ?? 0.5) * GRID_BASE_PX;
+        return (
       <div
         className={styles.gridResizeWrapper}
         style={
           showDimResize
             ? {
                 position: 'relative',
-                width: `${(equipmentWidth ?? 0.5) * GRID_BASE_PX}px`,
-                height: `${(equipmentDepth ?? 0.5) * GRID_BASE_PX}px`,
-                maxWidth: '100%',
-                minWidth: 80,
-                minHeight: 80,
+                width: `${boxW}px`,
+                height: `${boxH}px`,
+                minWidth: 40,
+                minHeight: 40,
               }
             : { position: 'relative' }
         }
@@ -519,6 +534,8 @@ const GridEditor = ({
         </>
       )}
       </div>
+        );
+      })()}
 
       {/* 재료 연결 UI */}
       {selectedCell && (

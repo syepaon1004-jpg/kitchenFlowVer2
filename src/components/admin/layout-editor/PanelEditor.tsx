@@ -35,6 +35,8 @@ interface Props {
   onSelectItem: (id: string | null) => void;
   onDeleteItem: (id: string) => void;
   onDuplicateItem: (id: string) => void;
+  /** scene 컨테이너 픽셀 크기 변경 콜백. PanelScene → KitchenLayoutEditor pass-through. */
+  onSceneSize?: (size: { width: number; height: number }) => void;
 }
 
 const MIN_RATIO = 0.1;
@@ -67,6 +69,7 @@ const PanelEditor = ({
   onSelectItem,
   onDeleteItem,
   onDuplicateItem,
+  onSceneSize,
 }: Props) => {
   const overlayRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -205,6 +208,7 @@ const PanelEditor = ({
           onSelectItem={onSelectItem}
           onDeleteItem={onDeleteItem}
           onDuplicateItem={onDuplicateItem}
+          onSceneSize={onSceneSize}
         />
 
         {/* 리사이즈 핸들: 편집 모드에서만, absolute 배치 */}

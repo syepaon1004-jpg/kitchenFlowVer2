@@ -1,27 +1,47 @@
 .selectionDisplay {
-  background: rgba(0, 0, 0, 0.6);
-  color: #fff;
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 12px;
+  pointer-events: auto;
+  background: var(--game-card-bg);
+  color: var(--game-text-secondary);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+  padding: 10px 14px;
+  font-size: var(--font-base);
+  min-height: var(--handbar-min-height);
+  border-radius: 12px;
+  box-shadow: var(--game-shadow-md);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--game-border);
   cursor: pointer;
   user-select: none;
   -webkit-user-select: none;
   white-space: nowrap;
-  transition: opacity 0.15s ease, visibility 0.15s ease;
 }
 
-.selectionDisplay.hidden {
-  opacity: 0;
-  visibility: hidden;
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  background: var(--color-primary-light);
+  border: 1px solid var(--game-border);
+  border-radius: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-sm);
+  color: var(--game-text-primary);
 }
 
-.selectionType {
-  font-size: 10px;
-  color: rgba(255, 255, 255, 0.6);
-  margin-right: 6px;
+.chipType {
+  color: var(--game-text-tertiary);
+  font-size: var(--font-xs);
 }
 
-.selectionLabel {
-  font-weight: 600;
+.chipLabel {
+  font-weight: bold;
+}
+
+.empty {
+  color: var(--game-text-tertiary);
+  font-style: italic;
+  font-size: var(--font-sm);
 }

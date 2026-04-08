@@ -17,6 +17,7 @@ import {
 } from './layout-editor/types';
 import LayoutToolbar from './layout-editor/LayoutToolbar';
 import PanelEditor from './layout-editor/PanelEditor';
+import { HANDLE_TOTAL_HEIGHT } from './layout-editor/PanelScene';
 import EquipmentPalette from './layout-editor/EquipmentPalette';
 import GridEditor from './layout-editor/GridEditor';
 import FridgeInternalEditor from './layout-editor/FridgeInternalEditor';
@@ -42,6 +43,8 @@ const KitchenLayoutEditor = ({ storeId, ingredients, containers }: Props) => {
 
   // 미리보기 Y 위치
   const [localPreviewYOffset, setLocalPreviewYOffset] = useState(DEFAULT_PREVIEW_Y_OFFSET);
+  // 미리보기 perspective 각도 (FOV deg). 슬라이더로 조절, DB에 영속화.
+  const [localPerspectiveDeg, setLocalPerspectiveDeg] = useState<number>(DEFAULT_PERSPECTIVE_DEG);
 
   // 인터랙션 상태 (미리보기 전용, 로컬)
   const INITIAL_INTERACTION: EquipmentInteractionState = { drawers: {}, burners: {}, baskets: {}, foldFridges: {} };
@@ -52,6 +55,15 @@ const KitchenLayoutEditor = ({ storeId, ingredients, containers }: Props) => {
   const [selectedEquipmentId, setSelectedEquipmentId] = useState<string | null>(null);
   const [activePanelIndex, setActivePanelIndex] = useState(0);
 
+  // scene 컨테이너 픽셀 크기 (PanelScene → PanelEditor → 여기). GridEditor 박스 종횡비 동기화용.
+  const [sceneSize, setSceneSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
+  const handleSceneSize = useCallback((size: { width: number; height: number }) => {
+    setSceneSize((prev) => {
+      if (prev.width === size.width && prev.height === size.height) return prev;
+      return size;
+    });
+  }, []);
+
   // 아이템 (재료/그릇) 편집 상태
   const [localItems, setLocalItems] = useState<LocalItem[]>([]);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
@@ -61,13 +73,22 @@ const KitchenLayoutEditor = ({ storeId, ingredients, containers }: Props) => {
   const [dbItemsSnapshot, setDbItemsSnapshot] = useState('[]');
 
   const hasChanges = (() => {
-    if (!layout) return backgroundImageUrl !== null || localEquipment.length > 0 || Math.abs(localPreviewYOffset - DEFAULT_PREVIEW_Y_OFFSET) > 0.001;
+    if (!layout) {
+      return (
+        backgroundImageUrl !== null ||
+        localEquipment.length > 0 ||
+        Math.abs(localPreviewYOffset - DEFAULT_PREVIEW_Y_OFFSET) > 0.001 ||
+        Math.abs(localPerspectiveDeg - DEFAULT_PERSPECTIVE_DEG) > 0.001
+      );
+    }
     const dbHeights = layout.panel_heights ?? DEFAULT_PANEL_HEIGHTS;
     const dbYOffset = layout.preview_y_offset ?? DEFAULT_PREVIEW_Y_OFFSET;
+    const dbPerspectiveDeg = layout.perspective_deg ?? DEFAULT_PERSPECTIVE_DEG;
     return (
       backgroundImageUrl !== layout.background_image_url ||
       localPanelHeights.some((h, i) => Math.abs(h - dbHeights[i]) > 0.001) ||
       Math.abs(localPreviewYOffset - dbYOffset) > 0.001 ||
+      Math.abs(localPerspectiveDeg - dbPerspectiveDeg) > 0.001 ||
       JSON.stringify(localEquipment) !== dbEquipmentSnapshot ||
       JSON.stringify(localItems) !== dbItemsSnapshot
     );
@@ -97,6 +118,7 @@ const KitchenLayoutEditor = ({ storeId, ingredients, containers }: Props) => {
         setLocalPanelHeights(ld.panel_heights ?? DEFAULT_PANEL_HEIGHTS);
         setBackgroundImageUrl(ld.background_image_url);
         setLocalPreviewYOffset(ld.preview_y_offset ?? DEFAULT_PREVIEW_Y_OFFSET);
+        setLocalPerspectiveDeg(ld.perspective_deg ?? DEFAULT_PERSPECTIVE_DEG);
 
         const { data: eqData, error: eqErr } = await supabase
           .from('panel_equipment')
@@ -131,6 +153,7 @@ const KitchenLayoutEditor = ({ storeId, ingredients, containers }: Props) => {
         setLocalPanelHeights(DEFAULT_PANEL_HEIGHTS);
         setBackgroundImageUrl(null);
         setLocalPreviewYOffset(DEFAULT_PREVIEW_Y_OFFSET);
+        setLocalPerspectiveDeg(DEFAULT_PERSPECTIVE_DEG);
         setLocalEquipment([]);
         setDbEquipmentSnapshot('[]');
         setLocalItems([]);
@@ -320,7 +343,7 @@ const KitchenLayoutEditor = ({ storeId, ingredients, containers }: Props) => {
         store_id: storeId,
         background_image_url: backgroundImageUrl,
         panel_heights: localPanelHeights,
-        perspective_deg: layout?.perspective_deg ?? DEFAULT_PERSPECTIVE_DEG,
+        perspective_deg: localPerspectiveDeg,
         preview_y_offset: localPreviewYOffset,
       };
 
@@ -465,13 +488,15 @@ const KitchenLayoutEditor = ({ storeId, ingredients, containers }: Props) => {
           onSave={handleSave}
           saving={saving}
           hasChanges={hasChanges}
+          perspectiveDeg={localPerspectiveDeg}
+          onPerspectiveDegChange={setLocalPerspectiveDeg}
         />
         <div className={styles.contentArea}>
           <PanelEditor
             mode={mode}
             panelHeights={localPanelHeights}
             onPanelHeightsChange={setLocalPanelHeights}
-            perspectiveDeg={layout?.perspective_deg ?? DEFAULT_PERSPECTIVE_DEG}
+            perspectiveDeg={localPerspectiveDeg}
             previewYOffset={localPreviewYOffset}
             onPreviewYOffsetChange={setLocalPreviewYOffset}
             backgroundImageUrl={backgroundImageUrl}
@@ -495,8 +520,15 @@ const KitchenLayoutEditor = ({ storeId, ingredients, containers }: Props) => {
             onSelectItem={handleSelectItem}
             onDeleteItem={handleDeleteItem}
             onDuplicateItem={handleDuplicateItem}
+            onSceneSize={handleSceneSize}
           />
-          {gridEditTarget && (
+          {gridEditTarget && (() => {
+            // 드로어가 속한 패널의 픽셀 치수 계산.
+            // GridEditor 박스 = in-game 서랍판 top-down 모양 (eq.width × panelPxW : depth × panelPxH).
+            const gridPanelAreaH = Math.max(0, sceneSize.height - HANDLE_TOTAL_HEIGHT);
+            const gridPanelPxW = sceneSize.width;
+            const gridPanelPxH = gridPanelAreaH * (localPanelHeights[gridEditTarget.panelIndex] ?? 0.4);
+            return (
             <GridEditor
               equipmentId={gridEditTarget.id}
               equipmentType={gridEditTarget.equipmentType as 'drawer' | 'basket'}
@@ -507,6 +539,8 @@ const KitchenLayoutEditor = ({ storeId, ingredients, containers }: Props) => {
                   ? ((gridEditTarget.config as Record<string, unknown>).depth as number)
                   : 0.5
               }
+              panelPxW={gridPanelPxW}
+              panelPxH={gridPanelPxH}
               maxWidth={Math.max(0.05, 1 - gridEditTarget.x)}
               ingredients={ingredients}
               onConfigChange={(id, newConfig) => handleEquipmentChange(id, { config: newConfig })}
@@ -525,7 +559,8 @@ const KitchenLayoutEditor = ({ storeId, ingredients, containers }: Props) => {
                 }
               }}
             />
-          )}
+            );
+          })()}
           {fridgeEditTarget && (
             <FridgeInternalEditor
               equipmentId={fridgeEditTarget.id}
