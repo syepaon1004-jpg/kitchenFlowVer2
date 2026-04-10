@@ -1,0 +1,73 @@
+{
+  "permissions": {
+    "defaultMode": "default",
+    "disableBypassPermissionsMode": "disable",
+    "deny": [
+      "Edit(/.harness/**)",
+      "Edit(/docs/commander/**)",
+      "Edit(/docs/rules/**)",
+      "Edit(/AGENTS.md)",
+      "Edit(/CLAUDE.md)",
+      "Edit(/.claude/**)",
+      "MultiEdit(/.harness/**)",
+      "MultiEdit(/docs/commander/**)",
+      "MultiEdit(/docs/rules/**)",
+      "MultiEdit(/AGENTS.md)",
+      "MultiEdit(/CLAUDE.md)",
+      "MultiEdit(/.claude/**)",
+      "Write(/.harness/**)",
+      "Write(/docs/commander/**)",
+      "Write(/docs/rules/**)",
+      "Write(/AGENTS.md)",
+      "Write(/CLAUDE.md)",
+      "Write(/.claude/**)",
+      "Read(/AGENTS.md)",
+      "Read(/docs/commander/**)",
+      "Read(/.harness/**)",
+      "Read(/.claude/settings.json)",
+      "Read(/.claude/settings.local.json)",
+      "Read(/.claude/commands/**)",
+      "Read(/.claude/hooks/**)"
+    ],
+    "allow": [
+      "Read(**)",
+      "Edit(/src/**)",
+      "Edit(/docs/worker/**)",
+      "Edit(/docs/DECISIONS.md)",
+      "MultiEdit(/src/**)",
+      "MultiEdit(/docs/worker/**)",
+      "MultiEdit(/docs/DECISIONS.md)",
+      "Write(/src/**)",
+      "Write(/docs/worker/**)",
+      "Write(/docs/DECISIONS.md)",
+      "Bash(npx tsc --noEmit)",
+      "Bash(npx eslint src/)",
+      "Bash(npx eslint src/ --fix)",
+      "Bash(npm run build)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Read|Edit|MultiEdit|Write|Bash|Glob|Grep",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/policy_firewall.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|MultiEdit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx tsc --noEmit"
+          }
+        ]
+      }
+    ]
+  }
+}
