@@ -1,0 +1,163 @@
+.root {
+  display: flex;
+  gap: var(--admin-spacing-lg);
+  width: 100%;
+  max-width: var(--admin-focus-max-width);
+}
+
+/* ── 확대된 Row Scene 영역 ── */
+
+.sceneArea {
+  flex: 1;
+  min-width: 0;
+}
+
+.sceneHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--admin-spacing-md);
+  margin-bottom: var(--admin-spacing-sm);
+}
+
+.backBtn {
+  padding: var(--admin-spacing-xs) var(--admin-spacing-md);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-md);
+  background: var(--admin-surface);
+  cursor: pointer;
+  font-size: var(--font-base);
+}
+
+.backBtn:hover {
+  background: var(--color-primary-light);
+}
+
+.sceneTitle {
+  font-size: var(--font-md);
+  font-weight: 600;
+  color: var(--admin-text-secondary);
+}
+
+.clipContainer {
+  overflow: hidden;
+  border: 1px solid var(--admin-border-light);
+  border-radius: var(--admin-radius-lg);
+  background: var(--admin-surface-alt);
+}
+
+.zoomedScene {
+  width: 100%;
+  /* scale/translateX: inline style */
+}
+
+/* ── 뷰포트 바 ── */
+
+.viewportBar {
+  position: relative;
+  width: 100%;
+  height: var(--admin-viewport-bar-height);
+  background: var(--admin-surface-alt);
+  border-radius: var(--admin-radius-md);
+  margin-top: var(--admin-spacing-sm);
+  overflow: hidden;
+}
+
+.viewportWindow {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: var(--admin-viewport-window-bg);
+  border: 1px solid var(--admin-viewport-window-border);
+  border-radius: var(--admin-spacing-2xs);
+}
+
+.viewportCenter {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: var(--admin-viewport-marker-width);
+  background: var(--admin-viewport-center-color);
+  transform: translateX(-1px);
+}
+
+.viewportLabels {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--font-xs);
+  color: var(--admin-text-muted);
+  margin-top: var(--admin-spacing-2xs);
+}
+
+/* ── 대표 장비 사이드바 ── */
+
+.sidebar {
+  width: var(--admin-focus-sidebar-width);
+  flex-shrink: 0;
+  border: 1px solid var(--admin-border-light);
+  border-radius: var(--admin-radius-lg);
+  background: var(--admin-surface);
+  padding: var(--admin-spacing-md);
+  align-self: flex-start;
+}
+
+.sidebarTitle {
+  font-size: var(--font-base);
+  font-weight: 600;
+  color: var(--admin-text-secondary);
+  margin: 0 0 var(--admin-spacing-sm);
+}
+
+.equipList {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 var(--admin-spacing-sm);
+}
+
+.equipList li {
+  margin-bottom: var(--admin-spacing-xs);
+}
+
+.equipBtn {
+  width: 100%;
+  text-align: left;
+  padding: var(--admin-spacing-xs) var(--admin-spacing-sm);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-md);
+  background: var(--admin-surface);
+  cursor: pointer;
+  font-size: var(--font-sm);
+  font-weight: 400;
+}
+
+.equipBtn:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+
+.equipBtnSelected {
+  border: 2px solid var(--color-primary);
+  background: var(--color-primary-light);
+  font-weight: 700;
+}
+
+.emptyMsg {
+  color: var(--admin-text-muted);
+  font-size: var(--font-sm);
+}
+
+.clearBtn {
+  width: 100%;
+  padding: var(--admin-spacing-xs) var(--admin-spacing-sm);
+  border: 1px solid var(--admin-border-light);
+  border-radius: var(--admin-radius-md);
+  background: var(--admin-surface-alt);
+  cursor: pointer;
+  font-size: var(--font-sm);
+  color: var(--admin-text-muted);
+}
+
+.clearBtn:hover {
+  background: var(--admin-error-light);
+  border-color: var(--color-error);
+  color: var(--color-error);
+}

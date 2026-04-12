@@ -136,6 +136,8 @@ interface Props {
   perspectiveDeg: number;
   previewYOffset: number;
   backgroundImageUrl: string | null;
+  /** 카메라 X offset 비율 (-0.5 ~ 0.5) — 섹션 슬라이드용 */
+  cameraOffsetX?: number;
   equipment: LocalEquipment[];
   items: LocalGameItem[];
   ingredientLabelsMap: Map<string, string>;
@@ -177,7 +179,7 @@ function getBasketCorrection(panelIndex: number): string {
 // ——— 컴포넌트 ———
 
 const GameKitchenView = ({
-  panelHeights, perspectiveDeg, previewYOffset, backgroundImageUrl, equipment, items, ingredientLabelsMap, wokContentsMap, placedContainers, hasSelection, selection, panelToStateIdMap, onSceneClick, children,
+  panelHeights, perspectiveDeg, previewYOffset, backgroundImageUrl, cameraOffsetX = 0, equipment, items, ingredientLabelsMap, wokContentsMap, placedContainers, hasSelection, selection, panelToStateIdMap, onSceneClick, children,
 }: Props) => {
   const sceneRef = useRef<HTMLDivElement>(null);
   const [containerHeight, setContainerHeight] = useState(0);
@@ -583,8 +585,14 @@ const GameKitchenView = ({
       {/* BillQueue: 일반 flow, 크기 고정 */}
       {children && <div className={styles.billQueueArea}>{children}</div>}
 
-      {/* 3D scene 영역 */}
-      <div className={styles.kitchenSceneArea}>
+      {/* 3D scene 영역 — cameraOffsetX로 같은 행 슬라이드 */}
+      <div
+        className={styles.kitchenSceneArea}
+        style={{
+          transform: cameraOffsetX !== 0 ? `translateX(${cameraOffsetX * 100}%)` : undefined,
+          transition: 'transform 0.3s ease-out',
+        }}
+      >
         {backgroundImageUrl ? (
           <img src={backgroundImageUrl} alt="주방 배경" className={styles.backgroundImage} draggable={false} />
         ) : (

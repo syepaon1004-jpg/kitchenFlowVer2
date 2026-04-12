@@ -1,0 +1,49 @@
+.container {
+  position: fixed;
+  bottom: var(--spacing-lg);
+  right: var(--spacing-lg);
+  display: grid;
+  grid-template-areas:
+    ".    up   ."
+    "left .    right"
+    ".    down .";
+  grid-template-columns: repeat(3, var(--game-nav-size));
+  grid-template-rows: repeat(3, var(--game-nav-size));
+  gap: var(--spacing-2xs);
+  z-index: 100;
+}
+
+.button {
+  width: var(--game-nav-size);
+  height: var(--game-nav-size);
+  border: none;
+  border-radius: var(--equip-btn-radius);
+  background: var(--game-nav-bg);
+  color: var(--game-nav-text);
+  font-size: var(--font-lg);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.15s, background 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.button:hover:not(.disabled) {
+  background: var(--game-nav-bg-hover);
+}
+
+.button:active:not(.disabled) {
+  background: var(--game-nav-bg-hover);
+}
+
+.disabled {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.up    { grid-area: up; }
+.down  { grid-area: down; }
+.left  { grid-area: left; }
+.right { grid-area: right; }

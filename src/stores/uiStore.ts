@@ -1,39 +1,41 @@
 import { create } from 'zustand';
-import type { SectionConfig, BillQueueArea, KitchenZone } from '../types/db';
+import type { SectionCell, BillQueueArea, KitchenZone } from '../types/db';
 import type { RejectionInfo, WokBlockedReason } from '../types/game';
+import type { MovableDirections, MoveDirection } from '../types/section';
 import { supabase } from '../lib/supabase';
-
-export const DEFAULT_SECTION_CONFIG: SectionConfig = {
-  boundaries: [0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 1.0],
-  walls: [4, 8],
-};
-
-/** 뒤돌기 시 최단 경로 방향 계산 (3-copy 캐러셀 애니메이션용) */
-function getNearestTurnOffset(current: number, target: number, totalSections: number): -1 | 0 | 1 {
-  const distC = Math.abs(target - current);
-  const distL = current + (totalSections - target);
-  const distR = (totalSections - current) + target;
-  if (distC <= distL && distC <= distR) return 0;
-  if (distL <= distR) return -1;
-  return 1;
-}
-
-export interface TurnResult {
-  target: number;
-  direction: -1 | 0 | 1;
-}
+import {
+  getStartSection,
+  findCellByNumber,
+  getMovableDirections,
+  getTargetCell,
+  isSameRowMove,
+} from '../lib/sections/navigation';
+import { getSectionCenterX, getCameraTranslateRatio } from '../lib/sections/camera';
+import type { PanelEquipment } from '../types/db';
 
 interface UiState {
-  // 메인 뷰포트
-  viewOffset: number;         // translateX px 값
-  currentSection: number;     // 섹션 인덱스 (1-indexed)
-  currentZoneId: string | null;
-  sectionConfig: SectionConfig;
+  // ——— 섹션 그리드 네비게이션 ———
+  /** 전체 그리드 행 수 */
+  gridRows: number;
+  /** 전체 그리드 열 수 */
+  gridCols: number;
+  /** 비어있지 않은 셀 목록 */
+  sectionCells: SectionCell[];
+  /** 현재 섹션 번호 (section_number, 1-indexed) */
+  currentSection: number;
+  /** 현재 행 인덱스 */
+  currentRow: number;
+  /** 카메라 X offset 비율 (-0.5 ~ 0.5) — scene translateX에 사용 */
+  cameraOffsetX: number;
+  /** 4방향 이동 가능 여부 (파생값, 셀/그리드 변경 시 갱신) */
+  movableDirections: MovableDirections;
+
+  // 빌 큐
   billQueueAreas: BillQueueArea[] | null;
 
   // 왼쪽 사이드바
-  leftSidebarZoneId: string | null; // null이면 zone 미선택
-  leftSidebarOpen: boolean;         // CSS 슬라이드 열림/닫힘
+  leftSidebarZoneId: string | null;
+  leftSidebarOpen: boolean;
   leftSidebarAnchor: { x: number; y: number; w: number; h: number } | null;
 
   // 모달
@@ -54,17 +56,25 @@ interface UiState {
   quantityModalPresets: number[];
   quantityModalCallback: ((qty: number) => void) | null;
 
-  // Zone 프리로드 캐시
+  // Zone 프리로드 ��시
   zoneCacheMap: Map<string, KitchenZone>;
   _prefetchingIds: Set<string>;
 
-  setViewOffset: (offset: number | ((prev: number) => number)) => void;
-  setCurrentSection: (section: number) => void;
-  setCurrentZoneId: (zoneId: string) => void;
-  setSectionConfig: (config: SectionConfig | null) => void;
-  goNext: () => TurnResult | null;
-  goPrev: () => TurnResult | null;
-  goTurn: () => TurnResult | null;
+  // ——— 섹션 액션 ———
+  /** 섹션 그리드 초기화 (인게임 진입 시 호출) */
+  initSectionGrid: (
+    gridRows: number,
+    gridCols: number,
+    cells: SectionCell[],
+    equipmentByRow: Map<number, PanelEquipment[]>,
+  ) => void;
+  /** 방향 이동. 같은 행이면 true, 다른 행이면 false 반환. 이동 불가면 null. */
+  moveSection: (
+    direction: MoveDirection,
+    equipmentByRow: Map<number, PanelEquipment[]>,
+  ) => boolean | null;
+
+  // ——— 기존 UI 액션 ———
   toggleLeftSidebar: () => void;
   setLeftSidebarZone: (zoneId: string | null, anchor?: { x: number; y: number; w: number; h: number }) => void;
   clearLeftSidebarAnchor: () => void;
@@ -81,11 +91,27 @@ interface UiState {
   resetZoneCache: () => void;
 }
 
+const NO_MOVE: MovableDirections = { up: false, down: false, left: false, right: false };
+
+/** 현재 셀 기준 카메라 offset 계산 헬퍼 */
+function computeCameraOffset(
+  cell: SectionCell,
+  equipmentByRow: Map<number, PanelEquipment[]>,
+): number {
+  const rowEq = equipmentByRow.get(cell.row_index) ?? [];
+  const centerX = getSectionCenterX(cell, rowEq);
+  return getCameraTranslateRatio(centerX);
+}
+
 export const useUiStore = create<UiState>((set, get) => ({
-  viewOffset: 0,
+  gridRows: 1,
+  gridCols: 1,
+  sectionCells: [],
   currentSection: 1,
-  currentZoneId: null,
-  sectionConfig: DEFAULT_SECTION_CONFIG,
+  currentRow: 0,
+  cameraOffsetX: 0,
+  movableDirections: NO_MOVE,
+
   billQueueAreas: null,
   leftSidebarZoneId: null,
   leftSidebarOpen: false,
@@ -103,57 +129,53 @@ export const useUiStore = create<UiState>((set, get) => ({
   zoneCacheMap: new Map(),
   _prefetchingIds: new Set(),
 
-  setViewOffset: (offset) =>
-    set((state) => ({
-      viewOffset: typeof offset === 'function' ? offset(state.viewOffset) : offset,
-    })),
-
-  setCurrentSection: (section) => {
-    const { sectionConfig } = get();
-    const totalSections = sectionConfig.boundaries.length - 1;
-    const wallSet = new Set(sectionConfig.walls);
-    if (section >= 1 && section <= totalSections && !wallSet.has(section)) {
-      set({ currentSection: section });
+  initSectionGrid: (gridRows, gridCols, cells, equipmentByRow) => {
+    const startCell = getStartSection(cells);
+    if (!startCell) {
+      set({
+        gridRows,
+        gridCols,
+        sectionCells: cells,
+        currentSection: 1,
+        currentRow: 0,
+        cameraOffsetX: 0,
+        movableDirections: NO_MOVE,
+      });
+      return;
     }
+    const directions = getMovableDirections(startCell, cells, gridRows, gridCols);
+    const offset = computeCameraOffset(startCell, equipmentByRow);
+    set({
+      gridRows,
+      gridCols,
+      sectionCells: cells,
+      currentSection: startCell.section_number,
+      currentRow: startCell.row_index,
+      cameraOffsetX: offset,
+      movableDirections: directions,
+    });
   },
 
-  setCurrentZoneId: (zoneId) => set({ currentZoneId: zoneId }),
+  moveSection: (direction, equipmentByRow) => {
+    const { currentSection, sectionCells, gridRows, gridCols } = get();
+    const currentCell = findCellByNumber(sectionCells, currentSection);
+    if (!currentCell) return null;
 
-  setSectionConfig: (config) =>
-    set({ sectionConfig: config ?? DEFAULT_SECTION_CONFIG }),
+    const target = getTargetCell(currentCell, direction, sectionCells, gridRows, gridCols);
+    if (!target) return null;
 
-  goTurn: () => {
-    const { currentSection, sectionConfig } = get();
-    const totalSections = sectionConfig.boundaries.length - 1;
-    const wallSet = new Set(sectionConfig.walls);
-    const target = totalSections - currentSection;
-    if (target < 1 || target > totalSections || wallSet.has(target)) return null;
-    const direction = getNearestTurnOffset(currentSection, target, totalSections);
-    set({ currentSection: target });
-    return { target, direction };
-  },
+    const sameRow = isSameRowMove(currentCell, target);
+    const directions = getMovableDirections(target, sectionCells, gridRows, gridCols);
+    const offset = computeCameraOffset(target, equipmentByRow);
 
-  goNext: () => {
-    const { currentSection, sectionConfig } = get();
-    const totalSections = sectionConfig.boundaries.length - 1;
-    const wallSet = new Set(sectionConfig.walls);
-    const next = currentSection + 1;
-    if (next > totalSections || wallSet.has(next)) {
-      return get().goTurn();
-    }
-    set({ currentSection: next });
-    return null;
-  },
+    set({
+      currentSection: target.section_number,
+      currentRow: target.row_index,
+      cameraOffsetX: offset,
+      movableDirections: directions,
+    });
 
-  goPrev: () => {
-    const { currentSection, sectionConfig } = get();
-    const wallSet = new Set(sectionConfig.walls);
-    const prev = currentSection - 1;
-    if (prev < 1 || wallSet.has(prev)) {
-      return get().goTurn();
-    }
-    set({ currentSection: prev });
-    return null;
+    return sameRow;
   },
 
   toggleLeftSidebar: () => set((s) => ({ leftSidebarOpen: !s.leftSidebarOpen })),
@@ -162,7 +184,6 @@ export const useUiStore = create<UiState>((set, get) => ({
       set({ leftSidebarZoneId: zoneId, leftSidebarOpen: true, leftSidebarAnchor: anchor ?? null });
     } else {
       set({ leftSidebarZoneId: null, leftSidebarOpen: false });
-      // anchor는 유지 — 닫힘 애니메이션 중 컴포넌트 마운트 유지
     }
   },
   clearLeftSidebarAnchor: () => set({ leftSidebarAnchor: null }),

@@ -293,6 +293,7 @@ export type PanelEquipmentType = 'drawer' | 'fold_fridge' | 'basket' | 'burner' 
 export interface PanelLayout {
   id: string;
   store_id: string;
+  row_index: number;
   background_image_url: string | null;
   panel_heights: number[];
   perspective_deg: number;
@@ -331,5 +332,27 @@ export interface PanelItem {
   ingredient_id: string | null;
   container_id: string | null;
   sort_order: number;
+  created_at: string;
+}
+
+// ——— 섹션 그리드 시스템 ————————————————————————————
+
+export interface SectionGrid {
+  id: string;
+  store_id: string;
+  grid_rows: number;
+  grid_cols: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SectionCell {
+  id: string;
+  store_id: string;
+  section_number: number;
+  row_index: number;
+  col_index: number;
+  rep_equipment_type: string | null;
+  rep_equipment_index: number | null;
   created_at: string;
 }

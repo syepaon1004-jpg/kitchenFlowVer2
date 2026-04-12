@@ -1,0 +1,110 @@
+.root {
+  padding: var(--admin-spacing-lg);
+}
+
+.title {
+  margin: 0 0 var(--admin-spacing-md);
+  font-size: var(--font-lg);
+  font-weight: 600;
+  color: var(--admin-text);
+}
+
+/* ── 리사이즈 컨트롤 ── */
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: var(--admin-spacing-sm);
+  margin-bottom: var(--admin-spacing-sm);
+  font-size: var(--font-base);
+  color: var(--admin-text-secondary);
+}
+
+.controlBtn {
+  padding: var(--admin-spacing-xs) var(--admin-btn-padding-h);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-md);
+  background: var(--admin-surface);
+  cursor: pointer;
+  font-size: var(--font-sm);
+}
+
+.controlBtn:hover {
+  background: var(--color-primary-light);
+  border-color: var(--color-primary);
+}
+
+.controlBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ── 그리드 ── */
+
+.grid {
+  display: grid;
+  gap: var(--admin-grid-gap);
+  /* gridTemplateColumns / gridTemplateRows: inline style */
+}
+
+.cell {
+  width: 100%;
+  height: 100%;
+  border: 1px solid var(--admin-border-strong);
+  border-radius: var(--admin-radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: var(--font-md);
+  user-select: none;
+  position: relative;
+}
+
+.cellOccupied {
+  background: var(--admin-grid-cell-occupied);
+  color: var(--admin-surface);
+  font-weight: 600;
+}
+
+.cellEmpty {
+  background: var(--admin-grid-cell-empty);
+  color: var(--admin-surface);
+  font-weight: 400;
+}
+
+.cellEmptyIcon {
+  opacity: 0.4;
+  font-size: var(--admin-icon-size);
+}
+
+/* ── 인라인 편집 입력 ── */
+
+.editInput {
+  width: var(--admin-input-width-sm);
+  text-align: center;
+  background: var(--admin-grid-input-bg);
+  color: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-sm);
+  font-size: var(--font-md);
+}
+
+/* ── 행 이동 버튼 ── */
+
+.rowBtn {
+  align-self: center;
+  margin-left: var(--admin-spacing-xs);
+  padding: var(--admin-spacing-xs) var(--admin-spacing-sm);
+  font-size: var(--font-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-md);
+  background: var(--admin-surface);
+}
+
+.rowBtn:hover {
+  background: var(--color-primary-light);
+  border-color: var(--color-primary);
+}

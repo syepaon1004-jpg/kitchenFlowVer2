@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo, useSyncExternalStore } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useGameStore } from '../stores/gameStore';
@@ -33,7 +33,10 @@ import SelectionDisplay from '../components/game/SelectionDisplay';
 import type { FeedbackState } from '../components/game/SessionResultOverlay';
 import { useClickInteraction } from '../hooks/useClickInteraction';
 import { useSelectionStore } from '../stores/selectionStore';
-import type { PanelLayout, PanelEquipment, PanelItem, PanelEquipmentType } from '../types/db';
+import type { PanelLayout, PanelEquipment, PanelItem, PanelEquipmentType, SectionGrid, SectionCell } from '../types/db';
+import type { MoveDirection } from '../types/section';
+import NavigationHUD from '../components/game/NavigationHUD';
+import MinimapHUD from '../components/game/MinimapHUD';
 import Handbar from '../components/layout/Handbar';
 import GameHeader from '../components/game/GameHeader';
 import SessionResultOverlay from '../components/game/SessionResultOverlay';
@@ -41,6 +44,25 @@ import OrderSelectModal from '../components/ui/OrderSelectModal';
 import QuantityInputModal from '../components/ui/QuantityInputModal';
 import '../styles/gameVariables.css';
 import styles from './GamePage.module.css';
+
+// ── 세션 종료 결과 외부 스토어 (effect → render 브릿지, React setState 미사용) ──
+type SessionResultSnapshot = { score: number; scoreEvents: GameScoreEvent[] } | null;
+let _sessionResultData: SessionResultSnapshot = null;
+const _sessionResultListeners = new Set<() => void>();
+
+function emitSessionResult(data: SessionResultSnapshot) {
+  _sessionResultData = data;
+  _sessionResultListeners.forEach((l) => l());
+}
+
+function subscribeSessionResult(onStoreChange: () => void) {
+  _sessionResultListeners.add(onStoreChange);
+  return () => { _sessionResultListeners.delete(onStoreChange); };
+}
+
+function getSessionResultSnapshot(): SessionResultSnapshot {
+  return _sessionResultData;
+}
 
 /** 패널 장비 타입 → 물리엔진 장비 타입 매핑 */
 function panelToPhysicsType(panelType: PanelEquipmentType): EquipmentType | null {
@@ -145,16 +167,43 @@ const GamePage = () => {
     }
   }, [ingredientInstances, evaluateAll]);
 
-  // 패널 레이아웃 (인게임 주방 렌더링)
-  const [panelLayout, setPanelLayout] = useState<PanelLayout | null>(null);
-  const [panelEquipmentList, setPanelEquipmentList] = useState<PanelEquipment[]>([]);
-  const [panelItemList, setPanelItemList] = useState<PanelItem[]>([]);
+  // 패널 레이아웃 (인게임 주방 렌더링) — 다중 행 지원
+  const [allLayouts, setAllLayouts] = useState<PanelLayout[]>([]);
+  const [allEquipmentByRow, setAllEquipmentByRow] = useState<Map<number, PanelEquipment[]>>(new Map());
+  const [allItemsByRow, setAllItemsByRow] = useState<Map<number, PanelItem[]>>(new Map());
+  const [sectionCells, setSectionCells] = useState<SectionCell[]>([]);
+  const [gridRows, setGridRows] = useState(1);
+  const [gridCols, setGridCols] = useState(1);
+
+  // 현재 행 기준 패널 데이터 (uiStore.currentRow에서 파생)
+  const currentRow = useUiStore((s) => s.currentRow);
+  const cameraOffsetX = useUiStore((s) => s.cameraOffsetX);
+  const movableDirections = useUiStore((s) => s.movableDirections);
+  const currentSection = useUiStore((s) => s.currentSection);
+  const initSectionGrid = useUiStore((s) => s.initSectionGrid);
+  const moveSection = useUiStore((s) => s.moveSection);
+
+  const panelLayout = useMemo(() =>
+    allLayouts.find((l) => l.row_index === currentRow) ?? null,
+  [allLayouts, currentRow]);
+  const panelEquipmentList = useMemo(() =>
+    allEquipmentByRow.get(currentRow) ?? [],
+  [allEquipmentByRow, currentRow]);
+  const panelItemList = useMemo(() =>
+    allItemsByRow.get(currentRow) ?? [],
+  [allItemsByRow, currentRow]);
+  // 전 행 통합 장비 (equipment state 초기화용)
+  const allPanelEquipment = useMemo(() => {
+    const all: PanelEquipment[] = [];
+    for (const eqs of allEquipmentByRow.values()) all.push(...eqs);
+    return all;
+  }, [allEquipmentByRow]);
 
   // panelEquipmentId → gameEquipmentStateId 매핑
   const [panelToStateIdMap, setPanelToStateIdMap] = useState<Map<string, string>>(new Map());
 
   // store_ingredients + containers 1회 로딩 캐시
-  const storeIngredientsMapRef = useRef<Map<string, StoreIngredient>>(new Map());
+  const storeIngredientsMap = useGameStore((s) => s.storeIngredientsMap);
   const [containersMap, setContainersMap] = useState<Map<string, Container>>(new Map());
 
   // 레시피 요구량 조회 (클릭 투입 프리셋용)
@@ -217,7 +266,7 @@ const GamePage = () => {
       }
 
       // StoreIngredient 조회
-      const si = storeIngredientsMapRef.current.get(ingredientId);
+      const si = storeIngredientsMap.get(ingredientId);
       const unit = si?.unit;
 
       // 같은 재료 기존 인스턴스 검색
@@ -620,11 +669,11 @@ const GamePage = () => {
         metadata: { order_id: orderId, serve_time_ms: serveTimeMs, container_count: targetContainers.length },
       });
     }
-  }, [sessionId, addIngredientInstance, incrementIngredientQuantity, decrementIngredientQuantity, addContainerInstance, moveContainer, openQuantityModal, addActionLog, findRecipeQuantity, bulkMoveIngredients, incrementContainerPlateOrder, updateEquipment, setContainerDirty, removeContainerInstance, panelToStateIdMap, tryRejectAndShowPopup, openOrderSelectModal, openWokBlockedPopup, setWokAtSink, markContainerServed, updateOrderStatus, addScoreEvent, addRecipeResult]);
+  }, [sessionId, addIngredientInstance, incrementIngredientQuantity, decrementIngredientQuantity, addContainerInstance, moveContainer, openQuantityModal, addActionLog, findRecipeQuantity, bulkMoveIngredients, incrementContainerPlateOrder, updateEquipment, setContainerDirty, removeContainerInstance, panelToStateIdMap, tryRejectAndShowPopup, openOrderSelectModal, openWokBlockedPopup, setWokAtSink, markContainerServed, updateOrderStatus, addScoreEvent, addRecipeResult, storeIngredientsMap]);
 
   // 클릭/선택 인터랙션 시스템
   const { selection, handleSceneClick, deselect } = useClickInteraction({
-    getIngredientLabel: (id) => storeIngredientsMapRef.current.get(id)?.display_name ?? id,
+    getIngredientLabel: (id) => storeIngredientsMap.get(id)?.display_name ?? id,
     getContainerLabel: (id) => containersMap.get(id)?.name ?? id,
     onAction: handleResolvedAction,
   });
@@ -640,7 +689,7 @@ const GamePage = () => {
       if (inst.location_type !== 'equipment' || !inst.equipment_state_id) continue;
       const panelId = stateToPanel.get(inst.equipment_state_id);
       if (!panelId) continue;
-      const si = storeIngredientsMapRef.current.get(inst.ingredient_id);
+      const si = storeIngredientsMap.get(inst.ingredient_id);
       const entry = {
         ingredientId: inst.ingredient_id,
         displayName: si?.display_name ?? inst.ingredient_id,
@@ -652,7 +701,7 @@ const GamePage = () => {
       map.set(panelId, arr);
     }
     return map;
-  }, [ingredientInstances, panelToStateIdMap]);
+  }, [ingredientInstances, panelToStateIdMap, storeIngredientsMap]);
 
   // 올려놓인 그릇 파생 데이터
   const placedContainers = useMemo(() => {
@@ -675,7 +724,7 @@ const GamePage = () => {
         const contents = ingredientInstances
           .filter((ii) => ii.container_instance_id === ci.id && ii.location_type === 'container')
           .map((ii) => {
-            const si = storeIngredientsMapRef.current.get(ii.ingredient_id);
+            const si = storeIngredientsMap.get(ii.ingredient_id);
             return `${si?.display_name ?? '재료'} ${ii.quantity}${si?.unit ?? ''}`;
           });
         const canServe = !!ci.assigned_order_id && (orderAllComplete.get(ci.assigned_order_id) ?? false);
@@ -691,36 +740,66 @@ const GamePage = () => {
           canServe,
         };
       });
-  }, [containerInstances, ingredientInstances, containersMap]);
+  }, [containerInstances, ingredientInstances, containersMap, storeIngredientsMap]);
 
-  // 패널 레이아웃 로드
+  // 패널 레이아웃 + 섹션 그리드 로드 (다중 행)
   useEffect(() => {
-    supabase
-      .from('panel_layouts')
-      .select('*')
-      .eq('store_id', storeId)
-      .maybeSingle()
-      .then(async ({ data: layoutData }) => {
-        if (!layoutData) return;
-        setPanelLayout(layoutData as PanelLayout);
+    const loadAll = async () => {
+      // 1. section_grid
+      const { data: gridData } = await supabase
+        .from('section_grid')
+        .select('*')
+        .eq('store_id', storeId)
+        .maybeSingle();
+      const gr = (gridData as SectionGrid | null)?.grid_rows ?? 1;
+      const gc = (gridData as SectionGrid | null)?.grid_cols ?? 1;
+      setGridRows(gr);
+      setGridCols(gc);
 
+      // 2. section_cells
+      const { data: cellsData } = await supabase
+        .from('section_cells')
+        .select('*')
+        .eq('store_id', storeId);
+      const cells = (cellsData ?? []) as SectionCell[];
+      setSectionCells(cells);
+
+      // 3. 전 행 panel_layouts
+      const { data: layoutsData } = await supabase
+        .from('panel_layouts')
+        .select('*')
+        .eq('store_id', storeId)
+        .order('row_index');
+      const layouts = (layoutsData ?? []) as PanelLayout[];
+      setAllLayouts(layouts);
+
+      // 4. 행별 equipment/items 로드
+      const eqMap = new Map<number, PanelEquipment[]>();
+      const itemMap = new Map<number, PanelItem[]>();
+      for (const ld of layouts) {
         const { data: eqData } = await supabase
           .from('panel_equipment')
           .select('*')
-          .eq('layout_id', layoutData.id)
+          .eq('layout_id', ld.id)
           .order('sort_order');
-
-        if (eqData) setPanelEquipmentList(eqData as PanelEquipment[]);
+        eqMap.set(ld.row_index, (eqData ?? []) as PanelEquipment[]);
 
         const { data: itemData } = await supabase
           .from('panel_items')
           .select('*')
-          .eq('layout_id', layoutData.id)
+          .eq('layout_id', ld.id)
           .order('sort_order');
+        itemMap.set(ld.row_index, (itemData ?? []) as PanelItem[]);
+      }
+      setAllEquipmentByRow(eqMap);
+      setAllItemsByRow(itemMap);
 
-        if (itemData) setPanelItemList(itemData as PanelItem[]);
-      });
-  }, [storeId]);
+      // 5. uiStore 섹션 그리드 초기화
+      initSectionGrid(gr, gc, cells, eqMap);
+    };
+
+    loadAll();
+  }, [storeId, initSectionGrid]);
 
   useEffect(() => {
     // store_ingredients + ingredients_master('물') 병렬 로딩
@@ -732,7 +811,6 @@ const GamePage = () => {
       if (data) {
         const map = new Map<string, StoreIngredient>();
         (data as StoreIngredient[]).forEach((si) => map.set(si.id, si));
-        storeIngredientsMapRef.current = map;
         useGameStore.getState().setStoreIngredientsMap(map);
 
         // 물 재료 ID Set 캐싱
@@ -765,12 +843,12 @@ const GamePage = () => {
 
   }, [storeId]);
 
-  // 장비 상태 초기화: panel_equipment 기반으로 game_equipment_state 생성
+  // 장비 상태 초기화: 전 행 panel_equipment 기반으로 game_equipment_state 생성
   useEffect(() => {
-    if (!sessionId || panelEquipmentList.length === 0) return;
+    if (!sessionId || allPanelEquipment.length === 0) return;
 
     // 물리엔진 대상 장비만 필터 (burner→wok, sink→sink)
-    const physicsEquipment = panelEquipmentList
+    const physicsEquipment = allPanelEquipment
       .map((pe) => ({ pe, physicsType: panelToPhysicsType(pe.equipment_type) }))
       .filter((item): item is { pe: PanelEquipment; physicsType: EquipmentType } => item.physicsType !== null);
 
@@ -800,7 +878,7 @@ const GamePage = () => {
         if (!error && result) {
           setEquipments(result as GameEquipmentState[]);
 
-          // panelEquipmentId → gameEquipmentStateId 매핑 구축
+          // panelEquipmentId → gameEquipmentStateId 매핑 (전 행 통합)
           const mapping = new Map<string, string>();
           for (const ges of result as GameEquipmentState[]) {
             if (ges.panel_equipment_id) {
@@ -812,14 +890,17 @@ const GamePage = () => {
           console.error('[GamePage] equipment init error:', error);
         }
       });
-  }, [sessionId, panelEquipmentList, setEquipments]);
+  }, [sessionId, allPanelEquipment, setEquipments]);
 
-  // 세션 결과 오버레이 상태
-  const [sessionResult, setSessionResult] = useState<{
-    score: number;
-    scoreEvents: GameScoreEvent[];
-  } | null>(null);
+  // 세션 결과 오버레이 상태 (useSyncExternalStore: effect 내 setState 회피)
+  const sessionResult = useSyncExternalStore(subscribeSessionResult, getSessionResultSnapshot);
   const [feedbackState, setFeedbackState] = useState<FeedbackState>('idle');
+
+  // 마운트 시 외부 스토어 초기화 (세션 재진입 대응)
+  useEffect(() => {
+    emitSessionResult(null);
+    return () => { emitSessionResult(null); };
+  }, []);
 
   // unmount 후 setState 가드
   const mountedRef = useRef(true);
@@ -985,18 +1066,6 @@ const GamePage = () => {
     }
   }, [sessionId, getRecipeName]);
 
-  const handleSessionEnd = useCallback(() => {
-    if (sessionEndTriggered.current) return;
-    sessionEndTriggered.current = true;
-
-    // 1. 즉시 점수 스냅샷으로 오버레이 등장
-    const { currentScore, scoreEvents } = useScoringStore.getState();
-    setSessionResult({ score: currentScore, scoreEvents });
-
-    // 2. 백그라운드 저장 + AI 호출 (await 안 함)
-    void persistAndFetchFeedback();
-  }, [persistAndFetchFeedback]);
-
   // 게임 자동 종료 감지
   const orders = useGameStore((s) => s.orders);
   const totalOrderCount = useGameStore((s) => s.totalOrderCount);
@@ -1008,8 +1077,18 @@ const GamePage = () => {
     const completedCount = orders.filter((o) => o.status === 'completed').length;
     if (completedCount < totalOrderCount) return;
 
-    handleSessionEnd();
-  }, [orders, totalOrderCount, handleSessionEnd]);
+    // 중복 종료 방지
+    sessionEndTriggered.current = true;
+
+    // 외부 스토어에 점수 스냅샷 발행 (React setState 미사용)
+    const { currentScore, scoreEvents } = useScoringStore.getState();
+    emitSessionResult({ score: currentScore, scoreEvents });
+
+    // 비동기 스케줄링: persistAndFetchFeedback 내부에서 setFeedbackState를 호출하므로
+    // effect 본문의 동기 호출 체인에서 분리하여 set-state-in-effect 회피
+    const fn = persistAndFetchFeedback;
+    setTimeout(() => { void fn(); }, 0);
+  }, [orders, totalOrderCount, persistAndFetchFeedback]);
 
 
 
@@ -1024,6 +1103,7 @@ const GamePage = () => {
               perspectiveDeg={panelLayout?.perspective_deg ?? 45}
               previewYOffset={panelLayout?.preview_y_offset ?? 0.5}
               backgroundImageUrl={panelLayout?.background_image_url ?? null}
+              cameraOffsetX={cameraOffsetX}
               equipment={panelEquipmentList.map((eq) => ({
                 id: eq.id,
                 panelIndex: eq.panel_number - 1,
@@ -1040,7 +1120,7 @@ const GamePage = () => {
               items={panelItemList.map((item) => {
                 let label = '';
                 if (item.item_type === 'ingredient' && item.ingredient_id) {
-                  label = storeIngredientsMapRef.current.get(item.ingredient_id)?.display_name ?? '';
+                  label = storeIngredientsMap.get(item.ingredient_id)?.display_name ?? '';
                 } else if (item.item_type === 'container' && item.container_id) {
                   label = containersMap.get(item.container_id)?.name ?? '';
                 }
@@ -1058,7 +1138,7 @@ const GamePage = () => {
                 };
               })}
               ingredientLabelsMap={new Map(
-                Array.from(storeIngredientsMapRef.current.entries()).map(([id, si]) => [id, si.display_name])
+                Array.from(storeIngredientsMap.entries()).map(([id, si]) => [id, si.display_name])
               )}
               wokContentsMap={wokContentsMap}
               placedContainers={placedContainers}
@@ -1070,6 +1150,17 @@ const GamePage = () => {
               <BillQueue getRecipeName={getRecipeName} getRecipeNaturalText={getRecipeNaturalText} />
             </GameKitchenView>
           </div>
+          {/* HUD: 미니맵 + 이동 */}
+          <MinimapHUD
+            gridRows={gridRows}
+            gridCols={gridCols}
+            cells={sectionCells}
+            currentSection={currentSection}
+          />
+          <NavigationHUD
+            movable={movableDirections}
+            onMove={(dir: MoveDirection) => moveSection(dir, allEquipmentByRow)}
+          />
           {/* HUD: 좌측 상단 (선택 표시 + 핸드바) */}
           <div className={styles.topLeftHud}>
             <SelectionDisplay selection={selection} onDeselect={deselect} />
@@ -1088,7 +1179,7 @@ const GamePage = () => {
       </div>
       <OrderSelectModal getRecipeName={getRecipeName} />
       <QuantityInputModal />
-      <RejectionPopup storeIngredientsMap={storeIngredientsMapRef.current} />
+      <RejectionPopup storeIngredientsMap={storeIngredientsMap} />
       <WokBlockedPopup />
       {sessionResult && (
         <SessionResultOverlay

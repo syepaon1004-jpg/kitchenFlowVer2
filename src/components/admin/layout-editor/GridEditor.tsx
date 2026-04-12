@@ -104,14 +104,6 @@ const GridEditor = ({
   const [mergeAnchor, setMergeAnchor] = useState<{ row: number; col: number } | null>(null);
   const [warning, setWarning] = useState<string | null>(null);
 
-  // equipmentId 변경 시 재초기화
-  useEffect(() => {
-    setGrid(resolveGrid(config, equipmentType));
-    setSelectedCellKey(null);
-    setMergeAnchor(null);
-    setWarning(null);
-  }, [equipmentId, config, equipmentType]);
-
   // 경고 자동 소멸
   useEffect(() => {
     if (!warning) return;

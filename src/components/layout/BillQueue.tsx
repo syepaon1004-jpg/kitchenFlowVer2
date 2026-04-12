@@ -23,7 +23,7 @@ export default function BillQueue({ getRecipeName, getRecipeNaturalText }: Props
     [orders],
   );
 
-  const [now, setNow] = useState(Date.now());
+  const [now, setNow] = useState(() => Date.now());
   const [openOrderId, setOpenOrderId] = useState<string | null>(null);
   const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number } | null>(null);
 

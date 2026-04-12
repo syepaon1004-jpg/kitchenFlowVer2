@@ -1,0 +1,65 @@
+/**
+ * 관리자 편집기 CSS 변수
+ * KitchenLayoutEditor 및 하위 컴포넌트에서 사용.
+ * gameVariables.css와 동일 :root에 정의하되, 관리자 전용 토큰만 포함.
+ */
+
+:root {
+  /* ── 공용 색상 토큰 (gameVariables.css와 동일, 관리자 컴포넌트에서도 사용 가능하도록) ── */
+  --color-primary: #4a90d9;
+  --color-primary-hover: #3a7bc8;
+  --color-primary-light: #e8f0fe;
+  --color-error: #d32f2f;
+
+  /* ── 폰트 크기 (gameVariables.css와 동일) ── */
+  --font-xs: 11px;
+  --font-sm: 12px;
+  --font-base: 13px;
+  --font-md: 14px;
+  --font-lg: 16px;
+
+  /* ── 관리자 공통 색상 ── */
+  --admin-text: #333;
+  --admin-text-secondary: #555;
+  --admin-text-muted: #888;
+
+  --admin-surface: #fff;
+  --admin-surface-alt: #f0f0f0;
+  --admin-surface-hover: #eee;
+
+  --admin-border: #ccc;
+  --admin-border-light: #ddd;
+  --admin-border-strong: #555;
+
+  /* ── 관리자 그리드 편집기 ── */
+  --admin-grid-cell-size: 64px;
+  --admin-grid-gap: 2px;
+  --admin-grid-cell-occupied: #3a5f3a;
+  --admin-grid-cell-empty: #2a2a2a;
+  --admin-grid-input-bg: #111;
+
+  /* ── 관리자 섹션 포커스 에디터 ── */
+  --admin-focus-sidebar-width: 180px;
+  --admin-focus-max-width: 1100px;
+  --admin-viewport-center-color: #d32f2f;
+  --admin-viewport-window-bg: rgba(25, 118, 210, 0.2);
+  --admin-viewport-window-border: rgba(25, 118, 210, 0.5);
+  --admin-error-light: #fdd;
+
+  /* ── 관리자 공통 크기 ── */
+  --admin-radius-sm: 3px;
+  --admin-radius-md: 4px;
+  --admin-radius-lg: 8px;
+  --admin-spacing-2xs: 2px;
+  --admin-spacing-xs: 4px;
+  --admin-spacing-sm: 8px;
+  --admin-spacing-md: 12px;
+  --admin-spacing-lg: 16px;
+
+  /* ── 관리자 컴포넌트 개별 크기 ── */
+  --admin-btn-padding-h: 10px;
+  --admin-icon-size: 20px;
+  --admin-input-width-sm: 40px;
+  --admin-viewport-bar-height: 24px;
+  --admin-viewport-marker-width: 2px;
+}

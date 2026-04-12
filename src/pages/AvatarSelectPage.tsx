@@ -107,6 +107,8 @@ const AvatarSelectPage = () => {
 
     setSelectingId(storeUser.id);
 
+    let finalUser = storeUser;
+
     // auth_user_id가 null이면 저장
     if (!storeUser.auth_user_id && user) {
       const { error } = await supabase
@@ -125,11 +127,11 @@ const AvatarSelectPage = () => {
       setAllUsers((prev) =>
         prev.map((u) => (u.id === storeUser.id ? updated : u)),
       );
-      storeUser = updated;
+      finalUser = updated;
     }
 
     setSelectingId(null);
-    setSelectedUser(storeUser);
+    setSelectedUser(finalUser);
 
     setShowRoleModal(true);
   };

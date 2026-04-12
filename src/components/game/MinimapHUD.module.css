@@ -1,0 +1,34 @@
+.container {
+  position: fixed;
+  top: calc(var(--game-header-height) + var(--spacing-lg));
+  right: var(--spacing-lg);
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.55);
+  border-radius: var(--equip-btn-radius);
+  padding: var(--spacing-xs);
+  display: inline-grid;
+  gap: var(--minimap-gap);
+}
+
+.cell {
+  width: var(--minimap-cell);
+  height: var(--minimap-cell);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-2xs);
+  color: var(--equip-text);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+  background: transparent;
+}
+
+.occupied {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.current {
+  background: var(--color-primary);
+  border-color: var(--color-primary-hover);
+  font-weight: 700;
+}

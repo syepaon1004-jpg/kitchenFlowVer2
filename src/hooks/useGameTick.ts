@@ -19,16 +19,17 @@ export function useGameTick() {
 
   // staleRef 패턴: equipments는 매 렌더마다 갱신, tick 함수는 stable
   const equipmentsRef = useRef(equipments);
-  equipmentsRef.current = equipments;
-
   const containerInstancesRef = useRef(containerInstances);
-  containerInstancesRef.current = containerInstances;
-
   const sessionIdRef = useRef(sessionId);
-  sessionIdRef.current = sessionId;
-
   const stirringRef = useRef(stirring_equipment_ids);
-  stirringRef.current = stirring_equipment_ids;
+
+  // ref sync — render 직후 최신 값으로 갱신
+  useEffect(() => {
+    equipmentsRef.current = equipments;
+    containerInstancesRef.current = containerInstances;
+    sessionIdRef.current = sessionId;
+    stirringRef.current = stirring_equipment_ids;
+  });
 
   useEffect(() => {
     const intervalId = setInterval(() => {

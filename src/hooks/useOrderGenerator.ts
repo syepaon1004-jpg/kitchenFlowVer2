@@ -13,10 +13,13 @@ export function useOrderGenerator() {
 
   // refs로 최신 값 참조 (인터벌 클로저 stale 방지)
   const ordersRef = useRef(orders);
-  ordersRef.current = orders;
-
   const activeRecipeIdsRef = useRef(activeRecipeIds);
-  activeRecipeIdsRef.current = activeRecipeIds;
+
+  // ref sync — render 직후 최신 값으로 갱신
+  useEffect(() => {
+    ordersRef.current = orders;
+    activeRecipeIdsRef.current = activeRecipeIds;
+  });
 
   useEffect(() => {
     if (!sessionId || activeRecipeIds.length === 0) return;

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import type { StoreUser } from '../../types/db';
 import styles from './StaffManager.module.css';
@@ -47,7 +47,7 @@ const StaffManager = ({ storeId, currentUserId }: Props) => {
   const [editRole, setEditRole] = useState<'admin' | 'staff'>('staff');
   const [editEmail, setEditEmail] = useState('');
 
-  const loadStaff = async () => {
+  const loadStaff = useCallback(async () => {
     const { data, error: queryError } = await supabase
       .from('store_users')
       .select('*')
@@ -62,10 +62,33 @@ const StaffManager = ({ storeId, currentUserId }: Props) => {
       setStaff((data ?? []) as StoreUser[]);
     }
     setLoading(false);
-  };
+  }, [storeId]);
 
   useEffect(() => {
-    loadStaff();
+    let cancelled = false;
+
+    const fetchStaff = async () => {
+      const { data, error: queryError } = await supabase
+        .from('store_users')
+        .select('*')
+        .eq('store_id', storeId)
+        .is('deleted_at', null)
+        .order('role', { ascending: true })
+        .order('name', { ascending: true });
+
+      if (cancelled) return;
+
+      if (queryError) {
+        setError('직원 목록을 불러오지 못했습니다.');
+      } else {
+        setStaff((data ?? []) as StoreUser[]);
+      }
+      setLoading(false);
+    };
+
+    fetchStaff();
+
+    return () => { cancelled = true; };
   }, [storeId]);
 
   // ── 직원 추가 (Edge Function 호출) ──

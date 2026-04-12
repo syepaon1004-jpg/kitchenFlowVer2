@@ -77,6 +77,10 @@
   --game-nav-text: #333333;
   --game-nav-size: 48px;
 
+  /* === 미니맵 === */
+  --minimap-cell: 20px;
+  --minimap-gap: 2px;
+
   /* === 장비 컴포넌트 === */
   --equip-btn-min-size: 0;
   --equip-bg: rgba(0, 0, 0, 0.2);

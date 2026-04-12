@@ -1,11 +1,11 @@
 import type { GameEquipmentState } from '../../types/db';
 import styles from './SinkComponent.module.css';
 
-interface Props {
+export interface SinkProps {
   equipmentState: GameEquipmentState;
 }
 
-export default function SinkComponent({ /* equipmentState */ }: Props) {
+export default function SinkComponent(/* props: SinkProps */) {
   return (
     <div
       className={styles.container}

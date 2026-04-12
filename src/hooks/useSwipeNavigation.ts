@@ -35,19 +35,19 @@ export function useSwipeNavigation({
   const lastSwipeTimestampRef = useRef(0);
 
   const enabledRef = useRef(enabled);
-  enabledRef.current = enabled;
-
   const onSwipeLeftRef = useRef(onSwipeLeft);
-  onSwipeLeftRef.current = onSwipeLeft;
-
   const onSwipeRightRef = useRef(onSwipeRight);
-  onSwipeRightRef.current = onSwipeRight;
-
   const onSwipeVerticalRef = useRef(onSwipeVertical);
-  onSwipeVerticalRef.current = onSwipeVertical;
-
   const cooldownMsRef = useRef(cooldownMs);
-  cooldownMsRef.current = cooldownMs;
+
+  // ref sync — render 직후 최신 값으로 갱신
+  useEffect(() => {
+    enabledRef.current = enabled;
+    onSwipeLeftRef.current = onSwipeLeft;
+    onSwipeRightRef.current = onSwipeRight;
+    onSwipeVerticalRef.current = onSwipeVertical;
+    cooldownMsRef.current = cooldownMs;
+  });
 
   useEffect(() => {
     const el = containerRef.current;

@@ -53,6 +53,13 @@
   background: var(--color-primary-hover);
 }
 
+.toolbarDivider {
+  width: 1px;
+  height: 20px;
+  background: var(--admin-border-light);
+  margin: 0 var(--admin-spacing-xs);
+}
+
 .toolbarSpacer {
   flex: 1;
 }

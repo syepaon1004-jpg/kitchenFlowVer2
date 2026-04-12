@@ -39,7 +39,7 @@ function HandIngredientChip({
         sourceLabel: `${displayName} ${inst.quantity}${unit}`,
       });
     }
-  }, [isSelected, select, deselect, inst.ingredient_id, inst.id, inst.quantity, displayName]);
+  }, [isSelected, select, deselect, inst.ingredient_id, inst.id, inst.quantity, displayName, unit]);
 
   const chipClass = `${styles.ingredientChip}${isSelected ? ` ${styles.chipSelected}` : ''}`;
 
