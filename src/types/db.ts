@@ -288,7 +288,7 @@ export interface GameAiFeedback {
 
 // ——— 패널 시스템 계층 ————————————————————————————
 
-export type PanelEquipmentType = 'drawer' | 'fold_fridge' | 'basket' | 'burner' | 'sink' | 'worktop' | 'shelf';
+export type PanelEquipmentType = 'drawer' | 'fold_fridge' | 'four_box_fridge' | 'basket' | 'burner' | 'sink' | 'worktop' | 'shelf';
 
 export interface PanelLayout {
   id: string;

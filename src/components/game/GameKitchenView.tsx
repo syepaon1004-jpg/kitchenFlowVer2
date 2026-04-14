@@ -5,6 +5,7 @@ import { useEquipmentStore } from '../../stores/equipmentStore';
 import { useGameStore } from '../../stores/gameStore';
 import { useShallow } from 'zustand/react/shallow';
 import { PLACED_CONTAINER_SIZE_VH } from '../../lib/interaction/constants';
+import { getEquipmentPositionStyle } from '../../lib/equipment-position';
 import { isGridConfig, isFoldFridgeConfig, getBindAnchor } from '../../types/game';
 import WokComponent from '../equipment/WokComponent';
 import styles from './GameKitchenView.module.css';
@@ -73,7 +74,7 @@ function resolveGrid(config: Record<string, unknown>, eqType: 'drawer' | 'basket
 // ——— 상수 ———
 
 const EQUIPMENT_COLORS: Record<PanelEquipmentType, string> = {
-  drawer: '#C0C0C0', fold_fridge: '#C0C0C0', basket: 'transparent',
+  drawer: '#C0C0C0', fold_fridge: '#C0C0C0', four_box_fridge: '#C0C0C0', basket: 'transparent',
   burner: '#888888', sink: '#6699CC', worktop: '#C0C0C0', shelf: '#8B7355',
 };
 
@@ -84,7 +85,7 @@ const STIR_DURATION = 30000;
 const STIR_INTERVAL = 100;
 
 const INITIAL_INTERACTION: EquipmentInteractionState = {
-  drawers: {}, burners: {}, baskets: {}, foldFridges: {},
+  drawers: {}, burners: {}, baskets: {}, foldFridges: {}, fourBoxFridges: {},
 };
 
 /** 장비 타입 → data-click-target 값 (shelf은 null → 부착하지 않음) */
@@ -94,6 +95,8 @@ function getEquipmentClickTarget(eqType: PanelEquipmentType): string | null {
     case 'fold_fridge':
     case 'basket':
       return 'equipment-toggle';
+    case 'four_box_fridge':
+      return null; // top/bottom face가 직접 click target 담당
     case 'burner':
       return 'burner';
     case 'worktop':
@@ -218,7 +221,7 @@ const GameKitchenView = ({
   // pointer-capture된 자손 mutation → iOS Safari pointercancel 발사로 hold 끊김 문제).
 
   // hit-test 인터랙션
-  const handleInteraction = useCallback((eqId: string, eqType: string) => {
+  const handleInteraction = useCallback((eqId: string, eqType: string, doorPart?: string) => {
     setInteractionState((prev) => {
       switch (eqType) {
         case 'drawer':
@@ -227,6 +230,13 @@ const GameKitchenView = ({
           return { ...prev, baskets: { ...prev.baskets, [eqId]: { isExpanded: !(prev.baskets[eqId]?.isExpanded) } } };
         case 'fold_fridge':
           return { ...prev, foldFridges: { ...prev.foldFridges, [eqId]: { isOpen: !(prev.foldFridges[eqId]?.isOpen) } } };
+        case 'four_box_fridge': {
+          const cur = prev.fourBoxFridges[eqId] ?? { topOpen: false, bottomOpen: false };
+          const updated = doorPart === 'top'
+            ? { ...cur, topOpen: !cur.topOpen }
+            : { ...cur, bottomOpen: !cur.bottomOpen };
+          return { ...prev, fourBoxFridges: { ...prev.fourBoxFridges, [eqId]: updated } };
+        }
         default:
           return prev;
       }
@@ -264,6 +274,12 @@ const GameKitchenView = ({
       if (eqType === 'drawer') return interactionState.drawers[eqId]?.isOpen ?? false;
       if (eqType === 'basket') return interactionState.baskets[eqId]?.isExpanded ?? false;
       if (eqType === 'fold_fridge') return interactionState.foldFridges[eqId]?.isOpen ?? false;
+      if (eqType === 'four_box_fridge') {
+        const fbState = interactionState.fourBoxFridges[eqId];
+        if (!fbState) return false;
+        const dp = el.dataset.doorPart;
+        return dp === 'top' ? fbState.topOpen : fbState.bottomOpen;
+      }
       return false;
     };
 
@@ -273,7 +289,12 @@ const GameKitchenView = ({
     for (const hit of hits) {
       const pid = hit.el.dataset.parentEquipmentId;
       const ptype = hit.el.dataset.parentEquipmentType;
-      if (pid && ptype) childParentKeys.add(`${ptype}:${pid}`);
+      if (pid && ptype) {
+        const pdp = hit.el.dataset.parentDoorPart;
+        const key = ptype === 'four_box_fridge' && pdp
+          ? `${ptype}:${pid}:${pdp}` : `${ptype}:${pid}`;
+        childParentKeys.add(key);
+      }
     }
     const filteredHits = hits.filter((hit) => {
       if (!isOpenEquipmentToggle(hit.el)) return true;
@@ -281,7 +302,10 @@ const GameKitchenView = ({
       const eqType = hit.el.dataset.equipmentType;
       if (!eqId || !eqType) return true;
       // 이 열린 toggle의 자식이 함께 잡혔다면 toggle 자체는 제외
-      return !childParentKeys.has(`${eqType}:${eqId}`);
+      const faceDoorPart = hit.el.dataset.doorPart;
+      const key = eqType === 'four_box_fridge' && faceDoorPart
+        ? `${eqType}:${eqId}:${faceDoorPart}` : `${eqType}:${eqId}`;
+      return !childParentKeys.has(key);
     });
 
     filteredHits.sort((a, b) => {
@@ -305,6 +329,12 @@ const GameKitchenView = ({
           isParentOpen = interactionState.baskets[parentEqId]?.isExpanded ?? false;
         } else if (parentEqType === 'fold_fridge') {
           isParentOpen = interactionState.foldFridges[parentEqId]?.isOpen ?? false;
+        } else if (parentEqType === 'four_box_fridge') {
+          const fbState = interactionState.fourBoxFridges[parentEqId];
+          if (fbState) {
+            const parentDoorPart = hit.el.dataset.parentDoorPart;
+            isParentOpen = parentDoorPart === 'top' ? fbState.topOpen : fbState.bottomOpen;
+          }
         }
         if (!isParentOpen) continue; // 닫혀있으면 skip
       }
@@ -322,7 +352,7 @@ const GameKitchenView = ({
         const toggleMeta = toggleMetaStr ? JSON.parse(toggleMetaStr) as Record<string, string> : {};
         const eqId = selectedHit.dataset.equipmentId ?? toggleMeta.equipmentId;
         const eqType = selectedHit.dataset.equipmentType ?? toggleMeta.equipmentType;
-        handleInteraction(eqId, eqType);
+        handleInteraction(eqId, eqType, toggleMeta.doorPart);
         // onSceneClick에도 전달 (선택 상태 관리용)
         onSceneClick?.({
           type: 'equipment-toggle',
@@ -441,9 +471,8 @@ const GameKitchenView = ({
                   } : {})}
                   style={{
                     left: `${eq.x * 100}%`,
-                    top: `${eq.y * 100}%`,
+                    ...getEquipmentPositionStyle(eq.y, eq.height),
                     width: `${eq.width * 100}%`,
-                    height: `${eq.height * 100}%`,
                   }}
                 >
                   {renderEquipment(eq, interactionState, index, ingredientLabelsMap, burnerLevelsRecord[eq.id] ?? 0, panelToStateIdMap?.get(eq.id), hasSelection, selection)}
@@ -795,6 +824,10 @@ function renderEquipment(eq: LocalEquipment, state: EquipmentInteractionState, p
     case 'burner': return <BurnerPanel stateId={stateId} fireLevel={burnerLevel} hasSelection={hasSelection} />;
     case 'basket': return renderBasket(state.baskets[eq.id]?.isExpanded ?? false, eq.id, panelIndex, eq.config, ingredientLabelsMap, selection);
     case 'fold_fridge': return renderFoldFridge(state.foldFridges[eq.id]?.isOpen ?? false, eq.id, eq.config, ingredientLabelsMap, state.baskets, selection);
+    case 'four_box_fridge': {
+      const fbState = state.fourBoxFridges[eq.id] ?? { topOpen: false, bottomOpen: false };
+      return renderFourBoxFridge(fbState.topOpen, fbState.bottomOpen, eq.id, eq.config, ingredientLabelsMap, state.baskets, selection);
+    }
     case 'sink': return <SinkArea sinkPanelId={eq.id} />;
     default: return renderSimple(eq.equipmentType);
   }
@@ -995,10 +1028,11 @@ function renderFridgeItem(
   item: FridgeInternalItem,
   idx: number,
   eqId: string,
-  level: 1 | 2,
+  level: 1 | 2 | 3 | 4,
   ingredientLabelsMap: Map<string, string>,
   basketStates: Record<string, { isExpanded: boolean }>,
   selection?: SelectionState | null,
+  doorPart?: string,
 ) {
   if (item.type === 'ingredient') {
     const label = item.ingredientId
@@ -1013,7 +1047,8 @@ function renderFridgeItem(
           'data-click-target': 'ingredient-source',
           'data-click-meta': JSON.stringify({ ingredientId: item.ingredientId }),
           'data-parent-equipment-id': eqId,
-          'data-parent-equipment-type': 'fold_fridge',
+          'data-parent-equipment-type': doorPart ? 'four_box_fridge' : 'fold_fridge',
+          ...(doorPart ? { 'data-parent-door-part': doorPart } : {}),
         } : {})}
         style={{
           position: 'absolute',
@@ -1060,7 +1095,8 @@ function renderFridgeItem(
       data-click-target="equipment-toggle"
       data-click-meta={JSON.stringify({ equipmentId: syntheticKey, equipmentType: 'basket' })}
       data-parent-equipment-id={eqId}
-      data-parent-equipment-type="fold_fridge"
+      data-parent-equipment-type={doorPart ? 'four_box_fridge' : 'fold_fridge'}
+      {...(doorPart ? { 'data-parent-door-part': doorPart } : {})}
       style={{
         position: 'absolute',
         left: `${item.x * 100}%`,
@@ -1089,7 +1125,8 @@ function renderFridgeItem(
               'data-click-target': 'ingredient-source',
               'data-click-meta': JSON.stringify({ ingredientId: cell.ingredientId }),
               'data-parent-equipment-id': eqId,
-              'data-parent-equipment-type': 'fold_fridge',
+              'data-parent-equipment-type': doorPart ? 'four_box_fridge' : 'fold_fridge',
+              ...(doorPart ? { 'data-parent-door-part': doorPart } : {}),
             } : {})}
             style={{
               left: `${cell.col * cellW * 100}%`,
@@ -1122,7 +1159,8 @@ function renderFridgeItem(
         data-click-target="equipment-toggle"
         data-click-meta={JSON.stringify({ equipmentId: syntheticKey, equipmentType: 'basket' })}
         data-parent-equipment-id={eqId}
-        data-parent-equipment-type="fold_fridge"
+        data-parent-equipment-type={doorPart ? 'four_box_fridge' : 'fold_fridge'}
+        {...(doorPart ? { 'data-parent-door-part': doorPart } : {})}
       >
         {isExpanded ? '접기' : '펼치기'}
       </button>
@@ -1164,6 +1202,90 @@ function renderFoldFridge(
         opacity: isOpen ? 0 : 1, transition: 'opacity 0.3s ease',
       }}>
         <div className={styles.eqHandleBar} style={{ top: 4 }} />
+      </div>
+    </div>
+  );
+}
+
+function renderFourBoxFridge(
+  topOpen: boolean,
+  bottomOpen: boolean,
+  eqId: string,
+  config: Record<string, unknown>,
+  ingredientLabelsMap: Map<string, string>,
+  basketStates: Record<string, { isExpanded: boolean }>,
+  selection?: SelectionState | null,
+) {
+  const parsed = isFoldFridgeConfig(config) ? config : null;
+  const panels = parsed?.panels ?? [];
+  const level1Items = panels.find((p) => p.level === 1)?.items ?? [];
+  const level2Items = panels.find((p) => p.level === 2)?.items ?? [];
+  const level3Items = panels.find((p) => p.level === 3)?.items ?? [];
+  const level4Items = panels.find((p) => p.level === 4)?.items ?? [];
+
+  return (
+    <div className={styles.fridgeContainer}>
+      {/* 하단 절반: level 1 + level 2 (독립 패널 면 2개) */}
+      <div className={styles.fourBoxFridgeHalf} style={{ bottom: 0 }}>
+        <div className={styles.fridgeInternalPanel} style={{
+          bottom: 0, left: '2%', width: '96%', height: '48%',
+          transformOrigin: 'center', transform: 'rotateX(90deg)',
+          opacity: bottomOpen ? 1 : 0, transition: 'opacity 0.3s ease',
+        }}>
+          {level1Items.map((item, idx) => renderFridgeItem(item, idx, eqId, 1, ingredientLabelsMap, basketStates, selection, 'bottom'))}
+        </div>
+        <div className={styles.fridgeInternalPanel} style={{
+          bottom: '50%', left: '2%', width: '96%', height: '48%',
+          transformOrigin: 'center', transform: 'rotateX(90deg)',
+          opacity: bottomOpen ? 1 : 0, transition: 'opacity 0.3s ease',
+        }}>
+          {level2Items.map((item, idx) => renderFridgeItem(item, idx, eqId, 2, ingredientLabelsMap, basketStates, selection, 'bottom'))}
+        </div>
+        <div
+          className={styles.fridgeFace}
+          data-click-target="equipment-toggle"
+          data-click-meta={JSON.stringify({ equipmentId: eqId, equipmentType: 'four_box_fridge', doorPart: 'bottom' })}
+          data-equipment-id={eqId}
+          data-equipment-type="four_box_fridge"
+          data-door-part="bottom"
+          style={{
+            background: EQUIPMENT_COLORS.four_box_fridge,
+            opacity: bottomOpen ? 0 : 1, transition: 'opacity 0.3s ease',
+          }}
+        >
+          <div className={styles.eqHandleBar} style={{ top: '50%', transform: 'translateY(-50%)' }} />
+        </div>
+      </div>
+      {/* 상단 절반: level 3 + level 4 (독립 패널 면 2개) */}
+      <div className={styles.fourBoxFridgeHalf} style={{ bottom: '50%' }}>
+        <div className={styles.fridgeInternalPanel} style={{
+          bottom: 0, left: '2%', width: '96%', height: '48%',
+          transformOrigin: 'center', transform: 'rotateX(90deg)',
+          opacity: topOpen ? 1 : 0, transition: 'opacity 0.3s ease',
+        }}>
+          {level3Items.map((item, idx) => renderFridgeItem(item, idx, eqId, 3, ingredientLabelsMap, basketStates, selection, 'top'))}
+        </div>
+        <div className={styles.fridgeInternalPanel} style={{
+          bottom: '50%', left: '2%', width: '96%', height: '48%',
+          transformOrigin: 'center', transform: 'rotateX(90deg)',
+          opacity: topOpen ? 1 : 0, transition: 'opacity 0.3s ease',
+        }}>
+          {level4Items.map((item, idx) => renderFridgeItem(item, idx, eqId, 4, ingredientLabelsMap, basketStates, selection, 'top'))}
+        </div>
+        <div
+          className={styles.fridgeFace}
+          data-click-target="equipment-toggle"
+          data-click-meta={JSON.stringify({ equipmentId: eqId, equipmentType: 'four_box_fridge', doorPart: 'top' })}
+          data-equipment-id={eqId}
+          data-equipment-type="four_box_fridge"
+          data-door-part="top"
+          style={{
+            background: EQUIPMENT_COLORS.four_box_fridge,
+            opacity: topOpen ? 0 : 1, transition: 'opacity 0.3s ease',
+          }}
+        >
+          <div className={styles.eqHandleBar} style={{ top: '50%', transform: 'translateY(-50%)' }} />
+        </div>
       </div>
     </div>
   );

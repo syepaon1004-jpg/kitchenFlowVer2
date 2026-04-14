@@ -69,6 +69,7 @@ function panelToPhysicsType(panelType: PanelEquipmentType): EquipmentType | null
   switch (panelType) {
     case 'burner': return 'wok';
     case 'sink': return 'sink';
+    case 'four_box_fridge': return null;
     default: return null;
   }
 }

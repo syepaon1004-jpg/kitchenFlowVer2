@@ -39,7 +39,8 @@
 }
 
 .clipContainer {
-  overflow: hidden;
+  overflow-x: clip;
+  overflow-y: visible;
   border: 1px solid var(--admin-border-light);
   border-radius: var(--admin-radius-lg);
   background: var(--admin-surface-alt);

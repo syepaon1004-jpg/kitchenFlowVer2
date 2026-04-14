@@ -56,7 +56,7 @@
   background: #fff;
   border: 1px solid #ccc;
   border-radius: 4px;
-  overflow: hidden;
+  overflow: visible;
 }
 
 /* ── 내부 아이템 ── */
@@ -74,7 +74,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
+  /* 라벨은 .fridgeItemLabel 자체에서 overflow 처리
+     (그래야 .itemActions(top:-24px)와 리사이즈 핸들이 잘리지 않는다) */
 }
 
 .fridgeItem:hover {

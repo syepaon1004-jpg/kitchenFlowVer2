@@ -102,7 +102,7 @@ const PanelScene = ({
 
   // hit-test 기반 인터랙션 (미리보기 전용)
   const handleEquipmentInteraction = useCallback(
-    (eqId: string, eqType: string) => {
+    (eqId: string, eqType: string, doorPart?: string) => {
       switch (eqType) {
         case 'drawer':
           onInteractionChange((prev) => ({
@@ -131,6 +131,15 @@ const PanelScene = ({
             foldFridges: { ...prev.foldFridges, [eqId]: { isOpen: !(prev.foldFridges[eqId]?.isOpen) } },
           }));
           break;
+        case 'four_box_fridge':
+          onInteractionChange((prev) => {
+            const cur = prev.fourBoxFridges[eqId] ?? { topOpen: false, bottomOpen: false };
+            const updated = doorPart === 'top'
+              ? { ...cur, topOpen: !cur.topOpen }
+              : { ...cur, bottomOpen: !cur.bottomOpen };
+            return { ...prev, fourBoxFridges: { ...prev.fourBoxFridges, [eqId]: updated } };
+          });
+          break;
       }
     },
     [onInteractionChange],
@@ -150,28 +159,42 @@ const PanelScene = ({
       // 서랍 face/inner는 translateZ로 투영 위치가 변하므로 자식(face/inner) 우선,
       // 없으면 컨테이너로 폴백한다. 가장 작은 면적의 적중을 우선해 가장 구체적인 레이어를 선택.
       const eqElements = sceneEl.querySelectorAll('[data-equipment-id]');
-      type Hit = { id: string; type: string; area: number; isLayer: boolean };
+      type Hit = { id: string; type: string; area: number; isLayer: boolean; doorPart?: string; parentEqId?: string; parentEqType?: string; parentDoorPart?: string };
       const hits: Hit[] = [];
       for (const el of eqElements) {
         const rect = el.getBoundingClientRect();
         if (clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom) {
-          const id = (el as HTMLElement).dataset.equipmentId!;
-          const type = (el as HTMLElement).dataset.equipmentType!;
-          const isLayer = !!(el as HTMLElement).dataset.eqHitLayer;
-          hits.push({ id, type, area: rect.width * rect.height, isLayer });
+          const htmlEl = el as HTMLElement;
+          const id = htmlEl.dataset.equipmentId!;
+          const type = htmlEl.dataset.equipmentType!;
+          const isLayer = !!htmlEl.dataset.eqHitLayer;
+          const doorPart = htmlEl.dataset.doorPart;
+          const parentEqId = htmlEl.dataset.parentEquipmentId;
+          const parentEqType = htmlEl.dataset.parentEquipmentType;
+          const parentDoorPart = htmlEl.dataset.parentDoorPart;
+          hits.push({ id, type, area: rect.width * rect.height, isLayer, doorPart, parentEqId, parentEqType, parentDoorPart });
         }
       }
       if (hits.length > 0) {
+        // four_box_fridge parent-open 필터: 닫힌 반쪽 내부 child 제거
+        const filtered = hits.filter((h) => {
+          if (!h.parentEqId || h.parentEqType !== 'four_box_fridge') return true;
+          const fbState = interactionState.fourBoxFridges[h.parentEqId];
+          if (!fbState) return false;
+          return h.parentDoorPart === 'top' ? fbState.topOpen : fbState.bottomOpen;
+        });
         // face/inner 레이어 우선, 없으면 컨테이너. 동일 카테고리에선 면적 작은 순.
-        hits.sort((a, b) => {
+        filtered.sort((a, b) => {
           if (a.isLayer !== b.isLayer) return a.isLayer ? -1 : 1;
           return a.area - b.area;
         });
-        const top = hits[0];
-        e.preventDefault();
-        e.stopPropagation();
-        handleEquipmentInteraction(top.id, top.type);
-        return;
+        if (filtered.length > 0) {
+          const top = filtered[0];
+          e.preventDefault();
+          e.stopPropagation();
+          handleEquipmentInteraction(top.id, top.type, top.doorPart);
+          return;
+        }
       }
 
       // 장비 미히트 → Y 드래그
@@ -193,7 +216,7 @@ const PanelScene = ({
       document.addEventListener('mousemove', onMove);
       document.addEventListener('mouseup', onUp);
     },
-    [isPreview, handleEquipmentInteraction, onPreviewYOffsetChange, previewYOffset, containerHeight],
+    [isPreview, handleEquipmentInteraction, onPreviewYOffsetChange, previewYOffset, containerHeight, interactionState],
   );
 
   const handlePanelClick = (index: number) => (e: React.MouseEvent) => {

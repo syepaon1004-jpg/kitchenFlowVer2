@@ -1,6 +1,7 @@
 import { useCallback, useRef } from 'react';
 import type { LocalEquipment, PanelEquipmentType } from './types';
 import { EQUIPMENT_COLORS, EQUIPMENT_LABELS } from './types';
+import { getEquipmentPositionStyle, normalizeOversizedY } from '../../../lib/equipment-position';
 import styles from '../KitchenLayoutEditor.module.css';
 
 const SNAP_THRESHOLD_PX = 10;
@@ -43,6 +44,20 @@ function renderEquipmentVisual(type: PanelEquipmentType) {
           <div style={{ position: 'absolute', bottom: 0, left: '5%', width: '90%', height: '45%', border: '1px dashed #fff', opacity: 0.4, boxSizing: 'border-box' }} />
           <div style={{ position: 'absolute', bottom: '50%', left: '5%', width: '90%', height: '45%', border: '1px dashed #fff', opacity: 0.4, boxSizing: 'border-box' }} />
           <div className={styles.eqHandleBar} style={{ top: 4 }} />
+        </>
+      );
+    case 'four_box_fridge':
+      return (
+        <>
+          <div style={{ ...base, background: color }} />
+          {/* 세로 4단 구획 */}
+          <div style={{ position: 'absolute', left: '5%', bottom: 0, width: '90%', height: '23%', border: '1px dashed #fff', opacity: 0.4, boxSizing: 'border-box' }} />
+          <div style={{ position: 'absolute', left: '5%', bottom: '25%', width: '90%', height: '23%', border: '1px dashed #fff', opacity: 0.4, boxSizing: 'border-box' }} />
+          <div style={{ position: 'absolute', left: '5%', bottom: '50%', width: '90%', height: '23%', border: '1px dashed #fff', opacity: 0.4, boxSizing: 'border-box' }} />
+          <div style={{ position: 'absolute', left: '5%', bottom: '75%', width: '90%', height: '23%', border: '1px dashed #fff', opacity: 0.4, boxSizing: 'border-box' }} />
+          {/* 상/하 핸들바 (2 doors) */}
+          <div className={styles.eqHandleBar} style={{ top: '25%', transform: 'translateY(-50%)' }} />
+          <div className={styles.eqHandleBar} style={{ top: '75%', transform: 'translateY(-50%)' }} />
         </>
       );
     case 'basket':
@@ -148,7 +163,7 @@ const EquipmentOnPanel = ({
 
         // 클램프 0~1 범위
         newX = Math.max(0, Math.min(1 - eq.width, newX));
-        newY = Math.max(0, Math.min(1 - eq.height, newY));
+        newY = eq.height > 1 ? 0 : Math.max(0, Math.min(1 - eq.height, newY));
 
         onEquipmentChange(eq.id, { x: newX, y: newY });
       };
@@ -213,7 +228,7 @@ const EquipmentOnPanel = ({
 
         // 클램프
         x = Math.max(0, Math.min(1 - width, x));
-        y = Math.max(0, Math.min(1 - height, y));
+        y = normalizeOversizedY(Math.max(0, Math.min(1 - height, y)), height);
 
         onEquipmentChange(eq.id, { x, y, width, height });
       };
@@ -241,9 +256,8 @@ const EquipmentOnPanel = ({
             className={`${styles.equipmentItem} ${isSelected ? styles.equipmentSelected : ''}`}
             style={{
               left: `${eq.x * 100}%`,
-              top: `${eq.y * 100}%`,
+              ...getEquipmentPositionStyle(eq.y, eq.height),
               width: `${eq.width * 100}%`,
-              height: `${eq.height * 100}%`,
             }}
             onMouseDown={handleMoveStart(eq)}
             onClick={(e) => {

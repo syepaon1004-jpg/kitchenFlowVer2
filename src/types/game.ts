@@ -48,6 +48,7 @@ export interface EquipmentInteractionState {
   burners: Record<string, { fireLevel: 0 | 1 | 2 }>;
   baskets: Record<string, { isExpanded: boolean }>;
   foldFridges: Record<string, { isOpen: boolean }>;
+  fourBoxFridges: Record<string, { topOpen: boolean; bottomOpen: boolean }>;
 }
 
 // ——— 장비 config 상세 타입 ————————————————————————————
@@ -89,7 +90,7 @@ export interface FridgeInternalItem {
 }
 
 export interface FridgePanel {
-  level: 1 | 2;
+  level: 1 | 2 | 3 | 4;
   items: FridgeInternalItem[];
 }
 
@@ -137,7 +138,7 @@ export function isFoldFridgeConfig(val: unknown): val is FoldFridgeConfig {
   return val.panels.every(
     (p: unknown) =>
       isRecord(p) &&
-      (p.level === 1 || p.level === 2) &&
+      (p.level === 1 || p.level === 2 || p.level === 3 || p.level === 4) &&
       Array.isArray(p.items),
   );
 }

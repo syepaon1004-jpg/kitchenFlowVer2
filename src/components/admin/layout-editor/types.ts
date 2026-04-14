@@ -1,5 +1,6 @@
 import type { PanelLayout, PanelEquipment, PanelEquipmentType, PanelItem, PanelItemType } from '../../../types/db';
 import type { PanelMode } from '../../../types/game';
+import { normalizeOversizedY, clampEquipmentHeight } from '../../../lib/equipment-position';
 
 // Re-export for convenience within layout-editor components
 export type { PanelLayout, PanelEquipment, PanelEquipmentType, PanelMode, PanelItem, PanelItemType };
@@ -39,6 +40,7 @@ export interface LocalEquipment {
 export const EQUIPMENT_DEFAULTS: Record<PanelEquipmentType, { width: number; height: number }> = {
   drawer: { width: 0.25, height: 0.4 },
   fold_fridge: { width: 0.25, height: 0.5 },
+  four_box_fridge: { width: 0.25, height: 1.0 },
   basket: { width: 0.15, height: 0.3 },
   burner: { width: 0.15, height: 0.3 },
   sink: { width: 0.2, height: 0.35 },
@@ -50,6 +52,7 @@ export const EQUIPMENT_DEFAULTS: Record<PanelEquipmentType, { width: number; hei
 export const EQUIPMENT_LABELS: Record<PanelEquipmentType, string> = {
   drawer: '서랍',
   fold_fridge: '폴드 냉장고',
+  four_box_fridge: '4호박스',
   basket: '바구니',
   burner: '화구',
   sink: '씽크대',
@@ -61,6 +64,7 @@ export const EQUIPMENT_LABELS: Record<PanelEquipmentType, string> = {
 export const EQUIPMENT_COLORS: Record<PanelEquipmentType, string> = {
   drawer: '#C0C0C0',
   fold_fridge: '#C0C0C0',
+  four_box_fridge: '#C0C0C0',
   basket: 'transparent',
   burner: '#888888',
   sink: '#6699CC',
@@ -75,7 +79,7 @@ export function dbToLocalEquipment(eq: PanelEquipment): LocalEquipment {
     panelIndex: eq.panel_number - 1, // DB: 1,2,3 → 내부: 0,1,2
     equipmentType: eq.equipment_type,
     x: eq.x,
-    y: eq.y,
+    y: normalizeOversizedY(eq.y, eq.height),
     width: eq.width,
     height: eq.height,
     equipmentIndex: eq.equipment_index,
@@ -156,9 +160,9 @@ export function localToDbPayload(
     panel_number: eq.panelIndex + 1, // 내부: 0,1,2 → DB: 1,2,3
     equipment_type: eq.equipmentType,
     x: clamp01(eq.x),
-    y: clamp01(eq.y),
+    y: clamp01(normalizeOversizedY(eq.y, eq.height)),
     width: clampSize(eq.width),
-    height: clampSize(eq.height),
+    height: clampEquipmentHeight(eq.height),
     equipment_index: eq.equipmentIndex,
     config: eq.config,
     placeable: eq.placeable,

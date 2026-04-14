@@ -4,6 +4,7 @@ import type { EquipmentInteractionState, GridCell, GridConfig, FridgeInternalIte
 import { isGridConfig, isFoldFridgeConfig, getBindAnchor } from '../../../types/game';
 import type { StoreIngredient } from '../../../types/db';
 import { EQUIPMENT_COLORS, EQUIPMENT_LABELS } from './types';
+import { getEquipmentPositionStyle } from '../../../lib/equipment-position';
 import styles from '../KitchenLayoutEditor.module.css';
 
 // ——— 그리드 유틸 (admin/game import 공유 금지이므로 복제) ———
@@ -51,9 +52,8 @@ const PreviewEquipment = ({ equipment, panelIndex, interactionState, ingredients
           data-equipment-type={eq.equipmentType}
           style={{
             left: `${eq.x * 100}%`,
-            top: `${eq.y * 100}%`,
+            ...getEquipmentPositionStyle(eq.y, eq.height),
             width: `${eq.width * 100}%`,
-            height: `${eq.height * 100}%`,
           }}
         >
           {renderPreviewVisual(eq, interactionState, panelIndex, ingredients)}
@@ -88,6 +88,10 @@ function renderPreviewVisual(eq: LocalEquipment, state: EquipmentInteractionStat
       return renderBasket(state.baskets[eq.id]?.isExpanded ?? false, panelIndex, eq.config, ingredients);
     case 'fold_fridge':
       return renderFoldFridge(state.foldFridges[eq.id]?.isOpen ?? false, eq.id, eq.config, ingredients, state.baskets);
+    case 'four_box_fridge': {
+      const fbState = state.fourBoxFridges[eq.id] ?? { topOpen: false, bottomOpen: false };
+      return renderFourBoxFridge(fbState.topOpen, fbState.bottomOpen, eq.id, eq.config, ingredients, state.baskets);
+    }
     case 'sink':
       return renderSink();
     default:
@@ -297,14 +301,15 @@ function renderBasket(isExpanded: boolean, panelIndex: number, config: Record<st
   );
 }
 
-/** 폴드냉장고 내부 아이템 1개 렌더링 (재료 또는 바구니) */
+/** 냉장고 내부 아이템 1개 렌더링 (재료 또는 바구니) */
 function renderFridgeItem(
   item: FridgeInternalItem,
   idx: number,
   eqId: string,
-  level: 1 | 2,
+  level: 1 | 2 | 3 | 4,
   ingredients: StoreIngredient[],
   basketStates: Record<string, { isExpanded: boolean }>,
+  parentAttrs?: Record<string, string>,
 ) {
   if (item.type === 'ingredient') {
     const label = item.ingredientId
@@ -355,6 +360,7 @@ function renderFridgeItem(
       key={`bsk-${idx}`}
       data-equipment-id={syntheticKey}
       data-equipment-type="basket"
+      {...(parentAttrs ?? {})}
       style={{
         position: 'absolute',
         left: `${item.x * 100}%`,
@@ -469,6 +475,111 @@ function renderFoldFridge(
       >
         <div className={styles.eqHandleBar} style={{ top: 4 }} />
         <span className={styles.eqTypeLabel}>{EQUIPMENT_LABELS.fold_fridge}</span>
+      </div>
+    </div>
+  );
+}
+
+/** 4호박스: 상/하 독립 도어 + 내부 패널 재사용 */
+function renderFourBoxFridge(
+  topOpen: boolean,
+  bottomOpen: boolean,
+  eqId: string,
+  config: Record<string, unknown>,
+  ingredients: StoreIngredient[],
+  basketStates: Record<string, { isExpanded: boolean }>,
+) {
+  const parsed = isFoldFridgeConfig(config) ? config : null;
+  const panels = parsed?.panels ?? [];
+  const level1Items = panels.find((p) => p.level === 1)?.items ?? [];
+  const level2Items = panels.find((p) => p.level === 2)?.items ?? [];
+  const level3Items = panels.find((p) => p.level === 3)?.items ?? [];
+  const level4Items = panels.find((p) => p.level === 4)?.items ?? [];
+
+  const topParentAttrs = {
+    'data-parent-equipment-id': eqId,
+    'data-parent-equipment-type': 'four_box_fridge',
+    'data-parent-door-part': 'top',
+  };
+  const bottomParentAttrs = {
+    'data-parent-equipment-id': eqId,
+    'data-parent-equipment-type': 'four_box_fridge',
+    'data-parent-door-part': 'bottom',
+  };
+
+  return (
+    <div className={styles.fridgeContainer}>
+      {/* 하단 절반: level 1 + level 2 (독립 패널 면 2개) */}
+      <div style={{ position: 'absolute', left: 0, bottom: 0, width: '100%', height: '50%', transformStyle: 'preserve-3d' }}>
+        <div
+          className={styles.fridgeInternalPanel}
+          style={{
+            bottom: 0, left: '2%', width: '96%', height: '48%',
+            transformOrigin: 'center', transform: 'rotateX(90deg)',
+            opacity: bottomOpen ? 1 : 0, transition: 'opacity 0.3s ease',
+          }}
+        >
+          {level1Items.map((item, idx) => renderFridgeItem(item, idx, eqId, 1, ingredients, basketStates, bottomParentAttrs))}
+        </div>
+        <div
+          className={styles.fridgeInternalPanel}
+          style={{
+            bottom: '50%', left: '2%', width: '96%', height: '48%',
+            transformOrigin: 'center', transform: 'rotateX(90deg)',
+            opacity: bottomOpen ? 1 : 0, transition: 'opacity 0.3s ease',
+          }}
+        >
+          {level2Items.map((item, idx) => renderFridgeItem(item, idx, eqId, 2, ingredients, basketStates, bottomParentAttrs))}
+        </div>
+        {/* 하단 face */}
+        <div
+          className={styles.fridgeFace}
+          data-equipment-id={eqId}
+          data-equipment-type="four_box_fridge"
+          data-door-part="bottom"
+          style={{
+            background: EQUIPMENT_COLORS.four_box_fridge,
+            opacity: bottomOpen ? 0 : 1, transition: 'opacity 0.3s ease',
+          }}
+        >
+          <div className={styles.eqHandleBar} style={{ top: '50%', transform: 'translateY(-50%)' }} />
+        </div>
+      </div>
+      {/* 상단 절반: level 3 + level 4 (독립 패널 면 2개) */}
+      <div style={{ position: 'absolute', left: 0, bottom: '50%', width: '100%', height: '50%', transformStyle: 'preserve-3d' }}>
+        <div
+          className={styles.fridgeInternalPanel}
+          style={{
+            bottom: 0, left: '2%', width: '96%', height: '48%',
+            transformOrigin: 'center', transform: 'rotateX(90deg)',
+            opacity: topOpen ? 1 : 0, transition: 'opacity 0.3s ease',
+          }}
+        >
+          {level3Items.map((item, idx) => renderFridgeItem(item, idx, eqId, 3, ingredients, basketStates, topParentAttrs))}
+        </div>
+        <div
+          className={styles.fridgeInternalPanel}
+          style={{
+            bottom: '50%', left: '2%', width: '96%', height: '48%',
+            transformOrigin: 'center', transform: 'rotateX(90deg)',
+            opacity: topOpen ? 1 : 0, transition: 'opacity 0.3s ease',
+          }}
+        >
+          {level4Items.map((item, idx) => renderFridgeItem(item, idx, eqId, 4, ingredients, basketStates, topParentAttrs))}
+        </div>
+        {/* 상단 face */}
+        <div
+          className={styles.fridgeFace}
+          data-equipment-id={eqId}
+          data-equipment-type="four_box_fridge"
+          data-door-part="top"
+          style={{
+            background: EQUIPMENT_COLORS.four_box_fridge,
+            opacity: topOpen ? 0 : 1, transition: 'opacity 0.3s ease',
+          }}
+        >
+          <div className={styles.eqHandleBar} style={{ top: '50%', transform: 'translateY(-50%)' }} />
+        </div>
       </div>
     </div>
   );

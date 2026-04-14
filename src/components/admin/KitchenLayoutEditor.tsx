@@ -16,6 +16,7 @@ import {
   dbToLocalItem,
   localItemToDbPayload,
 } from './layout-editor/types';
+import { normalizeOversizedY } from '../../lib/equipment-position';
 import LayoutToolbar from './layout-editor/LayoutToolbar';
 import PanelEditor from './layout-editor/PanelEditor';
 import { HANDLE_TOTAL_HEIGHT } from './layout-editor/PanelScene';
@@ -27,7 +28,7 @@ import SectionFocusEditor from './layout-editor/SectionFocusEditor';
 import '../../styles/adminVariables.css';
 import styles from './KitchenLayoutEditor.module.css';
 
-const INITIAL_INTERACTION: EquipmentInteractionState = { drawers: {}, burners: {}, baskets: {}, foldFridges: {} };
+const INITIAL_INTERACTION: EquipmentInteractionState = { drawers: {}, burners: {}, baskets: {}, foldFridges: {}, fourBoxFridges: {} };
 
 /** 행별 로컬 데이터 */
 interface RowData {
@@ -385,7 +386,7 @@ const KitchenLayoutEditor = ({ storeId, ingredients, containers }: Props) => {
         panelIndex: targetPanel,
         equipmentType: type,
         x: Math.max(0, 0.5 - defaults.width / 2),
-        y: Math.max(0, 0.5 - defaults.height / 2),
+        y: normalizeOversizedY(Math.max(0, 0.5 - defaults.height / 2), defaults.height),
         width: defaults.width,
         height: defaults.height,
         equipmentIndex: nextIndex,
@@ -447,7 +448,7 @@ const KitchenLayoutEditor = ({ storeId, ingredients, containers }: Props) => {
           ...source,
           id: crypto.randomUUID(),
           x: Math.min(1 - source.width, source.x + 0.05),
-          y: Math.min(1 - source.height, source.y + 0.05),
+          y: normalizeOversizedY(Math.min(1 - source.height, source.y + 0.05), source.height),
           equipmentIndex: nextIndex,
           sortOrder: rd.equipment.length,
         };
@@ -758,7 +759,7 @@ const KitchenLayoutEditor = ({ storeId, ingredients, containers }: Props) => {
   const fridgeEditTarget = (() => {
     if (editorView !== 'row' || mode !== 'edit' || !selectedEquipmentId) return null;
     const eq = localEquipment.find((e) => e.id === selectedEquipmentId);
-    if (!eq || eq.equipmentType !== 'fold_fridge') return null;
+    if (!eq || (eq.equipmentType !== 'fold_fridge' && eq.equipmentType !== 'four_box_fridge')) return null;
     return eq;
   })();
 
@@ -891,6 +892,7 @@ const KitchenLayoutEditor = ({ storeId, ingredients, containers }: Props) => {
               {fridgeEditTarget && (
                 <FridgeInternalEditor
                   equipmentId={fridgeEditTarget.id}
+                  equipmentType={fridgeEditTarget.equipmentType}
                   config={fridgeEditTarget.config}
                   ingredients={ingredients}
                   onConfigChange={(id, newConfig) => handleEquipmentChange(id, { config: newConfig })}

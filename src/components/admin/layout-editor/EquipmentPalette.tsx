@@ -4,7 +4,7 @@ import { EQUIPMENT_LABELS, EQUIPMENT_COLORS } from './types';
 import styles from '../KitchenLayoutEditor.module.css';
 
 const EQUIPMENT_TYPES: PanelEquipmentType[] = [
-  'drawer', 'fold_fridge', 'basket', 'burner', 'sink', 'worktop', 'shelf',
+  'drawer', 'fold_fridge', 'four_box_fridge', 'basket', 'burner', 'sink', 'worktop', 'shelf',
 ];
 
 interface Props {

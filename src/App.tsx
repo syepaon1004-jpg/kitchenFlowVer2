@@ -9,6 +9,7 @@ function App() {
     return () => unsubscribe();
   }, []);
 
+
   return <RouterProvider router={router} />;
 }
 

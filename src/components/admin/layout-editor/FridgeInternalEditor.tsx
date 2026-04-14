@@ -11,18 +11,27 @@ const SNAP_THRESHOLD_PX = 10;
 const MIN_SIZE = 0.05;
 const DEFAULT_ITEM_SIZE = 0.3;
 
-const DEFAULT_CONFIG: FoldFridgeConfig = {
+const DEFAULT_CONFIG_FOLD: FoldFridgeConfig = {
   panels: [
     { level: 1, items: [] },
     { level: 2, items: [] },
   ],
 };
 
+const DEFAULT_CONFIG_FOUR_BOX: FoldFridgeConfig = {
+  panels: [
+    { level: 1, items: [] },
+    { level: 2, items: [] },
+    { level: 3, items: [] },
+    { level: 4, items: [] },
+  ],
+};
+
 // ——— 유틸 ———
 
-function resolveConfig(config: Record<string, unknown>): FoldFridgeConfig {
+function resolveConfig(config: Record<string, unknown>, equipmentType?: string): FoldFridgeConfig {
   if (isFoldFridgeConfig(config)) return config;
-  return DEFAULT_CONFIG;
+  return equipmentType === 'four_box_fridge' ? DEFAULT_CONFIG_FOUR_BOX : DEFAULT_CONFIG_FOLD;
 }
 
 function snapValue(val: number, targets: number[], thresholdRatio: number): number {
@@ -48,6 +57,7 @@ function getSnapTargets(items: FridgeInternalItem[], excludeIndex: number): { x:
 
 interface FridgeInternalEditorProps {
   equipmentId: string;
+  equipmentType?: string;
   config: Record<string, unknown>;
   ingredients: StoreIngredient[];
   onConfigChange: (id: string, newConfig: Record<string, unknown>) => void;
@@ -55,25 +65,27 @@ interface FridgeInternalEditorProps {
 
 // ——— 컴포넌트 ———
 
+type FridgeLevel = 1 | 2 | 3 | 4;
 type Corner = 'nw' | 'ne' | 'sw' | 'se';
 
 const FridgeInternalEditor = ({
   equipmentId,
+  equipmentType,
   config,
   ingredients,
   onConfigChange,
 }: FridgeInternalEditorProps) => {
-  const [fridgeConfig, setFridgeConfig] = useState<FoldFridgeConfig>(() => resolveConfig(config));
+  const [fridgeConfig, setFridgeConfig] = useState<FoldFridgeConfig>(() => resolveConfig(config, equipmentType));
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [selectedBasketKey, setSelectedBasketKey] = useState<string | null>(null);
 
-  const panelRefs = useRef<Record<number, HTMLDivElement | null>>({ 1: null, 2: null });
+  const panelRefs = useRef<Record<number, HTMLDivElement | null>>({ 1: null, 2: null, 3: null, 4: null });
 
   // equipmentId 변경 = 다른 냉장고 선택 → 전체 초기화
   // config은 의존성에서 제거: emitChange가 이미 setFridgeConfig로 로컬 반영하므로,
   // 외부 config 변경(DB 로��)은 equipmentId 변경과 함께 발생하여 여기서 처리됨.
   useEffect(() => {
-    setFridgeConfig(resolveConfig(config));
+    setFridgeConfig(resolveConfig(config, equipmentType));
     setSelectedItemId(null);
     setSelectedBasketKey(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -92,17 +104,18 @@ const FridgeInternalEditor = ({
   // ——— 패널 헬퍼 ———
 
   const getPanelByLevel = useCallback(
-    (level: 1 | 2): FridgePanel => {
+    (level: FridgeLevel): FridgePanel => {
       return fridgeConfig.panels.find((p) => p.level === level) ?? { level, items: [] };
     },
     [fridgeConfig],
   );
 
   const updatePanel = useCallback(
-    (level: 1 | 2, newItems: FridgeInternalItem[]) => {
-      const newPanels = fridgeConfig.panels.map((p) =>
-        p.level === level ? { ...p, items: newItems } : p,
-      );
+    (level: FridgeLevel, newItems: FridgeInternalItem[]) => {
+      const exists = fridgeConfig.panels.some((p) => p.level === level);
+      const newPanels = exists
+        ? fridgeConfig.panels.map((p) => p.level === level ? { ...p, items: newItems } : p)
+        : [...fridgeConfig.panels, { level, items: newItems }];
       emitChange({ panels: newPanels });
     },
     [fridgeConfig, emitChange],
@@ -111,7 +124,7 @@ const FridgeInternalEditor = ({
   // ——— 아이템 추가 ———
 
   const handleAddItem = useCallback(
-    (level: 1 | 2, type: 'ingredient' | 'basket') => {
+    (level: FridgeLevel, type: 'ingredient' | 'basket') => {
       const panel = getPanelByLevel(level);
       const newItem: FridgeInternalItem = {
         type,
@@ -130,7 +143,7 @@ const FridgeInternalEditor = ({
   // ——— 아이템 삭제 ———
 
   const handleDeleteItem = useCallback(
-    (level: 1 | 2, index: number) => {
+    (level: FridgeLevel, index: number) => {
       const panel = getPanelByLevel(level);
       const newItems = panel.items.filter((_, i) => i !== index);
       // 삭제 시 선택 상태 초기화 (인덱스 시프트 방지)
@@ -141,10 +154,33 @@ const FridgeInternalEditor = ({
     [getPanelByLevel, updatePanel],
   );
 
+  // ——— 아이템 복제 ———
+
+  const handleDuplicateItem = useCallback(
+    (level: FridgeLevel, index: number) => {
+      const panel = getPanelByLevel(level);
+      const source = panel.items[index];
+      if (!source) return;
+      const clone: FridgeInternalItem = {
+        ...source,
+        x: Math.min(1 - source.width, source.x + 0.05),
+        y: Math.min(1 - source.height, source.y + 0.05),
+        basketConfig: source.basketConfig
+          ? (JSON.parse(JSON.stringify(source.basketConfig)) as typeof source.basketConfig)
+          : null,
+      };
+      const newItems = [...panel.items, clone];
+      updatePanel(level, newItems);
+      setSelectedItemId(`${level}-${newItems.length - 1}`);
+      setSelectedBasketKey(null);
+    },
+    [getPanelByLevel, updatePanel],
+  );
+
   // ——— 아이템 변경 (이동/리사이즈/FK) ———
 
   const handleItemUpdate = useCallback(
-    (level: 1 | 2, index: number, updates: Partial<FridgeInternalItem>) => {
+    (level: FridgeLevel, index: number, updates: Partial<FridgeInternalItem>) => {
       const panel = getPanelByLevel(level);
       const newItems = panel.items.map((item, i) =>
         i === index ? { ...item, ...updates } : item,
@@ -157,7 +193,7 @@ const FridgeInternalEditor = ({
   // ——— 드래그 이동 ———
 
   const handleMoveStart = useCallback(
-    (level: 1 | 2, index: number, item: FridgeInternalItem) => (e: React.MouseEvent) => {
+    (level: FridgeLevel, index: number, item: FridgeInternalItem) => (e: React.MouseEvent) => {
       e.stopPropagation();
       e.preventDefault();
       const key = `${level}-${index}`;
@@ -213,7 +249,7 @@ const FridgeInternalEditor = ({
   // ——— 리사이즈 ———
 
   const handleResizeStart = useCallback(
-    (level: 1 | 2, index: number, item: FridgeInternalItem, corner: Corner) => (e: React.MouseEvent) => {
+    (level: FridgeLevel, index: number, item: FridgeInternalItem, corner: Corner) => (e: React.MouseEvent) => {
       e.stopPropagation();
       e.preventDefault();
 
@@ -283,7 +319,7 @@ const FridgeInternalEditor = ({
   // ——— FK 연결 ———
 
   const handleIngredientChange = useCallback(
-    (level: 1 | 2, index: number, ingredientId: string | null) => {
+    (level: FridgeLevel, index: number, ingredientId: string | null) => {
       handleItemUpdate(level, index, { ingredientId });
     },
     [handleItemUpdate],
@@ -295,7 +331,7 @@ const FridgeInternalEditor = ({
     (_id: string, newBasketConfig: Record<string, unknown>) => {
       if (!selectedBasketKey) return;
       const [levelStr, indexStr] = selectedBasketKey.split('-');
-      const level = Number(levelStr) as 1 | 2;
+      const level = Number(levelStr) as FridgeLevel;
       const index = Number(indexStr);
       handleItemUpdate(level, index, { basketConfig: newBasketConfig as unknown as FridgeInternalItem['basketConfig'] });
     },
@@ -307,7 +343,7 @@ const FridgeInternalEditor = ({
   const selectedInfo = (() => {
     if (!selectedItemId) return null;
     const [levelStr, indexStr] = selectedItemId.split('-');
-    const level = Number(levelStr) as 1 | 2;
+    const level = Number(levelStr) as FridgeLevel;
     const index = Number(indexStr);
     const panel = getPanelByLevel(level);
     if (index < 0 || index >= panel.items.length) return null;
@@ -319,7 +355,7 @@ const FridgeInternalEditor = ({
   const basketEditInfo = (() => {
     if (!selectedBasketKey) return null;
     const [levelStr, indexStr] = selectedBasketKey.split('-');
-    const level = Number(levelStr) as 1 | 2;
+    const level = Number(levelStr) as FridgeLevel;
     const index = Number(indexStr);
     const panel = getPanelByLevel(level);
     if (index < 0 || index >= panel.items.length) return null;
@@ -343,7 +379,7 @@ const FridgeInternalEditor = ({
 
   // ——— 패널 렌더링 ———
 
-  const renderPanel = (level: 1 | 2) => {
+  const renderPanel = (level: FridgeLevel) => {
     const panel = getPanelByLevel(level);
 
     return (
@@ -402,6 +438,13 @@ const FridgeInternalEditor = ({
                     ))}
                     <div className={styles.itemActions}>
                       <button
+                        className={styles.actionBtn}
+                        onClick={(e) => { e.stopPropagation(); handleDuplicateItem(level, index); }}
+                        title="복제"
+                      >
+                        ⧉
+                      </button>
+                      <button
                         className={`${styles.actionBtn} ${styles.actionBtnDanger}`}
                         onClick={(e) => { e.stopPropagation(); handleDeleteItem(level, index); }}
                         title="삭제"
@@ -423,10 +466,21 @@ const FridgeInternalEditor = ({
 
   return (
     <div className={styles.root}>
-      <h3 className={styles.title}>폴드냉장고 내부 편집</h3>
+      <h3 className={styles.title}>{equipmentType === 'four_box_fridge' ? '4호박스' : '폴드냉장고'} 내부 편집</h3>
 
-      {renderPanel(2)}
-      {renderPanel(1)}
+      {equipmentType === 'four_box_fridge' ? (
+        <>
+          {renderPanel(4)}
+          {renderPanel(3)}
+          {renderPanel(2)}
+          {renderPanel(1)}
+        </>
+      ) : (
+        <>
+          {renderPanel(2)}
+          {renderPanel(1)}
+        </>
+      )}
 
       {/* 선택된 아이템 상세 */}
       {selectedInfo && selectedInfo.item.type === 'ingredient' && (
