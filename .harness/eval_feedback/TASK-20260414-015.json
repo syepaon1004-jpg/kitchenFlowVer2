@@ -1,0 +1,14 @@
+{
+  "task_id": "TASK-20260414-015",
+  "result": "approved",
+  "plan_alignment": 5,
+  "checklist_pass_rate": 100,
+  "extra_changes": false,
+  "plan_rounds": 1,
+  "execution_rounds": 1,
+  "notes": [
+    "Burner input ownership moved to root face-level handling",
+    "Selection-state scene delegation preserved",
+    "Local build re-verified with npm run build"
+  ]
+}

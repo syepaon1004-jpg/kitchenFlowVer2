@@ -66,11 +66,13 @@ export interface GridConfig {
   rows: number;
   cols: number;
   cells: GridCell[];
+  rowRatios?: number[];
+  colRatios?: number[];
 }
 
 export interface DrawerConfig {
   grid: GridConfig;
-  /** 서랍판(=서랍 그리드) 높이 = 서랍 깊이 (열렸을 때 튀어나오는 거리). 0..1, 기본 0.5.
+  /** 서랍판(=서랍 그리드) 높이 = 서랍 깊이 (열렸을 때 튀어나오는 거리). 1 초과 허용, 기본 0.5.
    *  eq.height(서랍 face 세로)와는 독립적이다. */
   depth?: number;
 }
@@ -117,9 +119,16 @@ function isGridCellArray(val: unknown): val is GridCell[] {
   );
 }
 
+function isFiniteNumberArray(arr: unknown): arr is number[] {
+  return Array.isArray(arr) && arr.every((v) => typeof v === 'number' && Number.isFinite(v));
+}
+
 export function isGridConfig(val: unknown): val is GridConfig {
   if (!isRecord(val)) return false;
-  return typeof val.rows === 'number' && typeof val.cols === 'number' && isGridCellArray(val.cells);
+  if (typeof val.rows !== 'number' || typeof val.cols !== 'number' || !isGridCellArray(val.cells)) return false;
+  if (val.rowRatios !== undefined && !isFiniteNumberArray(val.rowRatios)) return false;
+  if (val.colRatios !== undefined && !isFiniteNumberArray(val.colRatios)) return false;
+  return true;
 }
 
 export function isDrawerConfig(val: unknown): val is DrawerConfig {

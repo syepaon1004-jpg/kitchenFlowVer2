@@ -1,0 +1,15 @@
+{
+  "task_id": "TASK-20260414-018",
+  "result": "approved",
+  "plan_alignment": 5,
+  "checklist_pass_rate": 100,
+  "extra_changes": false,
+  "plan_rounds": 1,
+  "execution_rounds": 2,
+  "notes": [
+    "Burner fire/stir input unified under scene-level rect hit-testing",
+    "Local burner pointer handlers removed from CSS 3D face and child UI",
+    "Harness metadata files were explicitly included by follow-up instruction",
+    "Build and type-check re-verified"
+  ]
+}

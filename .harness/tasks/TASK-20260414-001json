@@ -1,0 +1,34 @@
+{
+  "id": "TASK-20260414-001",
+  "status": "pending",
+  "title": "4호박스 장비 추가 및 장비 공통 upward-overflow 규칙 도입",
+  "goal": "신규 panel equipment type `four_box_fridge`를 추가하고, 장비 height가 panel 높이를 초과할 때 아래가 아니라 위로 넘치도록 어드민 편집/미리보기/인게임 전 경로를 맞춘다.",
+  "scope": [
+    "supabase/migrations/007_allow_four_box_fridge_and_tall_equipment.sql",
+    "src/types/db.ts",
+    "src/types/game.ts",
+    "src/components/admin/KitchenLayoutEditor.tsx",
+    "src/components/admin/KitchenLayoutEditor.module.css",
+    "src/components/admin/layout-editor/types.ts",
+    "src/components/admin/layout-editor/EquipmentPalette.tsx",
+    "src/components/admin/layout-editor/EquipmentOnPanel.tsx",
+    "src/components/admin/layout-editor/PreviewEquipment.tsx",
+    "src/components/admin/layout-editor/PanelScene.tsx",
+    "src/components/admin/layout-editor/FridgeInternalEditor.tsx",
+    "src/components/game/GameKitchenView.tsx",
+    "src/components/game/GameKitchenView.module.css",
+    "src/pages/GamePage.tsx"
+  ],
+  "rules": [
+    "docs/rules/css-3d.md",
+    "docs/rules/forbidden.md",
+    "docs/rules/project-structure.md"
+  ],
+  "assumptions": [
+    "신규 내부 equipment_type key는 `four_box_fridge`로 통일",
+    "기본 추가 패널은 패널 3(하부 전면)으로 둔다",
+    "기본 크기는 fold_fridge와 동일한 width, height는 2배로 둔다",
+    "4호박스의 상/하 문은 독립 시각 토글만 가지며 내부 저장 구조는 기존 FoldFridgeConfig를 재사용한다",
+    "oversize 장비는 bottom-anchor 정책으로 위로 넘치게 렌더한다"
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "id": "TASK-20260414-018",
+  "title": "Rebuild burner input with scene-level manual hit-test",
+  "status": "done",
+  "goal": "Eliminate per-burner inconsistent fire/stir hitboxes by removing native local pointer handling from CSS 3D burner faces and routing burner input through scene-level rect-based hit-testing.",
+  "scope": [
+    "src/components/game/GameKitchenView.tsx",
+    "src/components/game/GameKitchenView.module.css"
+  ],
+  "constraints": [
+    "No local pointer handlers on burner face or burner child UI",
+    "Keep selection-state burner placement flow",
+    "Do not modify sink wash in this task",
+    "Preserve CSS 3D chain and transform order",
+    "No any type",
+    "No extra changes"
+  ],
+  "acceptance": [
+    "Upper-half fire input works across the full visible top region on every burner",
+    "Lower-half stir hold works across the full visible bottom region on every burner",
+    "No per-burner hitbox variation remains",
+    "Selection-state place-container and deselect behavior remain intact",
+    "Build and type-check pass"
+  ]
+}

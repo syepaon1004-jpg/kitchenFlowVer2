@@ -1,0 +1,16 @@
+{
+  "id": "TASK-20260414-002",
+  "status": "planned",
+  "title": "모바일/태블릿 게임 화면 터치 하이라이트 깜빡임 제거",
+  "goal": "GamePage 메인 씬에서 터치 입력은 유지하되 브라우저 기본 탭 하이라이트 때문에 화면 전체가 번쩍이는 시각적 아티팩트를 제거한다.",
+  "scope": [
+    "src/pages/GamePage.module.css",
+    "src/components/game/GameKitchenView.module.css",
+    "src/components/game/GameKitchenView.tsx"
+  ],
+  "rules": [
+    "docs/rules/forbidden.md",
+    "docs/rules/css-3d.md",
+    "docs/rules/project-structure.md"
+  ]
+}

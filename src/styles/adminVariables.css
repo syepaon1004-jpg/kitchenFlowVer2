@@ -44,6 +44,7 @@
   --admin-viewport-center-color: #d32f2f;
   --admin-viewport-window-bg: rgba(25, 118, 210, 0.2);
   --admin-viewport-window-border: rgba(25, 118, 210, 0.5);
+  --admin-track-handle-hover: rgba(74, 144, 217, 0.3);
   --admin-error-light: #fdd;
 
   /* ── 관리자 공통 크기 ── */

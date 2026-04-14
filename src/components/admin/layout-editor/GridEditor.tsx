@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { StoreIngredient } from '../../../types/db';
 import type { GridCell, GridConfig } from '../../../types/game';
 import { isGridConfig } from '../../../types/game';
+import { normalizeTracks, cumulativeOffsets, ratiosToGridTemplate, resizeRatios, MIN_TRACK_RATIO } from '../../../lib/grid-layout';
 import SearchableSelect from './SearchableSelect';
 import styles from '../KitchenLayoutEditor.module.css';
 
@@ -41,11 +42,22 @@ function cellKey(cell: GridCell): string {
   return `${cell.row}-${cell.col}`;
 }
 
-function buildConfigFromGrid(grid: GridConfig): Record<string, unknown> {
-  return { grid };
+function buildConfigFromGrid(config: Record<string, unknown>, grid: GridConfig): Record<string, unknown> {
+  return { ...config, grid };
 }
 
-/** 행/열 변경 시 새 그리드 생성 (병합 초기화, ingredientId 유지) */
+/** 기존 grid의 ratio를 보존하면서 cells만 교체 */
+function withRatios(grid: GridConfig, cells: GridCell[]): GridConfig {
+  return {
+    rows: grid.rows,
+    cols: grid.cols,
+    cells,
+    rowRatios: grid.rowRatios,
+    colRatios: grid.colRatios,
+  };
+}
+
+/** 행/열 변경 시 새 그리드 생성 (병합 초기화, ingredientId 유지, ratio 비례 재분배) */
 function resizeGrid(oldGrid: GridConfig, newRows: number, newCols: number): GridConfig {
   const newGrid = makeDefaultGrid(newRows, newCols);
   for (const cell of newGrid.cells) {
@@ -56,6 +68,8 @@ function resizeGrid(oldGrid: GridConfig, newRows: number, newCols: number): Grid
       cell.ingredientId = oldCell.ingredientId;
     }
   }
+  newGrid.rowRatios = resizeRatios(oldGrid.rowRatios, oldGrid.rows, newRows);
+  newGrid.colRatios = resizeRatios(oldGrid.colRatios, oldGrid.cols, newCols);
   return newGrid;
 }
 
@@ -67,7 +81,7 @@ interface GridEditorProps {
   config: Record<string, unknown>;
   /** 패널 비율(0..1)의 장비 가로 = 서랍판 가로. drawer 동기화용 */
   equipmentWidth?: number;
-  /** 서랍판 높이 = 서랍 깊이 (0..1). config.depth와 연동. drawer 동기화용.
+  /** 서랍판 높이 = 서랍 깊이. config.depth와 연동. drawer 동기화용. UI 상한 MAX_DRAWER_DEPTH 기준.
    *  주의: eq.height(서랍 face 세로)와는 다름. */
   equipmentDepth?: number;
   /** 드로어가 속한 패널의 픽셀 너비. 박스 종횡비 = in-game 일치용. drawer 동기화 전용. */
@@ -83,7 +97,9 @@ interface GridEditorProps {
 
 /** 하단 그리드 표시 영역의 기준 픽셀 (1.0 = BASE_PX) */
 const GRID_BASE_PX = 600;
+const DRAWER_EDITOR_MAX_PX = 360;
 const MIN_DIM = 0.05;
+const MAX_DRAWER_DEPTH = 3;
 
 // ——— 컴포넌트 ———
 
@@ -104,6 +120,8 @@ const GridEditor = ({
   const [selectedCellKey, setSelectedCellKey] = useState<string | null>(null);
   const [mergeAnchor, setMergeAnchor] = useState<{ row: number; col: number } | null>(null);
   const [warning, setWarning] = useState<string | null>(null);
+  const [localRowRatios, setLocalRowRatios] = useState<number[] | undefined>(grid.rowRatios);
+  const [localColRatios, setLocalColRatios] = useState<number[] | undefined>(grid.colRatios);
 
   const ingredientOptions = useMemo(
     () => ingredients.map((i) => ({ id: i.id, label: i.display_name })),
@@ -120,9 +138,11 @@ const GridEditor = ({
   const emitChange = useCallback(
     (newGrid: GridConfig) => {
       setGrid(newGrid);
-      onConfigChange(equipmentId, buildConfigFromGrid(newGrid));
+      setLocalRowRatios(newGrid.rowRatios);
+      setLocalColRatios(newGrid.colRatios);
+      onConfigChange(equipmentId, buildConfigFromGrid(config, newGrid));
     },
-    [equipmentId, onConfigChange],
+    [equipmentId, config, onConfigChange],
   );
 
   // ——— 서랍판 외곽 리사이즈 (drawer 전용) ———
@@ -134,36 +154,22 @@ const GridEditor = ({
     equipmentType === 'drawer' && onDimensionsChange !== undefined &&
     typeof equipmentWidth === 'number' && typeof equipmentDepth === 'number';
 
-  const startDimResize = useCallback(
-    (axis: 'x' | 'y' | 'xy') => (e: React.MouseEvent) => {
+  const handleWidthChange = useCallback(
+    (val: number) => {
       if (!onDimensionsChange) return;
-      e.preventDefault();
-      e.stopPropagation();
-      const startClientX = e.clientX;
-      const startClientY = e.clientY;
-      const startW = equipmentWidth ?? 0.5;
-      const startD = equipmentDepth ?? 0.5;
-
-      const onMove = (me: MouseEvent) => {
-        const dx = (me.clientX - startClientX) / GRID_BASE_PX;
-        const dy = (me.clientY - startClientY) / GRID_BASE_PX;
-        const dims: { width?: number; depth?: number } = {};
-        if (axis === 'x' || axis === 'xy') {
-          dims.width = Math.max(MIN_DIM, Math.min(maxWidth, startW + dx));
-        }
-        if (axis === 'y' || axis === 'xy') {
-          dims.depth = Math.max(MIN_DIM, Math.min(1, startD + dy));
-        }
-        onDimensionsChange(equipmentId, dims);
-      };
-      const onUp = () => {
-        document.removeEventListener('mousemove', onMove);
-        document.removeEventListener('mouseup', onUp);
-      };
-      document.addEventListener('mousemove', onMove);
-      document.addEventListener('mouseup', onUp);
+      const clamped = Math.max(MIN_DIM, Math.min(maxWidth, val));
+      onDimensionsChange(equipmentId, { width: clamped });
     },
-    [equipmentId, equipmentWidth, equipmentDepth, maxWidth, onDimensionsChange],
+    [equipmentId, maxWidth, onDimensionsChange],
+  );
+
+  const handleDepthChange = useCallback(
+    (val: number) => {
+      if (!onDimensionsChange) return;
+      const clamped = Math.max(MIN_DIM, Math.min(MAX_DRAWER_DEPTH, val));
+      onDimensionsChange(equipmentId, { depth: clamped });
+    },
+    [equipmentId, onDimensionsChange],
   );
 
   // 선택된 셀 객체
@@ -230,16 +236,19 @@ const GridEditor = ({
       const key = cellKey(cell);
 
       if (e.shiftKey && selectedCellKey) {
-        // Shift+클릭: merge anchor 설정
-        const [anchorRow, anchorCol] = selectedCellKey.split('-').map(Number);
-        setMergeAnchor({ row: anchorRow, col: anchorCol });
+        if (!mergeAnchor) {
+          // 첫 Shift+클릭: 현재 선택 셀을 anchor로 고정
+          const [anchorRow, anchorCol] = selectedCellKey.split('-').map(Number);
+          setMergeAnchor({ row: anchorRow, col: anchorCol });
+        }
+        // 이후 Shift+클릭: anchor 유지, 끝점만 갱신
         setSelectedCellKey(key);
       } else {
         setSelectedCellKey(key);
         setMergeAnchor(null);
       }
     },
-    [selectedCellKey],
+    [selectedCellKey, mergeAnchor],
   );
 
   // ——— 셀 합치기 ———
@@ -280,8 +289,7 @@ const GridEditor = ({
       ingredientId: null,
     });
 
-    const newGrid: GridConfig = { rows: grid.rows, cols: grid.cols, cells: newCells };
-    emitChange(newGrid);
+    emitChange(withRatios(grid, newCells));
     setSelectedCellKey(`${minRow}-${minCol}`);
     setMergeAnchor(null);
   }, [mergeRange, canMerge, grid, emitChange]);
@@ -306,8 +314,7 @@ const GridEditor = ({
       }
     }
 
-    const newGrid: GridConfig = { rows: grid.rows, cols: grid.cols, cells: newCells };
-    emitChange(newGrid);
+    emitChange(withRatios(grid, newCells));
     setMergeAnchor(null);
   }, [selectedCell, canSplit, grid, emitChange]);
 
@@ -355,7 +362,7 @@ const GridEditor = ({
     const newCells = grid.cells.map((c) =>
       keysInRange.has(cellKey(c)) ? { ...c, bindGroup: bindGroupValue } : c,
     );
-    emitChange({ rows: grid.rows, cols: grid.cols, cells: newCells });
+    emitChange(withRatios(grid, newCells));
     setMergeAnchor(null);
   }, [mergeRange, canBind, grid, emitChange]);
 
@@ -365,7 +372,7 @@ const GridEditor = ({
     const newCells = grid.cells.map((c) =>
       c.bindGroup === groupValue ? { ...c, bindGroup: null } : c,
     );
-    emitChange({ rows: grid.rows, cols: grid.cols, cells: newCells });
+    emitChange(withRatios(grid, newCells));
   }, [selectedCell, grid, emitChange]);
 
   // ——— 재료 연결 ———
@@ -377,9 +384,73 @@ const GridEditor = ({
       const newCells = grid.cells.map((c) =>
         cellKey(c) === key ? { ...c, ingredientId } : c,
       );
-      emitChange({ rows: grid.rows, cols: grid.cols, cells: newCells });
+      emitChange(withRatios(grid, newCells));
     },
     [selectedCell, grid, emitChange],
+  );
+
+  // ——— 내부 선 드래그 ———
+
+  const gridAreaRef = useRef<HTMLDivElement>(null);
+  const dragRatiosRef = useRef<number[] | null>(null);
+
+  const startTrackDrag = useCallback(
+    (axis: 'row' | 'col', index: number) => (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const gridEl = gridAreaRef.current;
+      if (!gridEl) return;
+      const rect = gridEl.getBoundingClientRect();
+      const count = axis === 'row' ? grid.rows : grid.cols;
+      const startRatios = normalizeTracks(
+        axis === 'row' ? localRowRatios : localColRatios,
+        count,
+      );
+      const startOffsets = cumulativeOffsets(startRatios);
+      const startPos = axis === 'row' ? e.clientY : e.clientX;
+      dragRatiosRef.current = startRatios;
+
+      const onMove = (me: MouseEvent) => {
+        const total = axis === 'row' ? rect.height : rect.width;
+        if (total <= 0) return;
+        const delta = ((axis === 'row' ? me.clientY : me.clientX) - startPos) / total;
+        const origLine = startOffsets[index + 1];
+        const prevOffset = startOffsets[index];
+        const nextOffset = startOffsets[index + 2];
+        const clampedLine = Math.max(
+          prevOffset + MIN_TRACK_RATIO,
+          Math.min(nextOffset - MIN_TRACK_RATIO, origLine + delta),
+        );
+        const newRatios = [...startRatios];
+        newRatios[index] = clampedLine - prevOffset;
+        newRatios[index + 1] = nextOffset - clampedLine;
+        dragRatiosRef.current = newRatios;
+        if (axis === 'row') setLocalRowRatios(newRatios);
+        else setLocalColRatios(newRatios);
+      };
+
+      const onUp = () => {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        const finalRatios = dragRatiosRef.current;
+        dragRatiosRef.current = null;
+        if (!finalRatios) return;
+        // ref에서 최종 ratios를 읽어 emit
+        const setter = (prev: GridConfig): GridConfig => ({
+          ...prev,
+          ...(axis === 'row' ? { rowRatios: finalRatios } : { colRatios: finalRatios }),
+        });
+        setGrid((prev) => {
+          const next = setter(prev);
+          onConfigChange(equipmentId, buildConfigFromGrid(config, next));
+          return next;
+        });
+      };
+
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    },
+    [grid.rows, grid.cols, localRowRatios, localColRatios, equipmentId, config, onConfigChange],
   );
 
   // ——— 렌더링 ———
@@ -445,17 +516,66 @@ const GridEditor = ({
         </button>
       </div>
 
-      {/* 그리드 영역 (서랍이면 외곽 리사이즈로 폭/깊이 동기화).
+      {/* 서랍 가로/깊이 고정형 조절 UI */}
+      {showDimResize && (
+        <div className={styles.drawerDimensionControls}>
+          <label className={styles.drawerDimLabel}>
+            <span>가로(W):</span>
+            <input
+              type="range"
+              min={MIN_DIM}
+              max={maxWidth}
+              step={0.01}
+              value={equipmentWidth}
+              onChange={(e) => handleWidthChange(Number(e.target.value))}
+              className={styles.drawerDimRange}
+            />
+            <input
+              type="number"
+              min={MIN_DIM}
+              max={maxWidth}
+              step={0.01}
+              value={equipmentWidth}
+              onChange={(e) => handleWidthChange(Number(e.target.value))}
+              className={styles.drawerDimNumber}
+            />
+          </label>
+          <label className={styles.drawerDimLabel}>
+            <span>깊이(D):</span>
+            <input
+              type="range"
+              min={MIN_DIM}
+              max={MAX_DRAWER_DEPTH}
+              step={0.01}
+              value={equipmentDepth}
+              onChange={(e) => handleDepthChange(Number(e.target.value))}
+              className={styles.drawerDimRange}
+            />
+            <input
+              type="number"
+              min={MIN_DIM}
+              max={MAX_DRAWER_DEPTH}
+              step={0.01}
+              value={equipmentDepth}
+              onChange={(e) => handleDepthChange(Number(e.target.value))}
+              className={styles.drawerDimNumber}
+            />
+          </label>
+        </div>
+      )}
+
+      {/* 그리드 영역.
           박스 = in-game 서랍판 top-down 모양 (eq.width × panelPxW : depth × panelPxH).
-          panelPxW/panelPxH 미측정(0)이면 정사각형 fallback (eq.width × GRID_BASE_PX, depth × GRID_BASE_PX). */}
+          panelPxW/panelPxH 미측정(0)이면 정사각형 fallback. */}
       {(() => {
+        const basePx = equipmentType === 'drawer' ? DRAWER_EDITOR_MAX_PX : GRID_BASE_PX;
         const naturalW = (equipmentWidth ?? 0.5) * (panelPxW ?? 0);
         const naturalH = (equipmentDepth ?? 0.5) * (panelPxH ?? 0);
         const natMax = Math.max(naturalW, naturalH);
         const useAspect = natMax > 0;
-        const aspectScale = useAspect ? GRID_BASE_PX / natMax : 1;
-        const boxW = useAspect ? naturalW * aspectScale : (equipmentWidth ?? 0.5) * GRID_BASE_PX;
-        const boxH = useAspect ? naturalH * aspectScale : (equipmentDepth ?? 0.5) * GRID_BASE_PX;
+        const aspectScale = useAspect ? basePx / natMax : 1;
+        const boxW = useAspect ? naturalW * aspectScale : (equipmentWidth ?? 0.5) * basePx;
+        const boxH = useAspect ? naturalH * aspectScale : (equipmentDepth ?? 0.5) * basePx;
         return (
       <div
         className={styles.gridResizeWrapper}
@@ -472,10 +592,15 @@ const GridEditor = ({
         }
       >
       <div
+        ref={gridAreaRef}
         className={styles.gridArea}
         style={{
-          gridTemplateRows: `repeat(${grid.rows}, 1fr)`,
-          gridTemplateColumns: `repeat(${grid.cols}, 1fr)`,
+          gridTemplateRows: localRowRatios
+            ? ratiosToGridTemplate(normalizeTracks(localRowRatios, grid.rows))
+            : `repeat(${grid.rows}, 1fr)`,
+          gridTemplateColumns: localColRatios
+            ? ratiosToGridTemplate(normalizeTracks(localColRatios, grid.cols))
+            : `repeat(${grid.cols}, 1fr)`,
           ...(showDimResize ? { width: '100%', height: '100%', minHeight: 0 } : null),
         }}
       >
@@ -511,26 +636,33 @@ const GridEditor = ({
             </div>
           );
         })}
+        {/* 내부 가로선 drag handle */}
+        {grid.rows > 1 && (() => {
+          const rNorm = normalizeTracks(localRowRatios, grid.rows);
+          const rOff = cumulativeOffsets(rNorm);
+          return rOff.slice(1, -1).map((offset, i) => (
+            <div
+              key={`rh-${i}`}
+              className={styles.gridTrackHandleH}
+              style={{ top: `${offset * 100}%` }}
+              onMouseDown={startTrackDrag('row', i)}
+            />
+          ));
+        })()}
+        {/* 내부 세로선 drag handle */}
+        {grid.cols > 1 && (() => {
+          const cNorm = normalizeTracks(localColRatios, grid.cols);
+          const cOff = cumulativeOffsets(cNorm);
+          return cOff.slice(1, -1).map((offset, i) => (
+            <div
+              key={`ch-${i}`}
+              className={styles.gridTrackHandleV}
+              style={{ left: `${offset * 100}%` }}
+              onMouseDown={startTrackDrag('col', i)}
+            />
+          ));
+        })()}
       </div>
-      {showDimResize && (
-        <>
-          <div
-            className={styles.gridDimHandleE}
-            onMouseDown={startDimResize('x')}
-            title="드래그하여 서랍 가로 조절"
-          />
-          <div
-            className={styles.gridDimHandleS}
-            onMouseDown={startDimResize('y')}
-            title="드래그하여 서랍 깊이 조절"
-          />
-          <div
-            className={styles.gridDimHandleSE}
-            onMouseDown={startDimResize('xy')}
-            title="드래그하여 가로/깊이 동시 조절"
-          />
-        </>
-      )}
       </div>
         );
       })()}

@@ -769,10 +769,39 @@
 
 .gridArea {
   display: grid;
+  position: relative;
   border: 1px solid #bbb;
   border-radius: 4px;
   overflow: hidden;
   min-height: 200px;
+}
+
+.gridTrackHandleH {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 8px;
+  margin-top: -4px;
+  cursor: ns-resize;
+  z-index: 5;
+  background: transparent;
+}
+.gridTrackHandleH:hover {
+  background: var(--admin-track-handle-hover);
+}
+
+.gridTrackHandleV {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  margin-left: -4px;
+  cursor: ew-resize;
+  z-index: 5;
+  background: transparent;
+}
+.gridTrackHandleV:hover {
+  background: var(--admin-track-handle-hover);
 }
 
 /* 서랍판 외곽 리사이즈 핸들 (drawer 동기화 전용) */
@@ -781,40 +810,36 @@
   box-sizing: border-box;
 }
 
-.gridDimHandleE,
-.gridDimHandleS,
-.gridDimHandleSE {
-  position: absolute;
-  background: var(--color-primary, #1976d2);
-  z-index: 10;
+/* 서랍 가로/깊이 슬라이더+숫자 입력 */
+.drawerDimensionControls {
+  display: flex;
+  gap: var(--admin-spacing-md);
+  align-items: center;
+  margin-bottom: var(--admin-spacing-md);
+  flex-wrap: wrap;
 }
 
-.gridDimHandleE {
-  top: 8px;
-  bottom: 8px;
-  right: -4px;
-  width: 8px;
-  border-radius: 4px;
-  cursor: ew-resize;
+.drawerDimLabel {
+  display: flex;
+  align-items: center;
+  gap: var(--admin-spacing-xs);
+  font-size: var(--font-sm);
+  color: var(--admin-text-secondary);
 }
 
-.gridDimHandleS {
-  left: 8px;
-  right: 8px;
-  bottom: -4px;
-  height: 8px;
-  border-radius: 4px;
-  cursor: ns-resize;
+.drawerDimRange {
+  width: 120px;
+  cursor: pointer;
+  accent-color: var(--color-primary);
 }
 
-.gridDimHandleSE {
-  right: -6px;
-  bottom: -6px;
-  width: 14px;
-  height: 14px;
-  border: 2px solid #fff;
-  border-radius: 3px;
-  cursor: nwse-resize;
+.drawerDimNumber {
+  width: var(--admin-input-width-sm);
+  padding: 2px 4px;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-sm);
+  font-size: var(--font-sm);
+  text-align: center;
 }
 
 .gridCell {

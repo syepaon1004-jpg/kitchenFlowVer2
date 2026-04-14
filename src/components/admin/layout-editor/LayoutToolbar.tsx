@@ -16,7 +16,7 @@ interface Props {
   onPerspectiveDegChange: (deg: number) => void;
 }
 
-const PERSPECTIVE_MIN = 20;
+const PERSPECTIVE_MIN = 1;
 const PERSPECTIVE_MAX = 100;
 
 const VIEW_LABELS: Record<EditorView, string> = {

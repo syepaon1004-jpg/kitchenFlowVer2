@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { PanelEquipmentType } from '../../types/db';
-import type { EquipmentInteractionState, FridgeInternalItem, ClickTarget, SelectionState } from '../../types/game';
+import type { EquipmentInteractionState, FridgeInternalItem, ClickTarget, SelectionState, GridCell, GridConfig } from '../../types/game';
 import { useEquipmentStore } from '../../stores/equipmentStore';
 import { useGameStore } from '../../stores/gameStore';
 import { useShallow } from 'zustand/react/shallow';
 import { PLACED_CONTAINER_SIZE_VH } from '../../lib/interaction/constants';
 import { getEquipmentPositionStyle } from '../../lib/equipment-position';
 import { isGridConfig, isFoldFridgeConfig, getBindAnchor } from '../../types/game';
+import { cellRect } from '../../lib/grid-layout';
 import WokComponent from '../equipment/WokComponent';
 import styles from './GameKitchenView.module.css';
 
@@ -39,21 +40,7 @@ interface LocalGameItem {
   containerId?: string | null;
 }
 
-// ——— 그리드 유틸 (admin과 import 공유 금지이므로 복제) ———
-
-interface GridCell {
-  row: number;
-  col: number;
-  rowSpan: number;
-  colSpan: number;
-  ingredientId: string | null;
-}
-
-interface GridConfig {
-  rows: number;
-  cols: number;
-  cells: GridCell[];
-}
+// ——— 그리드 유틸 ———
 
 function makeDefaultGrid(rows: number, cols: number): GridConfig {
   const cells: GridCell[] = [];
@@ -82,7 +69,6 @@ const EQUIP_RADIUS = 6;
 
 const BURNER_COLORS: Record<0 | 1 | 2, string> = { 0: '#888888', 1: '#E8820C', 2: '#CC2200' };
 const STIR_DURATION = 30000;
-const STIR_INTERVAL = 100;
 
 const INITIAL_INTERACTION: EquipmentInteractionState = {
   drawers: {}, burners: {}, baskets: {}, foldFridges: {}, fourBoxFridges: {},
@@ -187,6 +173,8 @@ const GameKitchenView = ({
   const sceneRef = useRef<HTMLDivElement>(null);
   const [containerHeight, setContainerHeight] = useState(0);
   const [interactionState, setInteractionState] = useState<EquipmentInteractionState>(INITIAL_INTERACTION);
+  const activeStirEquipmentIdRef = useRef<string | null>(null);
+  const activeStirStopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // equipmentStore에서 burner_level만 추출 (매 틱 wok_temp 변경 시 리렌더 방지)
   const burnerLevelsRecord = useEquipmentStore(
@@ -217,8 +205,53 @@ const GameKitchenView = ({
   const perspectivePx = containerHeight > 0 ? degToPerspectivePx(perspectiveDeg, containerHeight) : 800;
   const translateY = (previewYOffset - 0.5) * containerHeight;
 
-  // 볶기 hold는 BurnerPanel button-local로 처리(scene-level 처리는 100ms 재렌더 →
-  // pointer-capture된 자손 mutation → iOS Safari pointercancel 발사로 hold 끊김 문제).
+  // scene-level stir hold: ref + timeout 기반 (setState 없이 hold 유지 → iOS pointercancel 방지)
+  const stopSceneStir = useCallback(() => {
+    const stateId = activeStirEquipmentIdRef.current;
+    if (!stateId) return;
+    activeStirEquipmentIdRef.current = null;
+    if (activeStirStopTimerRef.current) {
+      clearTimeout(activeStirStopTimerRef.current);
+      activeStirStopTimerRef.current = null;
+    }
+    useEquipmentStore.getState().removeStirring(stateId);
+  }, []);
+
+  const startSceneStir = useCallback((stateId: string) => {
+    // 이미 stirring 중이면 무시
+    if (activeStirEquipmentIdRef.current) return;
+    // canStir 조건 검증 (imperative)
+    const equip = useEquipmentStore.getState().equipments.find((e) => e.id === stateId);
+    if (!equip) return;
+    if (!equip.burner_level) return;
+    if (equip.wok_status !== 'clean' && equip.wok_status !== 'overheating') return;
+    const { ingredientInstances, waterIngredientIds } = useGameStore.getState();
+    const wokIngredients = ingredientInstances.filter(
+      (i) => i.equipment_state_id === stateId && i.location_type === 'equipment',
+    );
+    if (wokIngredients.some((i) => waterIngredientIds.has(i.ingredient_id))) return;
+
+    activeStirEquipmentIdRef.current = stateId;
+    useEquipmentStore.getState().addStirring(stateId);
+    activeStirStopTimerRef.current = setTimeout(() => {
+      stopSceneStir();
+    }, STIR_DURATION);
+  }, [stopSceneStir]);
+
+  // unmount 시 stir cleanup
+  useEffect(() => {
+    return () => {
+      if (activeStirStopTimerRef.current) {
+        clearTimeout(activeStirStopTimerRef.current);
+        activeStirStopTimerRef.current = null;
+      }
+      const stateId = activeStirEquipmentIdRef.current;
+      if (stateId) {
+        useEquipmentStore.getState().removeStirring(stateId);
+        activeStirEquipmentIdRef.current = null;
+      }
+    };
+  }, []);
 
   // hit-test 인터랙션
   const handleInteraction = useCallback((eqId: string, eqType: string, doorPart?: string) => {
@@ -246,9 +279,6 @@ const GameKitchenView = ({
   const handleScenePointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     const sceneEl = sceneRef.current;
     if (!sceneEl) return;
-    // hold 인터랙션은 모두 element-local로 처리(BurnerPanel, WokComponent 등).
-    // scene-level 처리에 setPointerCapture를 쓰면 자손 DOM mutation +
-    // 손가락 미세 움직임 시 iOS Safari가 pointercancel을 발사한다.
     const { clientX, clientY } = e;
 
     // 1. data-click-target 요소 전체 수집 + 히트 판별
@@ -362,38 +392,49 @@ const GameKitchenView = ({
         return;
       }
 
-      // burner: rect 세로 이등분으로 fire/stir 판별
-      // 볶기 hold는 BurnerPanel button-local로 처리 → 여기는 fire(상단) 클릭과
-      // 선택 있을 때 place-container만 처리.
+      // burner: scene-level rect hit-test로 fire/stir 일원화
       if (targetType === 'burner') {
         const burnerMetaStr = selectedHit.dataset.clickMeta;
         const burnerMeta = burnerMetaStr ? JSON.parse(burnerMetaStr) as Record<string, string> : {};
         const eqId = selectedHit.dataset.equipmentId ?? burnerMeta.equipmentId;
         const rect = selectedHit.getBoundingClientRect();
+
+        if (hasSelection) {
+          // 선택 상태: place-container / move-container / deselect
+          onSceneClick?.({
+            type: 'burner',
+            equipmentId: eqId,
+            equipmentType: 'burner',
+            localRatio: {
+              x: (clientX - rect.left) / rect.width,
+              y: (clientY - rect.top) / rect.height,
+            },
+          });
+          return;
+        }
+
+        // no-selection: 상단/하단 이등분
         const midY = rect.top + rect.height / 2;
         const isStirHalf = clientY >= midY;
 
-        if (!hasSelection && !isStirHalf) {
-          // 상단 절반 → 불 단계 순환
+        if (!isStirHalf) {
+          // 상단 절반 → 불 단계 순환 0→1→2→0
           const stateId = panelToStateIdMap?.get(eqId);
           if (stateId) {
-            const equip = useEquipmentStore.getState().equipments.find((e) => e.id === stateId);
+            const equip = useEquipmentStore.getState().equipments.find((eq) => eq.id === stateId);
             if (equip && equip.burner_level !== null) {
               const next = ((equip.burner_level + 1) % 3) as 0 | 1 | 2;
               useEquipmentStore.getState().updateEquipment(stateId, { burner_level: next });
             }
           }
+        } else {
+          // 하단 절반 → 볶기 hold 시작
+          const stateId = panelToStateIdMap?.get(eqId);
+          if (stateId) {
+            startSceneStir(stateId);
+          }
         }
-
-        onSceneClick?.({
-          type: 'burner',
-          equipmentId: eqId,
-          equipmentType: 'burner',
-          localRatio: {
-            x: (clientX - rect.left) / rect.width,
-            y: (clientY - rect.top) / rect.height,
-          },
-        });
+        // no-selection 경로: onSceneClick 미호출
         return;
       }
 
@@ -427,13 +468,14 @@ const GameKitchenView = ({
 
     // 히트 없음 → empty-area
     onSceneClick?.({ type: 'empty-area' });
-  }, [handleInteraction, interactionState, hasSelection, onSceneClick, panelToStateIdMap]);
+  }, [handleInteraction, interactionState, hasSelection, onSceneClick, panelToStateIdMap, startSceneStir]);
 
   const handleScenePointerUp = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     if (e.currentTarget.hasPointerCapture(e.pointerId)) {
       e.currentTarget.releasePointerCapture(e.pointerId);
     }
-  }, []);
+    stopSceneStir();
+  }, [stopSceneStir]);
 
   // 패널 렌더링 (부모-자식 중첩)
   const renderPanel = (index: number): React.ReactNode => {
@@ -458,7 +500,12 @@ const GameKitchenView = ({
           <div className={styles.equipmentLayer}>
             {panelEquipment.map((eq) => {
               // 장비 타입별 data-click-target 분기
-              const eqClickTarget = getEquipmentClickTarget(eq.equipmentType);
+              // 선택 없음 → burner는 scene hit-test 제외 (local 버튼으로만 동작)
+              // 선택 있음 → burner를 scene 타깃으로 유지 (place-container/deselect)
+              // burner는 BurnerPanel face 요소에서 직접 data-click-target 부착
+              const eqClickTarget = eq.equipmentType === 'burner'
+                ? null
+                : getEquipmentClickTarget(eq.equipmentType);
               return (
                 <div
                   key={eq.id}
@@ -475,7 +522,7 @@ const GameKitchenView = ({
                     width: `${eq.width * 100}%`,
                   }}
                 >
-                  {renderEquipment(eq, interactionState, index, ingredientLabelsMap, burnerLevelsRecord[eq.id] ?? 0, panelToStateIdMap?.get(eq.id), hasSelection, selection)}
+                  {renderEquipment(eq, interactionState, index, ingredientLabelsMap, burnerLevelsRecord[eq.id] ?? 0, panelToStateIdMap?.get(eq.id), selection)}
                 </div>
               );
             })}
@@ -648,21 +695,15 @@ const GameKitchenView = ({
   );
 };
 
-// ——— BurnerPanel (hooks 사용을 위해 React 컴포넌트로 분리) ———
+// ——— BurnerPanel (순수 시각 컴포넌트 — 입력은 scene-level hit-test로 처리) ———
 
 interface BurnerPanelProps {
+  panelId: string;
   stateId: string | undefined;
   fireLevel: 0 | 1 | 2;
-  hasSelection: boolean;
 }
 
-function BurnerPanel({ stateId, fireLevel, hasSelection }: BurnerPanelProps) {
-  // 원시값 selector — 해당 필드 변경 시에만 리렌더
-  const burnerLevel = useEquipmentStore((s) => {
-    if (!stateId) return null;
-    const e = s.equipments.find((eq) => eq.id === stateId);
-    return e?.burner_level ?? null;
-  });
+function BurnerPanel({ panelId, stateId, fireLevel }: BurnerPanelProps) {
   const wokStatus = useEquipmentStore((s) => {
     if (!stateId) return null;
     const e = s.equipments.find((eq) => eq.id === stateId);
@@ -674,8 +715,11 @@ function BurnerPanel({ stateId, fireLevel, hasSelection }: BurnerPanelProps) {
     return e?.wok_temp ?? null;
   });
   const isStirring = useEquipmentStore((s) => stateId ? s.stirring_equipment_ids.has(stateId) : false);
-  const addStirring = useEquipmentStore((s) => s.addStirring);
-  const removeStirring = useEquipmentStore((s) => s.removeStirring);
+  const burnerLevel = useEquipmentStore((s) => {
+    if (!stateId) return null;
+    const e = s.equipments.find((eq) => eq.id === stateId);
+    return e?.burner_level ?? null;
+  });
   const ingredientInstances = useGameStore((s) => s.ingredientInstances);
   const waterIngredientIds = useGameStore((s) => s.waterIngredientIds);
 
@@ -685,76 +729,30 @@ function BurnerPanel({ stateId, fireLevel, hasSelection }: BurnerPanelProps) {
       : [],
     [ingredientInstances, stateId],
   );
-
   const hasWaterInWok = useMemo(
     () => wokIngredients.some((i) => waterIngredientIds.has(i.ingredient_id)),
     [wokIngredients, waterIngredientIds],
   );
-
   const canStir = !!burnerLevel
     && (wokStatus === 'clean' || wokStatus === 'overheating')
     && !hasWaterInWok;
-
-  // 볶기 hold: button-local 처리(sink wash 패턴).
-  // scene-level 처리는 100ms마다 GameKitchenView 전체를 재렌더 → BurnerPanel 재렌더 →
-  // pointer-capture된 자손 DOM mutation 중 손가락 미세 움직임에서 iOS Safari가
-  // pointercancel을 발사 → hold 끊김.
-  // 반드시 button element에 직접 바인딩하고 capture를 사용하지 않는다.
-  const [stirProgress, setStirProgress] = useState(0);
-  const stirTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  const startStir = useCallback((e: React.PointerEvent) => {
-    // 선택 상태이면 button-local stir를 발동하지 않고 scene으로 bubble
-    // (place-container를 발동시키기 위함)
-    if (hasSelection) return;
-    if (!canStir || !stateId) return;
-    e.stopPropagation();
-    e.preventDefault();
-    if (stirTimerRef.current) return;
-    addStirring(stateId);
-    let elapsed = 0;
-    const timer = setInterval(() => {
-      elapsed += STIR_INTERVAL;
-      setStirProgress(elapsed);
-      if (elapsed >= STIR_DURATION) {
-        if (stirTimerRef.current) clearInterval(stirTimerRef.current);
-        stirTimerRef.current = null;
-        setStirProgress(0);
-        removeStirring(stateId);
-      }
-    }, STIR_INTERVAL);
-    stirTimerRef.current = timer;
-  }, [hasSelection, canStir, stateId, addStirring, removeStirring]);
-
-  const stopStir = useCallback(() => {
-    if (stirTimerRef.current) {
-      clearInterval(stirTimerRef.current);
-      stirTimerRef.current = null;
-    }
-    setStirProgress(0);
-    if (stateId) removeStirring(stateId);
-  }, [stateId, removeStirring]);
-
-  // 언마운트 시 timer cleanup
-  useEffect(() => {
-    return () => {
-      if (stirTimerRef.current) {
-        clearInterval(stirTimerRef.current);
-        stirTimerRef.current = null;
-      }
-    };
-  }, []);
 
   const statusBg = wokStatus === 'burned' ? 'var(--color-error)'
     : wokStatus === 'overheating' ? 'var(--color-warning)'
     : BURNER_COLORS[fireLevel];
 
   return (
-    <div style={{
-      position: 'absolute', inset: 0, background: statusBg,
-      borderRadius: EQUIP_RADIUS, transition: 'background 0.2s',
-      display: 'flex', flexDirection: 'column', padding: 0, gap: 1,
-    }}>
+    <div
+      data-click-target="burner"
+      data-equipment-id={panelId}
+      data-click-meta={JSON.stringify({ equipmentId: panelId, equipmentType: 'burner' })}
+      style={{
+        position: 'absolute', inset: 0, background: statusBg,
+        borderRadius: EQUIP_RADIUS, transition: 'background 0.2s',
+        display: 'flex', flexDirection: 'column', padding: 0, gap: 1,
+        touchAction: 'none',
+      }}
+    >
       {/* 온도 오버레이 */}
       {wokTemp !== null && (
         <span style={{ position: 'absolute', top: 1, right: 3, fontSize: 'var(--font-game-cell)', color: 'rgba(255,255,255,0.8)', pointerEvents: 'none', zIndex: 3 }}>
@@ -767,49 +765,41 @@ function BurnerPanel({ stateId, fireLevel, hasSelection }: BurnerPanelProps) {
           BURNED
         </span>
       )}
-      {/* 불 버튼: 상단 절반 (scene이 위임 처리) */}
-      <button
+      {/* 불 표시: 상단 절반 (순수 시각) */}
+      <div
         className={styles.eqInteractionBtn}
-        style={{ position: 'relative', flex: 1, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        style={{
+          position: 'relative', flex: 1, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          pointerEvents: 'none',
+        }}
         data-action="fire"
       >
         불 {fireLevel}
-      </button>
-      {/* 볶기 버튼: 하단 절반 — button-local hold 처리 */}
-      <button
+      </div>
+      {/* 볶기 표시: 하단 절반 (순수 시각, isStirring boolean 피드백) */}
+      <div
         className={styles.eqInteractionBtn}
         style={{
-          position: 'relative', flex: 1, width: '100%', overflow: 'hidden', touchAction: 'none',
+          position: 'relative', flex: 1, width: '100%', overflow: 'hidden',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           background: isStirring ? 'var(--color-fire-active)' : canStir ? 'var(--color-warning)' : undefined,
           color: isStirring || canStir ? '#fff' : undefined,
-          cursor: canStir ? 'pointer' : 'not-allowed',
+          opacity: canStir ? 1 : 0.5,
+          pointerEvents: 'none',
         }}
-        disabled={!canStir}
         data-action="stir"
-        onPointerDown={startStir}
-        onPointerUp={stopStir}
-        onPointerLeave={stopStir}
-        onPointerCancel={stopStir}
       >
-        <div
-          className={styles.stirProgressBar}
-          style={{
-            width: `${(stirProgress / STIR_DURATION) * 100}%`,
-            transition: `width ${STIR_INTERVAL}ms linear`,
-          }}
-        />
         <span className={styles.stirProgressLabel}>
-          {isStirring ? `볶는 중 ${Math.round(stirProgress / 1000)}s` : '볶기'}
+          {isStirring ? '볶는 중...' : '볶기'}
         </span>
-      </button>
+      </div>
     </div>
   );
 }
 
 // ——— 장비 렌더링 ———
 
-function renderEquipment(eq: LocalEquipment, state: EquipmentInteractionState, panelIndex: number, ingredientLabelsMap: Map<string, string>, burnerLevel: 0 | 1 | 2 = 0, stateId?: string, hasSelection = false, selection?: SelectionState | null) {
+function renderEquipment(eq: LocalEquipment, state: EquipmentInteractionState, panelIndex: number, ingredientLabelsMap: Map<string, string>, burnerLevel: 0 | 1 | 2 = 0, stateId?: string, selection?: SelectionState | null) {
   switch (eq.equipmentType) {
     case 'drawer': return (
       <GameDrawerVisual
@@ -821,7 +811,7 @@ function renderEquipment(eq: LocalEquipment, state: EquipmentInteractionState, p
         selection={selection}
       />
     );
-    case 'burner': return <BurnerPanel stateId={stateId} fireLevel={burnerLevel} hasSelection={hasSelection} />;
+    case 'burner': return <BurnerPanel panelId={eq.id} stateId={stateId} fireLevel={burnerLevel} />;
     case 'basket': return renderBasket(state.baskets[eq.id]?.isExpanded ?? false, eq.id, panelIndex, eq.config, ingredientLabelsMap, selection);
     case 'fold_fridge': return renderFoldFridge(state.foldFridges[eq.id]?.isOpen ?? false, eq.id, eq.config, ingredientLabelsMap, state.baskets, selection);
     case 'four_box_fridge': {
@@ -906,8 +896,6 @@ function GameDrawerVisual({ eqId, isOpen, config, eqHeight, ingredientLabelsMap,
   const depthRatio = depth / safeEqH;
   const openZ = isOpen ? measuredH * depthRatio : 0;
   const grid = resolveGrid(config, 'drawer');
-  const cellW = 1 / grid.cols;
-  const cellH = 1 / grid.rows;
 
   return (
     <div ref={containerRef} className={styles.drawerContainer}>
@@ -926,6 +914,7 @@ function GameDrawerVisual({ eqId, isOpen, config, eqHeight, ingredientLabelsMap,
           transformOrigin: 'center center',
         }}>
           {grid.cells.map((cell) => {
+            const rect = cellRect(cell, grid.rowRatios, grid.colRatios, grid.rows, grid.cols);
             const label = cell.ingredientId ? (ingredientLabelsMap.get(cell.ingredientId) ?? '') : '';
             const isSel = isIngredientSelected(selection, cell.ingredientId);
             return (
@@ -939,10 +928,10 @@ function GameDrawerVisual({ eqId, isOpen, config, eqHeight, ingredientLabelsMap,
                   'data-parent-equipment-type': 'drawer',
                 } : {})}
                 style={{
-                  left: `${cell.col * cellW * 100}%`,
-                  top: `${cell.row * cellH * 100}%`,
-                  width: `${cell.colSpan * cellW * 100}%`,
-                  height: `${cell.rowSpan * cellH * 100}%`,
+                  left: `${rect.left * 100}%`,
+                  top: `${rect.top * 100}%`,
+                  width: `${rect.width * 100}%`,
+                  height: `${rect.height * 100}%`,
                 }}
               >
                 <span>{label}</span>
@@ -971,12 +960,11 @@ function GameDrawerVisual({ eqId, isOpen, config, eqHeight, ingredientLabelsMap,
 function renderBasket(isExpanded: boolean, eqId: string, panelIndex: number, config: Record<string, unknown>, ingredientLabelsMap: Map<string, string>, selection?: SelectionState | null) {
   const grid = resolveGrid(config, 'basket');
   const maxRow = grid.rows - 1;
-  const cellW = 1 / grid.cols;
-  const cellH = 1 / grid.rows;
   const cellHeightPx = 30;
   const correction = getBasketCorrection(panelIndex);
 
   const cellNodes = grid.cells.map((cell) => {
+    const rect = cellRect(cell, grid.rowRatios, grid.colRatios, grid.rows, grid.cols);
     const anchor = getBindAnchor(grid.cells, cell);
     const expandRow = anchor ? anchor.row : cell.row;
     const expandZ = isExpanded ? (maxRow - expandRow) * cellHeightPx : 0;
@@ -995,8 +983,8 @@ function renderBasket(isExpanded: boolean, eqId: string, panelIndex: number, con
           'data-parent-equipment-type': 'basket',
         } : {})}
         style={{
-          left: `${cell.col * cellW * 100}%`, top: `${cell.row * cellH * 100}%`,
-          width: `${cell.colSpan * cellW * 100}%`, height: `${cell.rowSpan * cellH * 100}%`,
+          left: `${rect.left * 100}%`, top: `${rect.top * 100}%`,
+          width: `${rect.width * 100}%`, height: `${rect.height * 100}%`,
           transformOrigin: `center ${originY}`,
           transform: `translateZ(${expandZ}px) rotateX(-90deg)`,
         }}>
@@ -1083,8 +1071,6 @@ function renderFridgeItem(
   const syntheticKey = `${eqId}_fridge_${level}_${idx}`;
   const isExpanded = basketStates[syntheticKey]?.isExpanded ?? false;
   const maxRow = basketGrid.rows - 1;
-  const cellW = 1 / basketGrid.cols;
-  const cellH = 1 / basketGrid.rows;
   const cellHeightPx = 30;
 
   return (
@@ -1107,6 +1093,7 @@ function renderFridgeItem(
       }}
     >
       {basketGrid.cells.map((cell) => {
+        const rect = cellRect(cell, basketGrid.rowRatios, basketGrid.colRatios, basketGrid.rows, basketGrid.cols);
         const anchor = getBindAnchor(basketGrid.cells, cell);
         const expandRow = anchor ? anchor.row : cell.row;
         const expandZ = isExpanded ? (maxRow - expandRow) * cellHeightPx : 0;
@@ -1129,10 +1116,10 @@ function renderFridgeItem(
               ...(doorPart ? { 'data-parent-door-part': doorPart } : {}),
             } : {})}
             style={{
-              left: `${cell.col * cellW * 100}%`,
-              top: `${cell.row * cellH * 100}%`,
-              width: `${cell.colSpan * cellW * 100}%`,
-              height: `${cell.rowSpan * cellH * 100}%`,
+              left: `${rect.left * 100}%`,
+              top: `${rect.top * 100}%`,
+              width: `${rect.width * 100}%`,
+              height: `${rect.height * 100}%`,
               transformOrigin: `center ${originY}`,
               transform: `translateZ(${expandZ}px) rotateX(-90deg)`,
             }}

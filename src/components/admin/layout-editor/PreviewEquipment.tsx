@@ -5,6 +5,7 @@ import { isGridConfig, isFoldFridgeConfig, getBindAnchor } from '../../../types/
 import type { StoreIngredient } from '../../../types/db';
 import { EQUIPMENT_COLORS, EQUIPMENT_LABELS } from './types';
 import { getEquipmentPositionStyle } from '../../../lib/equipment-position';
+import { cellRect } from '../../../lib/grid-layout';
 import styles from '../KitchenLayoutEditor.module.css';
 
 // ——— 그리드 유틸 (admin/game import 공유 금지이므로 복제) ———
@@ -135,8 +136,6 @@ function PreviewDrawerVisual({ eqId, isOpen, config, eqHeight, ingredients }: Pr
   const depthRatio = depth / safeEqH; // inner height/depth를 face height 기준으로 정규화
   const openZ = isOpen ? measuredH * depthRatio : 0;
   const grid = resolveGrid(config, 'drawer');
-  const cellW = 1 / grid.cols;
-  const cellH = 1 / grid.rows;
 
   return (
     <div ref={containerRef} className={styles.drawerContainer}>
@@ -166,6 +165,7 @@ function PreviewDrawerVisual({ eqId, isOpen, config, eqHeight, ingredients }: Pr
         }}>
           {/* 그리드 셀 오버레이 */}
           {grid.cells.map((cell) => {
+            const rect = cellRect(cell, grid.rowRatios, grid.colRatios, grid.rows, grid.cols);
             const label = cell.ingredientId
               ? ingredients.find((i) => i.id === cell.ingredientId)?.display_name ?? ''
               : '';
@@ -174,10 +174,10 @@ function PreviewDrawerVisual({ eqId, isOpen, config, eqHeight, ingredients }: Pr
                 key={`${cell.row}-${cell.col}`}
                 style={{
                   position: 'absolute',
-                  left: `${cell.col * cellW * 100}%`,
-                  top: `${cell.row * cellH * 100}%`,
-                  width: `${cell.colSpan * cellW * 100}%`,
-                  height: `${cell.rowSpan * cellH * 100}%`,
+                  left: `${rect.left * 100}%`,
+                  top: `${rect.top * 100}%`,
+                  width: `${rect.width * 100}%`,
+                  height: `${rect.height * 100}%`,
                   border: '1px solid rgba(0,0,0,0.15)',
                   boxSizing: 'border-box',
                   display: 'flex',
@@ -242,11 +242,10 @@ function renderBurner(fireLevel: 0 | 1 | 2) {
 function renderBasket(isExpanded: boolean, panelIndex: number, config: Record<string, unknown>, ingredients: StoreIngredient[]) {
   const grid = resolveGrid(config, 'basket');
   const maxRow = grid.rows - 1;
-  const cellW = 1 / grid.cols;
-  const cellH = 1 / grid.rows;
   const cellHeightPx = 30;
 
   const cellNodes = grid.cells.map((cell) => {
+    const rect = cellRect(cell, grid.rowRatios, grid.colRatios, grid.rows, grid.cols);
     const anchor = getBindAnchor(grid.cells, cell);
     const expandRow = anchor ? anchor.row : cell.row;
     const expandZ = isExpanded ? (maxRow - expandRow) * cellHeightPx : 0;
@@ -262,10 +261,10 @@ function renderBasket(isExpanded: boolean, panelIndex: number, config: Record<st
         key={`${cell.row}-${cell.col}`}
         className={styles.basketCell}
         style={{
-          left: `${cell.col * cellW * 100}%`,
-          top: `${cell.row * cellH * 100}%`,
-          width: `${cell.colSpan * cellW * 100}%`,
-          height: `${cell.rowSpan * cellH * 100}%`,
+          left: `${rect.left * 100}%`,
+          top: `${rect.top * 100}%`,
+          width: `${rect.width * 100}%`,
+          height: `${rect.height * 100}%`,
           transformOrigin: `center ${originY}`,
           transform: `translateZ(${expandZ}px) rotateX(-90deg)`,
         }}
@@ -351,8 +350,6 @@ function renderFridgeItem(
   const syntheticKey = `${eqId}_fridge_${level}_${idx}`;
   const isExpanded = basketStates[syntheticKey]?.isExpanded ?? false;
   const maxRow = basketGrid.rows - 1;
-  const cellW = 1 / basketGrid.cols;
-  const cellH = 1 / basketGrid.rows;
   const cellHeightPx = 30;
 
   return (
@@ -371,6 +368,7 @@ function renderFridgeItem(
       }}
     >
       {basketGrid.cells.map((cell) => {
+        const rect = cellRect(cell, basketGrid.rowRatios, basketGrid.colRatios, basketGrid.rows, basketGrid.cols);
         const anchor = getBindAnchor(basketGrid.cells, cell);
         const expandRow = anchor ? anchor.row : cell.row;
         const expandZ = isExpanded ? (maxRow - expandRow) * cellHeightPx : 0;
@@ -385,10 +383,10 @@ function renderFridgeItem(
             key={`${cell.row}-${cell.col}`}
             className={styles.basketCell}
             style={{
-              left: `${cell.col * cellW * 100}%`,
-              top: `${cell.row * cellH * 100}%`,
-              width: `${cell.colSpan * cellW * 100}%`,
-              height: `${cell.rowSpan * cellH * 100}%`,
+              left: `${rect.left * 100}%`,
+              top: `${rect.top * 100}%`,
+              width: `${rect.width * 100}%`,
+              height: `${rect.height * 100}%`,
               transformOrigin: `center ${originY}`,
               transform: `translateZ(${expandZ}px) rotateX(-90deg)`,
             }}

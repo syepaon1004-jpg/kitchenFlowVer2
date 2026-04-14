@@ -1,0 +1,15 @@
+{
+  "id": "TASK-20260413-001",
+  "status": "changes_requested",
+  "title": "볶기 버튼 데스크탑/모바일 공통 hit-target 안정화",
+  "goal": "3D 화구 표면에서 stir 입력을 inner button이 아닌 BurnerPanel face 기준으로 처리해 데스크탑과 모바일 모두에서 볶기 홀드가 정상 동작하게 한다",
+  "scope": [
+    "src/components/game/GameKitchenView.tsx",
+    "src/components/game/GameKitchenView.module.css"
+  ],
+  "rules": [
+    "docs/rules/forbidden.md",
+    "docs/rules/css-3d.md",
+    "docs/rules/project-structure.md"
+  ]
+}

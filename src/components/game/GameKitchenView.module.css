@@ -367,16 +367,6 @@
   background: #888;
 }
 
-/* 볶기 진행률 바 */
-.stirProgressBar {
-  position: absolute;
-  left: 0;
-  top: 0;
-  height: 100%;
-  background: rgba(255, 255, 255, 0.3);
-  pointer-events: none;
-}
-
 .stirProgressLabel {
   position: relative;
   pointer-events: none;

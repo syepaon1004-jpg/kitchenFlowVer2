@@ -1,0 +1,24 @@
+{
+  "id": "TASK-20260414-014",
+  "title": "Fix burner stir interaction ownership",
+  "status": "planned",
+  "goal": "Make wok stir hold reliably start on desktop and mobile by removing burner scene/local input conflict when no selection exists.",
+  "scope": [
+    "src/components/game/GameKitchenView.tsx",
+    "src/components/game/GameKitchenView.module.css"
+  ],
+  "constraints": [
+    "Keep burner as scene placement target only while selection exists",
+    "Do not modify sink wash in this task",
+    "Preserve CSS 3D chain and transform order",
+    "No any type",
+    "No extra changes"
+  ],
+  "acceptance": [
+    "No-selection burner fire cycles locally",
+    "No-selection stir hold starts and shows progress",
+    "Container selection still places on burner",
+    "Ingredient selection behavior unchanged",
+    "Desktop and mobile both pass"
+  ]
+}

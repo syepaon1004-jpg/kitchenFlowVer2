@@ -1,0 +1,27 @@
+{
+  "id": "TASK-20260414-005",
+  "title": "서랍 GridEditor 외곽 치수 조절 UX 고정형 전환 및 표시 축소",
+  "status": "planned",
+  "created_at": "2026-04-14",
+  "updated_at": "2026-04-14",
+  "objective": [
+    "서랍 외곽 크기 조절을 이동형 핸들에서 고정형 컨트롤로 전환",
+    "서랍 내부 편집 박스 표시 크기를 줄여 편집 여백 확보",
+    "실제 width/depth 저장 방식과 내부 그리드 편집 기능 유지"
+  ],
+  "assumptions": [
+    "이번 작업 범위는 drawer GridEditor에 한정",
+    "game runtime과 preview 렌더 로직은 변경하지 않음"
+  ],
+  "targets": [
+    "src/components/admin/layout-editor/GridEditor.tsx",
+    "src/components/admin/KitchenLayoutEditor.module.css",
+    "src/styles/adminVariables.css"
+  ],
+  "rules": [
+    "docs/rules/forbidden.md",
+    "docs/rules/project-structure.md",
+    "docs/rules/css-3d.md"
+  ],
+  "risk": "low-medium"
+}

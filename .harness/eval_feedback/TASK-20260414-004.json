@@ -1,0 +1,31 @@
+{
+  "id": "TASK-20260414-004",
+  "title": "주방 레이아웃 편집 각도 하한 해제 및 내부 그리드 다중 편집 개선",
+  "status": "planned",
+  "created_at": "2026-04-14",
+  "updated_at": "2026-04-14",
+  "objective": [
+    "toolbar 각도 입력이 20 미만도 허용되게 수정",
+    "GridEditor 내부 분할선을 드래그로 이동 가능하게 확장",
+    "merge/bind가 3개 이상 셀까지 자연스럽게 선택 및 적용되도록 수정"
+  ],
+  "assumptions": [
+    "각도 요청은 perspective 하한 완화로 처리하고 top panel 고정 rotateX(-20deg)는 유지",
+    "bind는 기존과 동일하게 동일 열의 연속 셀만 허용"
+  ],
+  "targets": [
+    "src/components/admin/layout-editor/LayoutToolbar.tsx",
+    "src/components/admin/layout-editor/GridEditor.tsx",
+    "src/components/admin/KitchenLayoutEditor.module.css",
+    "src/types/game.ts",
+    "src/components/admin/layout-editor/PreviewEquipment.tsx",
+    "src/components/game/GameKitchenView.tsx",
+    "src/lib/grid-layout.ts"
+  ],
+  "rules": [
+    "docs/rules/css-3d.md",
+    "docs/rules/project-structure.md",
+    "docs/rules/forbidden.md"
+  ],
+  "risk": "medium-high"
+}
