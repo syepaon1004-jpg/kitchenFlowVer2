@@ -1,0 +1,29 @@
+/* ── 검색 가능 셀렉트 ── */
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.searchInput {
+  padding: 3px 6px;
+  font-size: 11px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  min-width: 120px;
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: var(--color-primary, #1976d2);
+}
+
+.select {
+  padding: 4px 6px;
+  font-size: 11px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  background: #fff;
+  min-width: 120px;
+}

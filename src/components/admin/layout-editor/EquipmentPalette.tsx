@@ -1,6 +1,8 @@
+import { useMemo } from 'react';
 import type { PanelEquipmentType, LocalItem, PanelItemType } from './types';
 import type { StoreIngredient, Container } from '../../../types/db';
 import { EQUIPMENT_LABELS, EQUIPMENT_COLORS } from './types';
+import SearchableSelect from './SearchableSelect';
 import styles from '../KitchenLayoutEditor.module.css';
 
 const EQUIPMENT_TYPES: PanelEquipmentType[] = [
@@ -24,6 +26,15 @@ const EquipmentPalette = ({
   containers,
   onItemChange,
 }: Props) => {
+  const ingredientOptions = useMemo(
+    () => ingredients.map((i) => ({ id: i.id, label: i.display_name })),
+    [ingredients],
+  );
+  const containerOptions = useMemo(
+    () => containers.map((c) => ({ id: c.id, label: c.name })),
+    [containers],
+  );
+
   return (
     <div className={styles.palette}>
       <h3 className={styles.paletteTitle}>장비</h3>
@@ -69,37 +80,29 @@ const EquipmentPalette = ({
             {selectedItem.itemType === 'ingredient' ? '재료 연결' : '그릇 연결'}
           </h4>
           {selectedItem.itemType === 'ingredient' ? (
-            <select
-              className={styles.fkSelect}
+            <SearchableSelect
+              key={selectedItem.id}
+              options={ingredientOptions}
               value={selectedItem.ingredientId ?? ''}
-              onChange={(e) => {
-                const val = e.target.value || null;
-                onItemChange(selectedItem.id, { ingredientId: val });
-              }}
-            >
-              <option value="">-- 선택 --</option>
-              {ingredients.map((ing) => (
-                <option key={ing.id} value={ing.id}>
-                  {ing.display_name}
-                </option>
-              ))}
-            </select>
-          ) : (
-            <select
+              placeholder="-- 선택 --"
+              searchPlaceholder="재료 검색..."
               className={styles.fkSelect}
-              value={selectedItem.containerId ?? ''}
-              onChange={(e) => {
-                const val = e.target.value || null;
-                onItemChange(selectedItem.id, { containerId: val });
+              onChange={(val) => {
+                onItemChange(selectedItem.id, { ingredientId: val || null });
               }}
-            >
-              <option value="">-- 선택 --</option>
-              {containers.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
+            />
+          ) : (
+            <SearchableSelect
+              key={selectedItem.id}
+              options={containerOptions}
+              value={selectedItem.containerId ?? ''}
+              placeholder="-- 선택 --"
+              searchPlaceholder="그릇 검색..."
+              className={styles.fkSelect}
+              onChange={(val) => {
+                onItemChange(selectedItem.id, { containerId: val || null });
+              }}
+            />
           )}
           {(selectedItem.ingredientId || selectedItem.containerId) && (
             <button

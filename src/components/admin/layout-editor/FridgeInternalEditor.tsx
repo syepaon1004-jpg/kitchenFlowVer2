@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { StoreIngredient } from '../../../types/db';
 import type { FoldFridgeConfig, FridgeInternalItem, FridgePanel } from '../../../types/game';
 import { isFoldFridgeConfig, isBasketConfig } from '../../../types/game';
 import GridEditor from './GridEditor';
+import SearchableSelect from './SearchableSelect';
 import styles from './FridgeInternalEditor.module.css';
 
 // ——— 상수 ———
@@ -80,6 +81,11 @@ const FridgeInternalEditor = ({
   const [selectedBasketKey, setSelectedBasketKey] = useState<string | null>(null);
 
   const panelRefs = useRef<Record<number, HTMLDivElement | null>>({ 1: null, 2: null, 3: null, 4: null });
+
+  const ingredientOptions = useMemo(
+    () => ingredients.map((i) => ({ id: i.id, label: i.display_name })),
+    [ingredients],
+  );
 
   // equipmentId 변경 = 다른 냉장고 선택 → 전체 초기화
   // config은 의존성에서 제거: emitChange가 이미 setFridgeConfig로 로컬 반영하므로,
@@ -486,18 +492,15 @@ const FridgeInternalEditor = ({
       {selectedInfo && selectedInfo.item.type === 'ingredient' && (
         <div className={styles.detailSection}>
           <span className={styles.detailLabel}>재료 연결:</span>
-          <select
-            className={styles.fkSelect}
+          <SearchableSelect
+            key={selectedItemId}
+            options={ingredientOptions}
             value={selectedInfo.item.ingredientId ?? ''}
-            onChange={(e) => handleIngredientChange(selectedInfo.level, selectedInfo.index, e.target.value || null)}
-          >
-            <option value="">-- 재료 선택 --</option>
-            {ingredients.map((ing) => (
-              <option key={ing.id} value={ing.id}>
-                {ing.display_name}
-              </option>
-            ))}
-          </select>
+            placeholder="-- 재료 선택 --"
+            searchPlaceholder="재료 검색..."
+            className={styles.fkSelect}
+            onChange={(val) => handleIngredientChange(selectedInfo.level, selectedInfo.index, val || null)}
+          />
           {selectedInfo.item.ingredientId && (
             <button
               className={styles.fkUnlinkBtn}

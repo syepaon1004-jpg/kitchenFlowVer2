@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { StoreIngredient } from '../../../types/db';
 import type { GridCell, GridConfig } from '../../../types/game';
 import { isGridConfig } from '../../../types/game';
+import SearchableSelect from './SearchableSelect';
 import styles from '../KitchenLayoutEditor.module.css';
 
 // ——— 유틸 ———
@@ -103,6 +104,11 @@ const GridEditor = ({
   const [selectedCellKey, setSelectedCellKey] = useState<string | null>(null);
   const [mergeAnchor, setMergeAnchor] = useState<{ row: number; col: number } | null>(null);
   const [warning, setWarning] = useState<string | null>(null);
+
+  const ingredientOptions = useMemo(
+    () => ingredients.map((i) => ({ id: i.id, label: i.display_name })),
+    [ingredients],
+  );
 
   // 경고 자동 소멸
   useEffect(() => {
@@ -532,19 +538,16 @@ const GridEditor = ({
       {/* 재료 연결 UI */}
       {selectedCell && (
         <div className={styles.gridIngredientSection}>
-          <select
+          <SearchableSelect
+            key={selectedCellKey}
+            options={ingredientOptions}
+            value={selectedCell.ingredientId ?? ''}
+            placeholder="-- 재료 선택 --"
+            searchPlaceholder="재료 검색..."
             className={styles.fkSelect}
             style={{ width: 'auto', minWidth: 120 }}
-            value={selectedCell.ingredientId ?? ''}
-            onChange={(e) => handleIngredientChange(e.target.value || null)}
-          >
-            <option value="">-- 재료 선택 --</option>
-            {ingredients.map((ing) => (
-              <option key={ing.id} value={ing.id}>
-                {ing.display_name}
-              </option>
-            ))}
-          </select>
+            onChange={(val) => handleIngredientChange(val || null)}
+          />
           {selectedCell.ingredientId && (
             <button
               className={styles.fkUnlinkBtn}
