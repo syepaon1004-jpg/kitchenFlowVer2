@@ -1,0 +1,29 @@
+{
+  "id": "TASK-20260414-019",
+  "title": "Align sink wash hold target with visible sink UI",
+  "status": "planned",
+  "goal": "Make sink wash interaction use the same visible region that the player sees, and enlarge the sink wash CTA on desktop/mobile without changing other sink behaviors.",
+  "scope": [
+    "src/components/game/GameKitchenView.tsx",
+    "src/components/game/GameKitchenView.module.css",
+    "src/components/equipment/WokComponent.tsx",
+    "src/components/equipment/WokComponent.module.css"
+  ],
+  "constraints": [
+    "Keep current selection-state sink actions (wok-content -> move-wok-to-sink, placed-container -> dispose)",
+    "Do not fix by globally raising --equip-btn-min-size for all equipment",
+    "Reuse the recent burner input-ownership principle",
+    "Preserve CSS 3D chain and transform order",
+    "No any type",
+    "No admin/game cross-import",
+    "No extra changes"
+  ],
+  "acceptance": [
+    "Dirty or burned wok at sink starts wash hold from the full intended visible sink wash region",
+    "Visible sink wash CTA size matches the actual holdable area on desktop and mobile",
+    "Wok-content selection still moves wok to sink",
+    "Placed-container selection still disposes at sink",
+    "Empty sink or clean sink does not trigger unintended wash behavior",
+    "Build and type-check pass"
+  ]
+}

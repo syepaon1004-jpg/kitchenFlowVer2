@@ -451,6 +451,7 @@ const KitchenLayoutEditor = ({ storeId, ingredients, containers }: Props) => {
           y: normalizeOversizedY(Math.min(1 - source.height, source.y + 0.05), source.height),
           equipmentIndex: nextIndex,
           sortOrder: rd.equipment.length,
+          config: JSON.parse(JSON.stringify(source.config)) as Record<string, unknown>,
         };
 
         setSelectedEquipmentId(copy.id);

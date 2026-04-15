@@ -1,0 +1,27 @@
+{
+  "id": "TASK-20260415-002",
+  "title": "Isolate fold fridge internal config per equipment instance",
+  "status": "done",
+  "goal": "Prevent fold_fridge and four_box_fridge internal panel config from being shared across equipment instances in the admin editor.",
+  "scope": [
+    "src/components/admin/KitchenLayoutEditor.tsx",
+    "src/components/admin/layout-editor/FridgeInternalEditor.tsx"
+  ],
+  "constraints": [
+    "Fix in admin editor state/config flow only",
+    "Do not modify game/runtime files unless a new blocker is proven from code",
+    "Do not change DB schema or SQL",
+    "Do not shallow-copy equipment.config during duplication",
+    "Ensure nested basketConfig is also detached",
+    "No any type",
+    "No extra changes"
+  ],
+  "acceptance": [
+    "Adding a second fold_fridge from the palette starts with an empty internal panel state",
+    "Duplicating a fold_fridge copies the current internal snapshot but later edits do not affect the original",
+    "The same isolation holds for four_box_fridge",
+    "A edits never appear in B, and B edits never appear in A",
+    "npm run build passes",
+    "npx tsc --noEmit passes"
+  ]
+}

@@ -49,8 +49,10 @@ const PreviewEquipment = ({ equipment, panelIndex, interactionState, ingredients
         <div
           key={eq.id}
           className={styles.previewEqItem}
-          data-equipment-id={eq.id}
-          data-equipment-type={eq.equipmentType}
+          {...(eq.equipmentType !== 'filler_panel' ? {
+            'data-equipment-id': eq.id,
+            'data-equipment-type': eq.equipmentType,
+          } : {})}
           style={{
             left: `${eq.x * 100}%`,
             ...getEquipmentPositionStyle(eq.y, eq.height),

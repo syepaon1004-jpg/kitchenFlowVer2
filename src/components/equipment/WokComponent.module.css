@@ -73,12 +73,6 @@
   font-weight: bold;
 }
 
-.washSection {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-2xs);
-}
-
 .cleanStatus {
   font-size: var(--font-2xs);
   color: var(--color-success);

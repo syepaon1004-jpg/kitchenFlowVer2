@@ -1,0 +1,38 @@
+{
+  "id": "TASK-20260415-003",
+  "title": "Refine in-game basket expand/collapse UX across scene and HUD clicks",
+  "status": "done",
+  "goal": "Replace the in-game basket expand/collapse button flow with basket-surface click opening and context-aware auto-collapse so non-transfer scene clicks and top-left HUD clicks close the current basket while valid ingredient transfer clicks keep it open.",
+  "scope": [
+    "src/components/game/GameKitchenView.tsx",
+    "src/components/game/GameKitchenView.module.css",
+    "src/pages/GamePage.tsx",
+    "src/components/game/SelectionDisplay.tsx",
+    "src/components/layout/Handbar.tsx"
+  ],
+  "constraints": [
+    "Game runtime only; do not change admin preview/editor behavior in this task",
+    "Preserve CSS 3D transform order and preserve-3d chain",
+    "Keep scene-level rect hit-testing; do not switch to pointer-events-based 3D hit detection",
+    "Include SelectionDisplay and Handbar clicks as outside-click collapse triggers",
+    "Do not globalize the whole interaction state just to support HUD collapse; use a narrow collapse signal/callback path",
+    "Do not regress burner or sink scene-level input ownership",
+    "Do not revert pre-existing dirty changes in GameKitchenView",
+    "No any type",
+    "No admin/game cross-import",
+    "No extra changes"
+  ],
+  "acceptance": [
+    "Clicking a basket surface opens it without relying on a visible expand/collapse button",
+    "Clicking empty scene space closes any expanded basket",
+    "Clicking another storage toggle target such as a drawer or another basket closes the current basket and still performs the target toggle in the same click",
+    "With an ingredient selected from a basket, clicking a valid transfer destination such as a wok hologram or placed bowl keeps the basket open while the transfer proceeds",
+    "Clicking SelectionDisplay closes any expanded basket and preserves its current deselect behavior",
+    "Clicking Handbar blank area closes any expanded basket and preserves current move-to-hand behavior when applicable",
+    "Clicking a Handbar ingredient chip closes any expanded basket and preserves current chip select/deselect behavior",
+    "Fridge-internal baskets follow the same keep-open vs auto-close rules without breaking fridge door open filtering",
+    "Burner and sink scene-level interactions remain unchanged",
+    "npm run build passes",
+    "npx tsc --noEmit passes"
+  ]
+}

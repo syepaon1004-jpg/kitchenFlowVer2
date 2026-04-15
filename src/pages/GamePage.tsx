@@ -679,6 +679,15 @@ const GamePage = () => {
     onAction: handleResolvedAction,
   });
 
+  // 바구니 접기 신호: GameKitchenView → HUD 전달
+  const collapseAllBasketsRef = useRef<(() => void) | null>(null);
+  const handleRegisterCollapseBaskets = useCallback((fn: () => void) => {
+    collapseAllBasketsRef.current = fn;
+  }, []);
+  const collapseBaskets = useCallback(() => {
+    collapseAllBasketsRef.current?.();
+  }, []);
+
   // 웍 내용물 맵 (홀로그램 텍스트 표시용)
   const wokContentsMap = useMemo(() => {
     const map = new Map<string, { ingredientId: string; displayName: string; quantity: number; unit: string }[]>();
@@ -1147,6 +1156,7 @@ const GamePage = () => {
               selection={selection}
               panelToStateIdMap={panelToStateIdMap}
               onSceneClick={handleSceneClick}
+              onRegisterCollapseBaskets={handleRegisterCollapseBaskets}
             >
               <BillQueue getRecipeName={getRecipeName} getRecipeNaturalText={getRecipeNaturalText} />
             </GameKitchenView>
@@ -1164,8 +1174,8 @@ const GamePage = () => {
           />
           {/* HUD: 좌측 상단 (선택 표시 + 핸드바) */}
           <div className={styles.topLeftHud}>
-            <SelectionDisplay selection={selection} onDeselect={deselect} />
-            <Handbar onIngredientToHandbar={(sel) => {
+            <SelectionDisplay selection={selection} onDeselect={deselect} onCollapseBaskets={collapseBaskets} />
+            <Handbar onCollapseBaskets={collapseBaskets} onIngredientToHandbar={(sel) => {
               if (sel.ingredientId) {
                 handleResolvedAction({
                   type: 'add-ingredient',

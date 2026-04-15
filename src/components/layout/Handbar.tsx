@@ -7,14 +7,17 @@ import styles from './Handbar.module.css';
 
 interface HandbarProps {
   onIngredientToHandbar?: (selection: SelectionState) => void;
+  onCollapseBaskets?: () => void;
 }
 
 function HandIngredientChip({
   inst,
   storeIngredientsMap,
+  onCollapseBaskets,
 }: {
   inst: GameIngredientInstance;
   storeIngredientsMap: Map<string, StoreIngredient>;
+  onCollapseBaskets?: () => void;
 }) {
   const selection = useSelectionStore((s) => s.selection);
   const select = useSelectionStore((s) => s.select);
@@ -29,6 +32,7 @@ function HandIngredientChip({
 
   const handleClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
+    onCollapseBaskets?.();
     if (isSelected) {
       deselect();
     } else {
@@ -39,7 +43,7 @@ function HandIngredientChip({
         sourceLabel: `${displayName} ${inst.quantity}${unit}`,
       });
     }
-  }, [isSelected, select, deselect, inst.ingredient_id, inst.id, inst.quantity, displayName, unit]);
+  }, [isSelected, select, deselect, onCollapseBaskets, inst.ingredient_id, inst.id, inst.quantity, displayName, unit]);
 
   const chipClass = `${styles.ingredientChip}${isSelected ? ` ${styles.chipSelected}` : ''}`;
 
@@ -57,7 +61,7 @@ function HandIngredientChip({
   );
 }
 
-export default function Handbar({ onIngredientToHandbar }: HandbarProps) {
+export default function Handbar({ onIngredientToHandbar, onCollapseBaskets }: HandbarProps) {
   const ingredientInstances = useGameStore((s) => s.ingredientInstances);
   const storeIngredientsMap = useGameStore((s) => s.storeIngredientsMap);
 
@@ -67,6 +71,7 @@ export default function Handbar({ onIngredientToHandbar }: HandbarProps) {
   );
 
   const handleHandbarClick = useCallback(() => {
+    onCollapseBaskets?.();
     const sel = useSelectionStore.getState().selection;
 
     // 무한 소스 재료 선택 상태 → 핸드바에 추가
@@ -75,7 +80,7 @@ export default function Handbar({ onIngredientToHandbar }: HandbarProps) {
       return;
     }
     // 그 외 클릭은 무시 (칩 클릭은 stopPropagation으로 여기 도달하지 않음)
-  }, [onIngredientToHandbar]);
+  }, [onCollapseBaskets, onIngredientToHandbar]);
 
   return (
     <div
@@ -86,7 +91,7 @@ export default function Handbar({ onIngredientToHandbar }: HandbarProps) {
         <span>핸드바 (비어있음)</span>
       ) : (
         handIngredients.map((inst) => (
-          <HandIngredientChip key={inst.id} inst={inst} storeIngredientsMap={storeIngredientsMap} />
+          <HandIngredientChip key={inst.id} inst={inst} storeIngredientsMap={storeIngredientsMap} onCollapseBaskets={onCollapseBaskets} />
         ))
       )}
     </div>

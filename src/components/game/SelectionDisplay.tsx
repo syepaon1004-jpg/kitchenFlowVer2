@@ -11,11 +11,12 @@ const TYPE_LABELS: Record<SelectionState['type'], string> = {
 interface Props {
   selection: SelectionState | null;
   onDeselect: () => void;
+  onCollapseBaskets?: () => void;
 }
 
-const SelectionDisplay = ({ selection, onDeselect }: Props) => {
+const SelectionDisplay = ({ selection, onDeselect, onCollapseBaskets }: Props) => {
   return (
-    <div className={styles.selectionDisplay} onClick={selection ? onDeselect : undefined}>
+    <div className={styles.selectionDisplay} onClick={() => { onCollapseBaskets?.(); if (selection) onDeselect(); }}>
       {selection ? (
         <div className={styles.chip}>
           <span className={styles.chipType}>{TYPE_LABELS[selection.type]}</span>

@@ -46,6 +46,7 @@ export const EQUIPMENT_DEFAULTS: Record<PanelEquipmentType, { width: number; hei
   sink: { width: 0.2, height: 0.35 },
   worktop: { width: 0.3, height: 0.25 },
   shelf: { width: 0.3, height: 0.15 },
+  filler_panel: { width: 0.25, height: 0.3 },
 };
 
 /** 장비 한글 라벨 */
@@ -58,6 +59,7 @@ export const EQUIPMENT_LABELS: Record<PanelEquipmentType, string> = {
   sink: '씽크대',
   worktop: '작업대',
   shelf: '선반',
+  filler_panel: '필러패널',
 };
 
 /** 장비 외형 색상 (편집 모드용) */
@@ -70,6 +72,7 @@ export const EQUIPMENT_COLORS: Record<PanelEquipmentType, string> = {
   sink: '#6699CC',
   worktop: '#A0845C',
   shelf: '#8B7355',
+  filler_panel: 'var(--color-filler-panel)',
 };
 
 /** DB PanelEquipment → LocalEquipment 변환 */

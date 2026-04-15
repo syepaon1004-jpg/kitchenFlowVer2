@@ -9,8 +9,6 @@ interface Props {
   atSink?: boolean;
 }
 
-const WASH_DURATION = 3000; // 3초
-const WASH_INTERVAL = 50; // 50ms 간격 업데이트
 const STIR_DURATION = 30000; // 30초
 const STIR_INTERVAL = 100; // 100ms 간격 업데이트
 
@@ -22,9 +20,7 @@ export default function WokComponent({ equipmentState, atSink = false }: Props) 
   const ingredientInstances = useGameStore((s) => s.ingredientInstances);
   const waterIngredientIds = useGameStore((s) => s.waterIngredientIds);
 
-  // 세척 진행률 (로컬 state)
-  const [washProgress, setWashProgress] = useState(0);
-  const washTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // 세척은 scene-level hold로 이동 (GameKitchenView) → 로컬 wash state 제거
 
   // 볶기 진행률 (로컬 state)
   const [stirProgress, setStirProgress] = useState(0);
@@ -47,41 +43,6 @@ export default function WokComponent({ equipmentState, atSink = false }: Props) 
     updateEquipment(equipmentState.id, { burner_level: level });
   };
 
-  // 세척 홀드 시작
-  const startWash = useCallback(
-    (e: React.PointerEvent) => {
-      e.stopPropagation();
-      e.preventDefault();
-      if (equipmentState.wok_status === 'clean') return;
-
-      let elapsed = 0;
-      washTimerRef.current = setInterval(() => {
-        elapsed += WASH_INTERVAL;
-        setWashProgress(elapsed);
-        if (elapsed >= WASH_DURATION) {
-          // 세척 완료
-          if (washTimerRef.current) clearInterval(washTimerRef.current);
-          washTimerRef.current = null;
-          setWashProgress(0);
-          updateEquipment(equipmentState.id, {
-            wok_status: 'clean',
-            wok_temp: 25,
-            burner_level: 0,
-          });
-        }
-      }, WASH_INTERVAL);
-    },
-    [equipmentState.id, equipmentState.wok_status, updateEquipment],
-  );
-
-  // 세척 홀드 중단
-  const stopWash = useCallback(() => {
-    if (washTimerRef.current) {
-      clearInterval(washTimerRef.current);
-      washTimerRef.current = null;
-    }
-    setWashProgress(0);
-  }, []);
 
   // 볶��� 홀드 시���
   const startStir = useCallback(
@@ -126,8 +87,6 @@ export default function WokComponent({ equipmentState, atSink = false }: Props) 
           : 'var(--color-success)';
 
   const canStir = !!equipmentState.burner_level && (equipmentState.wok_status === 'clean' || equipmentState.wok_status === 'overheating') && !hasWaterInWok;
-  const needsWash = atSink && equipmentState.wok_status !== 'clean';
-  const washPercent = (washProgress / WASH_DURATION) * 100;
 
   return (
     <div
@@ -135,6 +94,7 @@ export default function WokComponent({ equipmentState, atSink = false }: Props) 
       style={{
         background: 'var(--equip-bg)',
         border: `2px solid ${atSink ? 'var(--color-sink)' : statusColor}`,
+        ...(atSink ? { pointerEvents: 'none' as const } : {}),
       }}
     >
       <div className={styles.titleRow}>
@@ -205,32 +165,6 @@ export default function WokComponent({ equipmentState, atSink = false }: Props) 
             </div>
           )}
         </>
-      )}
-
-      {needsWash && (
-        <div className={styles.washSection}>
-          <button
-            onPointerDown={startWash}
-            onPointerUp={stopWash}
-            onPointerLeave={stopWash}
-            className={styles.actionBtn}
-            style={{
-              background: washProgress > 0 ? 'var(--color-sink)' : 'var(--color-sink)',
-              cursor: 'pointer',
-            }}
-          >
-            <div
-              className={styles.progressBar}
-              style={{
-                width: `${washPercent}%`,
-                transition: `width ${WASH_INTERVAL}ms linear`,
-              }}
-            />
-            <span className={styles.progressLabel}>
-              {washProgress > 0 ? `세척중 ${Math.round(washPercent)}%` : '세�� (꾹 누르기)'}
-            </span>
-          </button>
-        </div>
       )}
 
       {atSink && equipmentState.wok_status === 'clean' && (

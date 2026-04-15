@@ -32,7 +32,8 @@ const DEFAULT_CONFIG_FOUR_BOX: FoldFridgeConfig = {
 
 function resolveConfig(config: Record<string, unknown>, equipmentType?: string): FoldFridgeConfig {
   if (isFoldFridgeConfig(config)) return config;
-  return equipmentType === 'four_box_fridge' ? DEFAULT_CONFIG_FOUR_BOX : DEFAULT_CONFIG_FOLD;
+  const template = equipmentType === 'four_box_fridge' ? DEFAULT_CONFIG_FOUR_BOX : DEFAULT_CONFIG_FOLD;
+  return JSON.parse(JSON.stringify(template)) as FoldFridgeConfig;
 }
 
 function snapValue(val: number, targets: number[], thresholdRatio: number): number {

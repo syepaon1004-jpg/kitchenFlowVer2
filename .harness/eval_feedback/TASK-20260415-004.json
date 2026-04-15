@@ -1,0 +1,17 @@
+{
+  "task_id": "TASK-20260415-004",
+  "result": "approved",
+  "plan_alignment": 5,
+  "checklist_pass_rate": 100,
+  "extra_changes": false,
+  "plan_rounds": 3,
+  "execution_rounds": 1,
+  "notes": [
+    "Only two files changed on cleanup/remove-dnd-remnants: src/hooks/useSwipeNavigation.ts deleted, src/types/db.ts modified",
+    "Legacy DnD-only symbols AreaType, HitboxPoint, AreaDefinition, drag_start, and drop_success were removed",
+    "draggable={false} was preserved in game/admin background images",
+    "npx tsc --noEmit was re-verified during evaluation",
+    "npx eslint src/types/db.ts was re-verified during evaluation",
+    "npm run build was accepted as reported and not re-run during read-only evaluation"
+  ]
+}

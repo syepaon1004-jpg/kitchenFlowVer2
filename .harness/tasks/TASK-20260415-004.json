@@ -1,0 +1,28 @@
+{
+  "id": "TASK-20260415-004",
+  "title": "Remove residual drag-and-drop artifacts after click-selection migration",
+  "status": "done",
+  "goal": "Delete the remaining drag-and-drop remnants that are no longer part of the current click-selection runtime, without changing current gameplay behavior. Because the worktree is already dirty, isolate the task on a dedicated cleanup branch after snapshotting the current state.",
+  "scope": [
+    "src/hooks/useSwipeNavigation.ts",
+    "src/types/db.ts"
+  ],
+  "constraints": [
+    "Do not work directly on main; snapshot the current dirty worktree first, then use a dedicated cleanup branch",
+    "Treat draggable={false} on background images as native browser drag prevention, not legacy DnD",
+    "Do not touch GameKitchenView 3D transform order or preserve-3d chain unless strictly required",
+    "No any type",
+    "No admin/game cross-import",
+    "Do not rewrite old Supabase migrations in this task",
+    "No extra cleanup outside drag-and-drop remnants unless it is directly adjacent and proven unused"
+  ],
+  "acceptance": [
+    "src no longer contains runtime/type-level DnD remnants for the draggable guard or drag_start/drop_success",
+    "src/hooks/useSwipeNavigation.ts is either removed as unused or stripped of the draggable-specific logic after a full reference search",
+    "src/types/db.ts no longer contains drag_start or drop_success in ActionLogType",
+    "Legacy AreaDefinition hitbox contract in src/types/db.ts is removed if it remains unreferenced after full-code verification",
+    "Background image behavior in game/admin remains unchanged",
+    "npm run build passes",
+    "npx tsc --noEmit passes"
+  ]
+}

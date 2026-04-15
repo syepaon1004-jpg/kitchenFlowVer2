@@ -5,6 +5,7 @@ import { useEquipmentStore } from '../../stores/equipmentStore';
 import { useGameStore } from '../../stores/gameStore';
 import { useShallow } from 'zustand/react/shallow';
 import { PLACED_CONTAINER_SIZE_VH } from '../../lib/interaction/constants';
+import { resolveAction } from '../../lib/interaction/resolveAction';
 import { getEquipmentPositionStyle } from '../../lib/equipment-position';
 import { isGridConfig, isFoldFridgeConfig, getBindAnchor } from '../../types/game';
 import { cellRect } from '../../lib/grid-layout';
@@ -63,12 +64,14 @@ function resolveGrid(config: Record<string, unknown>, eqType: 'drawer' | 'basket
 const EQUIPMENT_COLORS: Record<PanelEquipmentType, string> = {
   drawer: '#C0C0C0', fold_fridge: '#C0C0C0', four_box_fridge: '#C0C0C0', basket: 'transparent',
   burner: '#888888', sink: '#6699CC', worktop: '#C0C0C0', shelf: '#8B7355',
+  filler_panel: 'var(--color-filler-panel)',
 };
 
 const EQUIP_RADIUS = 6;
 
 const BURNER_COLORS: Record<0 | 1 | 2, string> = { 0: '#888888', 1: '#E8820C', 2: '#CC2200' };
 const STIR_DURATION = 30000;
+const SCENE_WASH_DURATION = 3000;
 
 const INITIAL_INTERACTION: EquipmentInteractionState = {
   drawers: {}, burners: {}, baskets: {}, foldFridges: {}, fourBoxFridges: {},
@@ -90,6 +93,8 @@ function getEquipmentClickTarget(eqType: PanelEquipmentType): string | null {
     case 'sink':
       return 'sink';
     case 'shelf':
+      return null;
+    case 'filler_panel':
       return null;
     default:
       return null;
@@ -137,6 +142,7 @@ interface Props {
   selection?: SelectionState | null;
   panelToStateIdMap?: Map<string, string>;
   onSceneClick?: (target: ClickTarget) => void;
+  onRegisterCollapseBaskets?: (fn: () => void) => void;
   children?: React.ReactNode; // BillQueue slot
 }
 
@@ -168,13 +174,15 @@ function getBasketCorrection(panelIndex: number): string {
 // ——— 컴포넌트 ———
 
 const GameKitchenView = ({
-  panelHeights, perspectiveDeg, previewYOffset, backgroundImageUrl, cameraOffsetX = 0, equipment, items, ingredientLabelsMap, wokContentsMap, placedContainers, hasSelection, selection, panelToStateIdMap, onSceneClick, children,
+  panelHeights, perspectiveDeg, previewYOffset, backgroundImageUrl, cameraOffsetX = 0, equipment, items, ingredientLabelsMap, wokContentsMap, placedContainers, hasSelection, selection, panelToStateIdMap, onSceneClick, onRegisterCollapseBaskets, children,
 }: Props) => {
   const sceneRef = useRef<HTMLDivElement>(null);
   const [containerHeight, setContainerHeight] = useState(0);
   const [interactionState, setInteractionState] = useState<EquipmentInteractionState>(INITIAL_INTERACTION);
   const activeStirEquipmentIdRef = useRef<string | null>(null);
   const activeStirStopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const activeWashEquipmentIdRef = useRef<string | null>(null);
+  const activeWashCompletionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // equipmentStore에서 burner_level만 추출 (매 틱 wok_temp 변경 시 리렌더 방지)
   const burnerLevelsRecord = useEquipmentStore(
@@ -238,7 +246,42 @@ const GameKitchenView = ({
     }, STIR_DURATION);
   }, [stopSceneStir]);
 
-  // unmount 시 stir cleanup
+  // scene-level wash hold: ref + timeout 기반 (stir 패턴 동일)
+  const stopSceneWash = useCallback(() => {
+    const stateId = activeWashEquipmentIdRef.current;
+    if (!stateId) return;
+    activeWashEquipmentIdRef.current = null;
+    if (activeWashCompletionTimerRef.current) {
+      clearTimeout(activeWashCompletionTimerRef.current);
+      activeWashCompletionTimerRef.current = null;
+    }
+    useEquipmentStore.getState().removeWashing(stateId);
+  }, []);
+
+  const startSceneWash = useCallback((wokStateId: string) => {
+    if (activeWashEquipmentIdRef.current) return;
+    const equip = useEquipmentStore.getState().equipments.find((e) => e.id === wokStateId);
+    if (!equip || equip.wok_status === 'clean') return;
+
+    activeWashEquipmentIdRef.current = wokStateId;
+    useEquipmentStore.getState().addWashing(wokStateId);
+
+    activeWashCompletionTimerRef.current = setTimeout(() => {
+      const cur = useEquipmentStore.getState().equipments.find((e) => e.id === wokStateId);
+      if (cur && cur.wok_status !== 'clean') {
+        useEquipmentStore.getState().updateEquipment(wokStateId, {
+          wok_status: 'clean',
+          wok_temp: 25,
+          burner_level: 0,
+        });
+      }
+      useEquipmentStore.getState().removeWashing(wokStateId);
+      activeWashEquipmentIdRef.current = null;
+      activeWashCompletionTimerRef.current = null;
+    }, SCENE_WASH_DURATION);
+  }, []);
+
+  // unmount 시 stir + wash cleanup
   useEffect(() => {
     return () => {
       if (activeStirStopTimerRef.current) {
@@ -249,6 +292,15 @@ const GameKitchenView = ({
       if (stateId) {
         useEquipmentStore.getState().removeStirring(stateId);
         activeStirEquipmentIdRef.current = null;
+      }
+      if (activeWashCompletionTimerRef.current) {
+        clearTimeout(activeWashCompletionTimerRef.current);
+        activeWashCompletionTimerRef.current = null;
+      }
+      const washStateId = activeWashEquipmentIdRef.current;
+      if (washStateId) {
+        useEquipmentStore.getState().removeWashing(washStateId);
+        activeWashEquipmentIdRef.current = null;
       }
     };
   }, []);
@@ -275,6 +327,22 @@ const GameKitchenView = ({
       }
     });
   }, []);
+
+  const collapseAllBaskets = useCallback(() => {
+    setInteractionState((prev) => {
+      const hasExpanded = Object.values(prev.baskets).some(b => b.isExpanded);
+      if (!hasExpanded) return prev;
+      const collapsed: Record<string, { isExpanded: boolean }> = {};
+      for (const key of Object.keys(prev.baskets)) {
+        collapsed[key] = { isExpanded: false };
+      }
+      return { ...prev, baskets: collapsed };
+    });
+  }, []);
+
+  useEffect(() => {
+    onRegisterCollapseBaskets?.(collapseAllBaskets);
+  }, [onRegisterCollapseBaskets, collapseAllBaskets]);
 
   const handleScenePointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     const sceneEl = sceneRef.current;
@@ -324,6 +392,11 @@ const GameKitchenView = ({
         const key = ptype === 'four_box_fridge' && pdp
           ? `${ptype}:${pid}:${pdp}` : `${ptype}:${pid}`;
         childParentKeys.add(key);
+      }
+      // fridge 내부 바구니 셀 → basket owner 관계 추가
+      const basketOwnerId = hit.el.dataset.basketOwnerId;
+      if (basketOwnerId) {
+        childParentKeys.add(`basket:${basketOwnerId}`);
       }
     }
     const filteredHits = hits.filter((hit) => {
@@ -382,6 +455,18 @@ const GameKitchenView = ({
         const toggleMeta = toggleMetaStr ? JSON.parse(toggleMetaStr) as Record<string, string> : {};
         const eqId = selectedHit.dataset.equipmentId ?? toggleMeta.equipmentId;
         const eqType = selectedHit.dataset.equipmentType ?? toggleMeta.equipmentType;
+        // 바구니 자동 접힘: basket이면 다른 바구니만, 아니면 전부
+        if (eqType === 'basket') {
+          setInteractionState((prev) => {
+            const newBaskets: Record<string, { isExpanded: boolean }> = {};
+            for (const key of Object.keys(prev.baskets)) {
+              newBaskets[key] = key === eqId ? prev.baskets[key] : { isExpanded: false };
+            }
+            return { ...prev, baskets: newBaskets };
+          });
+        } else {
+          collapseAllBaskets();
+        }
         handleInteraction(eqId, eqType, toggleMeta.doorPart);
         // onSceneClick에도 전달 (선택 상태 관리용)
         onSceneClick?.({
@@ -394,6 +479,7 @@ const GameKitchenView = ({
 
       // burner: scene-level rect hit-test로 fire/stir 일원화
       if (targetType === 'burner') {
+        collapseAllBaskets();
         const burnerMetaStr = selectedHit.dataset.clickMeta;
         const burnerMeta = burnerMetaStr ? JSON.parse(burnerMetaStr) as Record<string, string> : {};
         const eqId = selectedHit.dataset.equipmentId ?? burnerMeta.equipmentId;
@@ -438,6 +524,43 @@ const GameKitchenView = ({
         return;
       }
 
+      // sink: scene-level wash hold
+      if (targetType === 'sink') {
+        collapseAllBaskets();
+        const sinkMetaStr = selectedHit.dataset.clickMeta;
+        const sinkMeta = sinkMetaStr ? JSON.parse(sinkMetaStr) as Record<string, string> : {};
+        const eqId = selectedHit.dataset.equipmentId ?? sinkMeta.equipmentId;
+
+        if (hasSelection) {
+          // 선택 상태: move-wok-to-sink / dispose 등 → onSceneClick 위임
+          const rect = selectedHit.getBoundingClientRect();
+          onSceneClick?.({
+            type: 'sink',
+            equipmentId: eqId,
+            equipmentType: 'sink',
+            localRatio: {
+              x: (clientX - rect.left) / rect.width,
+              y: (clientY - rect.top) / rect.height,
+            },
+          });
+          return;
+        }
+
+        // no-selection: dirty wok → wash hold 시작
+        const { wok_at_sink, equipments } = useEquipmentStore.getState();
+        let wokStateId: string | null = null;
+        for (const [wokId, sinkId] of wok_at_sink) {
+          if (sinkId === eqId) { wokStateId = wokId; break; }
+        }
+        if (wokStateId) {
+          const wokEquip = equipments.find((e) => e.id === wokStateId);
+          if (wokEquip && wokEquip.wok_status !== 'clean') {
+            startSceneWash(wokStateId);
+          }
+        }
+        return;
+      }
+
       // 기타 타겟: ClickTarget 구성 후 onSceneClick 호출
       const metaStr = selectedHit.dataset.clickMeta;
       const meta = metaStr ? JSON.parse(metaStr) as Record<string, string> : {};
@@ -462,20 +585,34 @@ const GameKitchenView = ({
         };
       }
 
+      // 바구니 자동 접힘: 바구니 내부 재료 클릭 또는 add-ingredient 액션이면 유지, 그 외 접힘
+      const basketOwnerId = selectedHit.dataset.basketOwnerId;
+      const isExpandedBasketInteriorHit = targetType === 'ingredient-source'
+        && !!basketOwnerId
+        && (interactionState.baskets[basketOwnerId]?.isExpanded ?? false);
+      if (!isExpandedBasketInteriorHit) {
+        const resolved = resolveAction(selection ?? null, clickTarget);
+        if (resolved?.type !== 'add-ingredient') {
+          collapseAllBaskets();
+        }
+      }
+
       onSceneClick?.(clickTarget);
       return;
     }
 
     // 히트 없음 → empty-area
+    collapseAllBaskets();
     onSceneClick?.({ type: 'empty-area' });
-  }, [handleInteraction, interactionState, hasSelection, onSceneClick, panelToStateIdMap, startSceneStir]);
+  }, [handleInteraction, interactionState, hasSelection, selection, onSceneClick, panelToStateIdMap, startSceneStir, startSceneWash, collapseAllBaskets]);
 
   const handleScenePointerUp = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     if (e.currentTarget.hasPointerCapture(e.pointerId)) {
       e.currentTarget.releasePointerCapture(e.pointerId);
     }
     stopSceneStir();
-  }, [stopSceneStir]);
+    stopSceneWash();
+  }, [stopSceneStir, stopSceneWash]);
 
   // 패널 렌더링 (부모-자식 중첩)
   const renderPanel = (index: number): React.ReactNode => {
@@ -520,6 +657,7 @@ const GameKitchenView = ({
                     left: `${eq.x * 100}%`,
                     ...getEquipmentPositionStyle(eq.y, eq.height),
                     width: `${eq.width * 100}%`,
+                    ...(eq.equipmentType === 'filler_panel' ? { pointerEvents: 'none' as const } : {}),
                   }}
                 >
                   {renderEquipment(eq, interactionState, index, ingredientLabelsMap, burnerLevelsRecord[eq.id] ?? 0, panelToStateIdMap?.get(eq.id), selection)}
@@ -840,6 +978,9 @@ function SinkArea({ sinkPanelId }: SinkAreaProps) {
   const wokEquipment = useEquipmentStore((s) =>
     wokStateId ? s.equipments.find((e) => e.id === wokStateId) ?? null : null,
   );
+  const isWashing = useEquipmentStore((s) =>
+    wokStateId ? s.washing_equipment_ids.has(wokStateId) : false,
+  );
   const clearWokAtSink = useEquipmentStore((s) => s.clearWokAtSink);
 
   // 세척 완료(wok_status === 'clean') 감지 → 자동으로 burner 복귀
@@ -850,9 +991,20 @@ function SinkArea({ sinkPanelId }: SinkAreaProps) {
   }, [wokStateId, wokEquipment?.wok_status, clearWokAtSink]);
 
   if (wokEquipment) {
+    const needsWash = wokEquipment.wok_status !== 'clean';
     return (
       <div style={{ position: 'absolute', inset: 0 }}>
         <WokComponent equipmentState={wokEquipment} atSink />
+        {needsWash && (
+          <div className={styles.sinkWashOverlay}>
+            <span className={styles.sinkWashLabel}>
+              {isWashing ? '세척중...' : '세척 (꾹 누르기)'}
+            </span>
+            <div className={styles.sinkWashBar}>
+              <div className={`${styles.sinkWashFill}${isWashing ? ` ${styles.sinkWashFillAnimating}` : ''}`} />
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -981,6 +1133,7 @@ function renderBasket(isExpanded: boolean, eqId: string, panelIndex: number, con
           'data-click-meta': JSON.stringify({ ingredientId: cell.ingredientId }),
           'data-parent-equipment-id': eqId,
           'data-parent-equipment-type': 'basket',
+          'data-basket-owner-id': eqId,
         } : {})}
         style={{
           left: `${rect.left * 100}%`, top: `${rect.top * 100}%`,
@@ -1000,13 +1153,13 @@ function renderBasket(isExpanded: boolean, eqId: string, panelIndex: number, con
   });
 
   return (
-    <div className={styles.basketContainer} style={{ transform: correction }}>
+    <div className={styles.basketContainer} style={{ transform: correction }}
+      data-click-target="equipment-toggle"
+      data-equipment-id={eqId}
+      data-equipment-type="basket"
+      data-click-meta={JSON.stringify({ equipmentId: eqId, equipmentType: 'basket' })}
+    >
       {cellNodes}
-      <button className={styles.eqInteractionBtn} style={{
-        position: 'absolute', bottom: -20, left: '50%', transform: 'translateX(-50%)',
-      }} data-action="expand">
-        {isExpanded ? '접기' : '펼치기'}
-      </button>
     </div>
   );
 }
@@ -1114,6 +1267,7 @@ function renderFridgeItem(
               'data-parent-equipment-id': eqId,
               'data-parent-equipment-type': doorPart ? 'four_box_fridge' : 'fold_fridge',
               ...(doorPart ? { 'data-parent-door-part': doorPart } : {}),
+              'data-basket-owner-id': syntheticKey,
             } : {})}
             style={{
               left: `${rect.left * 100}%`,
@@ -1134,23 +1288,6 @@ function renderFridgeItem(
           </div>
         );
       })}
-      <button
-        className={styles.eqInteractionBtn}
-        style={{
-          position: 'absolute',
-          bottom: -20,
-          left: '50%',
-          transform: 'translateX(-50%)',
-        }}
-        data-action="expand"
-        data-click-target="equipment-toggle"
-        data-click-meta={JSON.stringify({ equipmentId: syntheticKey, equipmentType: 'basket' })}
-        data-parent-equipment-id={eqId}
-        data-parent-equipment-type={doorPart ? 'four_box_fridge' : 'fold_fridge'}
-        {...(doorPart ? { 'data-parent-door-part': doorPart } : {})}
-      >
-        {isExpanded ? '접기' : '펼치기'}
-      </button>
     </div>
   );
 }

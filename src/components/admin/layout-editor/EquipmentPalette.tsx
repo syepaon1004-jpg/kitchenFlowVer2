@@ -6,7 +6,7 @@ import SearchableSelect from './SearchableSelect';
 import styles from '../KitchenLayoutEditor.module.css';
 
 const EQUIPMENT_TYPES: PanelEquipmentType[] = [
-  'drawer', 'fold_fridge', 'four_box_fridge', 'basket', 'burner', 'sink', 'worktop', 'shelf',
+  'drawer', 'fold_fridge', 'four_box_fridge', 'basket', 'burner', 'sink', 'worktop', 'shelf', 'filler_panel',
 ];
 
 interface Props {

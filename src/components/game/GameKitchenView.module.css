@@ -179,6 +179,10 @@
   height: 100%;
 }
 
+.basketContainer {
+  cursor: pointer;
+}
+
 .drawerFace,
 .fridgeFace {
   position: absolute;
@@ -387,4 +391,45 @@
   outline: 2px solid var(--color-primary, #1976d2);
   box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.45);
   z-index: 8;
+}
+
+/* ——— Sink wash overlay (scene-level hold, visual only) ——— */
+.sinkWashOverlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-2xs);
+}
+
+.sinkWashBar {
+  width: 80%;
+  height: 6px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.sinkWashFill {
+  height: 100%;
+  width: 0%;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.sinkWashFillAnimating {
+  animation: sinkWashFill 3s linear forwards;
+}
+
+@keyframes sinkWashFill {
+  from { width: 0%; }
+  to { width: 100%; }
+}
+
+.sinkWashLabel {
+  font-size: var(--font-2xs);
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }

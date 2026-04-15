@@ -10,6 +10,7 @@
   --color-primary-hover: #3a7bc8;
   --color-primary-light: #e8f0fe;
   --color-error: #d32f2f;
+  --color-filler-panel: #D0C8B8;
 
   /* ── 폰트 크기 (gameVariables.css와 동일) ── */
   --font-xs: 11px;

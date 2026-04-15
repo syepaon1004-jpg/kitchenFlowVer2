@@ -68,6 +68,8 @@ function renderEquipmentVisual(type: PanelEquipmentType) {
       return <div style={{ ...base, background: color, borderRadius: 3 }} />;
     case 'worktop':
       return <div style={{ ...base, background: color }} />;
+    case 'filler_panel':
+      return <div style={{ ...base, background: color }} />;
     case 'shelf':
       return (
         <div style={{ ...base, display: 'flex' }}>
