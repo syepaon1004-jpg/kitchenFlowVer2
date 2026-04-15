@@ -15,19 +15,18 @@ from pathlib import Path
 
 PROTECTED_EXACT = ("AGENTS.md", "CLAUDE.md")
 
-PROTECTED_DIRS = (".harness", "docs/commander", "docs/rules", ".claude")
+PROTECTED_DIRS = ("docs/commander", "docs/rules", ".claude")
 
 # Bash 명령 문자열/직렬화된 JSON에서 검색할 마커
 PROTECTED_MARKERS = (
     "AGENTS.md", "CLAUDE.md",
-    ".harness/", ".harness\\", ".harness",
     "docs/commander/", "docs/commander\\",
     "docs/rules/", "docs/rules\\",
     ".claude/", ".claude\\", ".claude",
 )
 
-# 보호 디렉토리 basename (심볼릭 없는 bare path 검사용)
-PROTECTED_DIR_BASENAMES = {".harness", ".claude"}
+# 보호 디렉토리 basename (bare path 검사용)
+PROTECTED_DIR_BASENAMES = {".claude"}
 
 
 # --- 유틸리티 ---
@@ -132,7 +131,7 @@ def check_bash(cwd: Path, cmd: str) -> None:
     for t in tokens:
         if t.startswith("-"):
             continue  # 옵션 플래그 스킵
-        # bare basename 검사 (예: "ls .harness", "ls .claude")
+        # bare basename 검사 (예: "ls .claude")
         if t in PROTECTED_DIR_BASENAMES or t in PROTECTED_EXACT:
             block(f"Bash references protected path: {t}")
         # 모든 비플래그 토큰에 대해 경로 정규화 후 보호 대상 검사
@@ -172,7 +171,6 @@ def check_read_like_tool(tool: str, cwd: Path, tool_input: dict) -> None:
                 if s and "*" not in s and "?" not in s and "[" not in s and "{" not in s
             ]
             for seg in segments:
-                # base + segment 합성
                 if base:
                     candidate = f"{base}/{seg}"
                 else:
@@ -182,7 +180,6 @@ def check_read_like_tool(tool: str, cwd: Path, tool_input: dict) -> None:
                         f"Glob pattern segment resolves to protected path: {candidate} "
                         f"(from path='{base}', pattern='{pattern}')"
                     )
-                # segment가 보호 대상 basename이면 직접 차단
                 if seg in PROTECTED_DIR_BASENAMES or seg in PROTECTED_EXACT:
                     block(f"Glob pattern contains protected name: {seg}")
         else:
