@@ -65,31 +65,7 @@ export interface Container {
   image_url: string | null;
 }
 
-export type AreaType = 'ingredient' | 'container' | 'navigate' | 'equipment' | 'basket';
 export type EquipmentType = 'wok' | 'frying_basket' | 'microwave' | 'sink';
-export type HitboxPoint = [number, number];
-
-export interface AreaDefinition {
-  id: string;
-  store_id: string;
-  zone_id: string;
-  label: string;
-  area_type: AreaType;
-  x: number;   // 0~1 비율
-  y: number;   // 0~1 비율
-  w: number;   // 0~1 비율
-  h: number;   // 0~1 비율
-  points: HitboxPoint[] | null;
-  ingredient_id: string | null;
-  container_id: string | null;
-  navigate_zone_id: string | null;
-  equipment_type: EquipmentType | null;
-  equipment_index: number | null;
-  drag_image_url: string | null;
-  overlay_image_url: string | null;
-  parent_area_id: string | null;
-  sort_order: number;
-}
 
 export interface Recipe {
   id: string;
@@ -217,7 +193,7 @@ export interface GameContainerInstance {
 
 // 액션 로그 타입
 export type ActionLogType =
-  | 'navigate_open' | 'drag_start' | 'drop_success'
+  | 'navigate_open'
   | 'stir'
   | 'basket_down' | 'basket_up'
   | 'serve' | 'dispose' | 'wok_burned'
