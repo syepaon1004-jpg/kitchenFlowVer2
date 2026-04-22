@@ -138,7 +138,7 @@ const GameSetupPage = () => {
       await Promise.allSettled(decodePromises);
     }
 
-    navigate('/game');
+    navigate('/sim/game');
   };
 
   return (
@@ -147,7 +147,7 @@ const GameSetupPage = () => {
       <header className={styles.header}>
         <button
           className={styles.backButton}
-          onClick={() => navigate('/join/avatar')}
+          onClick={() => navigate('/sim/join/avatar')}
         >
           &larr; 돌아가기
         </button>

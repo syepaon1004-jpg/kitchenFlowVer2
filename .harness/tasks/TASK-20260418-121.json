@@ -1,0 +1,31 @@
+{
+  "id": "TASK-20260418-121",
+  "title": "Practice Menu Tacit Media Preview",
+  "status": "pending",
+  "goal": "Expose inline image/video preview for existing non-media tacit browse items on /practice/menu/:menuId using the already-fetched PracticeMenuBundle.tacit_media, without changing practice store/runtime/query/admin boundaries or expanding into signed/private URL handling.",
+  "depends_on": ["TASK-20260418-120"],
+  "scope": [
+    "src/lib/practice/menuView.ts",
+    "src/lib/practice/__tests__/menuView.test.ts",
+    "src/pages/practice/PracticeMenuPage.tsx",
+    "src/pages/practice/PracticePlaceholder.module.css"
+  ],
+  "constraints": [
+    "Keep src/stores/practiceStore.ts, src/lib/practice/runtime.ts, src/lib/practice/queries.ts, src/types/practice.ts, src/lib/practice/sessionView.ts, router, sim pages, and admin flows unchanged unless a blocker is proven from code",
+    "Keep src/lib/practice/menuView.ts bundle-only and do not import session-state helpers or PracticeSessionPage-local rendering helpers",
+    "Limit this task to inline media preview attached to existing non-media tacit browse items; defer signed/private URL handling, modal/gallery/custom player work, pure media-type tacit item browse cards, PracticePage card preview, runtime/store derived promotion, debug console work, and admin authoring",
+    "Preserve the existing expandable browse interaction, body text preview, sensory tags, and safe start-session CTA on PracticeMenuPage",
+    "Render image/video in a minimal native way only when URLs are directly usable; do not introduce extra Supabase reads/writes",
+    "No any, as any, ts-ignore, eslint-disable, admin/game cross-import, display:none, or inline filter/map inside Zustand selectors",
+    "Reuse existing gameVariables.css tokens first and keep PracticePlaceholder.module.css changes additive under browse-prefixed classes",
+    "No extra changes outside the approved write set and the session-start dirty snapshot baseline"
+  ],
+  "acceptance": [
+    "A pure menu browse helper can derive stable per-tacit media preview data grouped by tacit_item_id and sorted by sort_order (with deterministic tie-breaker when needed) from the existing PracticeMenuBundle",
+    "The helper keeps current non-media tacit browse ordering intact, attaches media only to the corresponding browse item, and does not import React, Zustand, Supabase, or sessionView helpers",
+    "PracticeMenuPage keeps the existing menu details, step-group expand/collapse UI, body preview, sensory tag preview, and start-session CTA, and renders inline image/video preview only when a browse item has media",
+    "If a browse item has no media, the UI remains text-first and does not leave broken spacing or placeholder chrome",
+    "Queries, types, practiceStore, runtime, sessionView, PracticePage, sim routes/pages, and PracticeAdminPage remain behaviorally unchanged",
+    "npx vitest run src/lib/practice/__tests__/menuView.test.ts, npx tsc --noEmit, npm run build, and npm run lint complete with no new warnings/errors beyond the pre-existing warning at src/hooks/useGameTick.ts:73 and the pre-existing non-blocking Vite chunk warning"
+  ]
+}

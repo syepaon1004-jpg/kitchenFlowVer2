@@ -1,0 +1,13 @@
+{
+  "id": "TASK-20260420-158",
+  "title": "/practice/admin closure audit / regression pass",
+  "status": "planned",
+  "goal": "/practice/admin authoring/validation chain closure 확인 및 regression 점검",
+  "scope": "새 기능 추가 없음, 회귀 재현 시 최소 polish만 허용",
+  "approved_truth_anchor": "TASK-110~153, TASK-20260420-155, TASK-20260420-156, TASK-20260420-157",
+  "expected_files": "기본 없음; 조건부 src/pages/practice/PracticeAdminPage.tsx",
+  "allowed_helper_files": "docs/worker/LAST_SESSION.md, docs/worker/LEARNINGS.md, docs/worker/MISTAKES.md",
+  "baseline_rule": "extra_changes는 이번 세션 시작 git status --short 스냅샷 대비 신규 범위만 판정",
+  "phase4_order_required": "npm run build -> npm run lint -> @self-reviewer -> npx tsc --noEmit",
+  "extra_changes_exception": "worker docs 3종의 task 관련 갱신만 예외 처리"
+}

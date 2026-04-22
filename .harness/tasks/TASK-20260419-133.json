@@ -1,0 +1,10 @@
+{
+  "id": "TASK-20260419-133",
+  "title": "Practice Admin Tacit Text Authoring Scaffold",
+  "status": "pending",
+  "goal": "Add a minimal /practice/admin scaffold that lists and creates non-media practice_tacit_items for selected step groups so the existing browse/session/admin read paths surface real tacit guidance without touching runtime/store/session helper boundaries.",
+  "depends_on": "TASK-20260419-132",
+  "scope": "src/lib/practice/queries.ts; src/pages/practice/PracticeAdminPage.tsx; src/pages/practice/PracticePlaceholder.module.css",
+  "constraints": "Keep menuView.ts, sessionView.ts, adminView.ts, runtime.ts, practiceStore.ts, types/practice.ts, router, and sim flows unchanged unless a concrete blocker is proven from code; add only practice_tacit_items write helper(s) in queries.ts; limit this slice to non-media tacit list/create only and defer tacit_media upload/signing, tacit edit/delete, multi-hop path editing, node edit/delete, and step-group edit; judge extra_changes against the fresh 2026-04-19 session-start dirty baseline, with task-related worker docs allowed per CLAUDE.md and AGENTS.md.",
+  "acceptance": "Selected menu on /practice/admin shows current text tacit items per step group through the existing drilldown and supports creating a non-media tacit item for a selected step group; admins can author tacit_type (observe/adjust/warning/reason), title, optional body, sort_order, and optional sensory notes; successful create updates local bundle plus summary/drilldown immediately; the new item appears through the shared fetchPracticeMenuBundle path in /practice/menu/:menuId and /practice/session/:sessionId without runtime/store/session/helper changes; Phase 4 completes in order build -> lint -> self-reviewer -> tsc, allowing only the documented pre-existing warnings."
+}

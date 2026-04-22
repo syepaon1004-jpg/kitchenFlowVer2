@@ -1,0 +1,30 @@
+{
+  "id": "TASK-20260418-117",
+  "title": "Practice Session Next Learning Unit Preview",
+  "status": "pending",
+  "goal": "Expose the immediate next non-empty step group as a compact preview on /practice/session/:sessionId using pure sessionView helpers and existing bundle data, without changing practice runtime/store persistence or sim/admin boundaries.",
+  "depends_on": ["TASK-20260417-116"],
+  "scope": [
+    "src/lib/practice/sessionView.ts",
+    "src/lib/practice/__tests__/sessionView.test.ts",
+    "src/pages/practice/PracticeSessionPage.tsx",
+    "src/pages/practice/PracticePlaceholder.module.css"
+  ],
+  "constraints": [
+    "Keep src/stores/practiceStore.ts, src/lib/practice/runtime.ts, src/lib/practice/queries.ts, src/types/practice.ts, router, sim pages, and admin flows unchanged unless a blocker is proven from code",
+    "Derive current/next step-group sequence from engineState.node_progress plus bundle.step_groups and bundle.step_group_nodes; do not infer next preview from legalActions only",
+    "Keep next preview session-local and pure; do not promote current/next learning-unit state into Zustand or persistence for this task",
+    "Scope the preview to step metadata and text tacit only; exclude tacit media preview, modal/gallery/player work, signed URL handling, PracticeMenuPage tacit preview, and debug console expansion",
+    "No any, as any, ts-ignore, eslint-disable, admin/game cross-import, display:none, or inline filter/map inside Zustand selectors",
+    "Reuse existing gameVariables tokens first and avoid touching src/styles/gameVariables.css unless a missing token is proven from code",
+    "No extra changes outside the approved write set and the session-start dirty snapshot baseline"
+  ],
+  "acceptance": [
+    "A pure helper can derive the immediate next non-empty step group after the current incomplete group using existing bundle plus progress data",
+    "The helper returns stable next-group title, summary, primary location label, and sorted text tacit preview data without React, Zustand, or Supabase imports",
+    "PracticeSessionPage shows a compact next learning-unit preview when a next group exists and hides it cleanly when the current group is last or the session is complete",
+    "Existing current tacit media panel, legal action buttons, ghost guide wording/intensity, session lifecycle, and persistence behavior remain unchanged",
+    "PracticeMenuPage, PracticeAdminPage, runtime/store derived state, queries/types, sim routes/pages, and signed/private media handling remain unchanged",
+    "npx vitest run src/lib/practice/__tests__/sessionView.test.ts, npx tsc --noEmit, npm run build, and npm run lint complete with no new warnings/errors beyond the pre-existing warning at src/hooks/useGameTick.ts:73 and the pre-existing non-blocking Vite chunk warning"
+  ]
+}

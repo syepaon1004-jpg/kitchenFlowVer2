@@ -1,0 +1,71 @@
+{
+  "id": "TASK-20260421-209",
+  "title": "Phase 2 closeout candidate 회귀 검증 / 감사",
+  "status": "approved",
+  "goal": "TASK-205 / 207 / 208 누적 결과가 Phase 2 기준을 충족하는지 최종 회귀 검증하고, Phase 2 closeout 후보인지 판정 보고한다. 이번 작업은 새 구현이 아니라 검증/감사다.",
+  "constraints": [
+    "코드 수정 금지",
+    "새 기능 구현 금지",
+    "regression/이상 발견 시 수정하지 말고 즉시 중단 후 재현 경로와 영향 범위를 보고",
+    "Phase 3 / Gate B / practice adapter 실동작 착수 금지",
+    "practice 파일/route/store/engine 0 touch",
+    ".harness/* 수정 금지",
+    "이번 task의 write set은 worker 기록 파일만 허용한다",
+    "Phase 4 검증 순서는 npm run build -> npm run lint -> @self-reviewer -> npx tsc --noEmit 고정",
+    "lint의 기존 pre-existing warning은 새 위반으로 오판하지 말고, 신규 warning/error 유입 여부만 구분해서 보고",
+    "ground truth는 반드시 실제 코드와 현재 diff다. 기존 계획/요약만 복사하지 말 것"
+  ],
+  "files": [],
+  "allowed_aux_files": [
+    "docs/worker/LAST_SESSION.md",
+    "docs/worker/LEARNINGS.md",
+    "docs/worker/MISTAKES.md"
+  ],
+  "references": [
+    "docs/practice/SIM_REGRESSION_CHECKLIST_2026-04-21.md",
+    "docs/practice/PHASE2_SLICE_MAP_2026-04-21.md",
+    "docs/practice/SHARED_SHELL_BOUNDARY_APPENDIX_2026-04-21.md",
+    "docs/practice/EXECUTION_PLAN_2026-04-21.md",
+    "docs/practice/MASTER_IMPLEMENTATION_PLAN_2026-04-21.md",
+    "docs/practice/CURRENT_CODE_INVENTORY_2026-04-21.md",
+    "CLAUDE.md",
+    "docs/rules/forbidden.md",
+    "docs/rules/project-structure.md",
+    "docs/rules/maintenance.md",
+    "docs/rules/css-3d.md"
+  ],
+  "cautions": [
+    "Phase 2가 연 3개 축의 누적 상태 확인: Slice 1 shell/provider pass-through, Slice 2 onPostTick seam, Slice 3 sim-only score/log ownership migration",
+    "축1: shared runtime에 sim-only scoring 결합이 다시 남아 있지 않은가",
+    "축2: sim adapter ownership이 createSimModeAdapter.onRuntimeTick()에만 집중되어 있는가",
+    "축3: hydration race 방어(equipments.length > 0 gate)가 실제 코드에 존재하는가",
+    "regression이 발견되면 수정하지 말고 '다음 지시서 필요'로 종료"
+  ],
+  "required_steps": [
+    "1. 누적 코드 감사: src/pages/GamePage.tsx, src/hooks/useGameTick.ts, src/stores/equipmentStore.ts, src/lib/kitchen-mode/createSimModeAdapter.ts, src/lib/kitchen-mode/createPracticeModeAdapter.ts를 직접 읽고 TASK-205/207/208 누적 상태가 문서 기준과 일치하는지 보고",
+    "2. ownership / leak-check grep: shared runtime 청결(equipmentStore+useGameTick에서 sim scoring 심볼 0 hit), sim adapter ownership 1 hit 이상, practice adapter 경계 0 hit, seam 유지 확인",
+    "3. Phase 4 검증: npm run build -> npm run lint -> @self-reviewer -> npx tsc --noEmit",
+    "4. Phase 2 closeout용 sjb 수동 검증 가이드 작성 (20~30분 분량) — SIM_REGRESSION §2 장비/물리, §5 점수/로그, §6 UI/HUD, §9.1 기본 주문 1건 처리, §9.2 장비 시간 경과 포함. 특히 idle penalty 타이밍, stir log 빈도, wok_burned 1회성, hydration 직후 false-positive 없음을 분리해서 기술",
+    "5. 결과 보고 형식: (1) 누적 코드 상태 (2) grep 결과 (3) Phase 4 검증 결과 (4) sjb 수동 검증 체크리스트 (5) 판정. 판정은 'Phase 2 closeout candidate' 또는 'regression found — 다음 지시서 필요' 둘 중 하나만",
+    "6. worker 문서: docs/worker/LAST_SESSION.md 갱신 필수. LEARNINGS.md, MISTAKES.md는 실제 새 패턴/실수 있을 때만 갱신. unrelated 기존 dirty 내용은 건드리지 말 것"
+  ],
+  "grep_specs": {
+    "shared_runtime_clean": {
+      "cmd": "rg -n \"useScoringStore|addScoreEvent|addActionLog|checkIdlePenalty|wok_burned|action_type: 'stir'\" src/stores/equipmentStore.ts src/hooks/useGameTick.ts",
+      "expected": "0 hit"
+    },
+    "sim_adapter_ownership": {
+      "cmd": "rg -n \"useScoringStore|addScoreEvent|addActionLog|checkIdlePenalty|wok_burned|action_type: 'stir'|scoringStore\" src/lib/kitchen-mode/createSimModeAdapter.ts",
+      "expected": "1 hit 이상"
+    },
+    "practice_adapter_boundary": {
+      "cmd": "rg -n \"useScoringStore|addScoreEvent|addActionLog|checkIdlePenalty|wok_burned|action_type: 'stir'|scoringStore\" src/lib/kitchen-mode/createPracticeModeAdapter.ts",
+      "expected": "0 hit"
+    },
+    "seam_maintenance": {
+      "cmd": "rg -n \"useGameTick\\(|onRuntimeTick|createSimModeAdapter\\(|useMemo\\(\" src/pages/GamePage.tsx",
+      "expected": "seam 유지 확인"
+    }
+  },
+  "final_line": "실행 완료 후 대기"
+}

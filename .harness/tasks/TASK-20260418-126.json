@@ -1,0 +1,26 @@
+{
+  "id": "TASK-20260418-126",
+  "title": "Practice Admin Menu Metadata Edit Scaffold",
+  "status": "pending",
+  "goal": "Add a minimal inline metadata editor for the selected practice menu on /practice/admin so admins can update name, description, and image_url through the existing practice query boundary without touching runtime/store/session helper boundaries.",
+  "depends_on": ["TASK-20260418-125"],
+  "scope": [
+    "src/pages/practice/PracticeAdminPage.tsx",
+    "src/pages/practice/PracticePlaceholder.module.css",
+    "src/lib/practice/queries.ts"
+  ],
+  "constraints": [
+    "Limit the write surface to practice_menus metadata only; defer new menu creation, node authoring, step group authoring, tacit authoring, media upload/signing, and engine preview",
+    "Keep Supabase writes inside src/lib/practice/queries.ts and leave src/stores/practiceStore.ts, src/lib/practice/runtime.ts, src/lib/practice/menuView.ts, src/lib/practice/sessionView.ts, src/lib/practice/adminView.ts, router, and sim flows unchanged unless a blocker is proven from code",
+    "Preserve the current selectedMenuId toggle behavior and the immediate reset of summary, bundle, summaryError, summaryLoading, and expandedGroupId on selection changes",
+    "No any, as any, ts-ignore, eslint-disable, display:none, inline filter/map inside Zustand selectors, or admin/game cross-imports",
+    "No extra changes outside the approved write set and the session-start dirty baseline"
+  ],
+  "acceptance": [
+    "PracticeAdminPage exposes a minimal edit form for the currently selected menu's name, description, and image_url, with loading/error/success handling that does not break the existing read-only overview and drilldown",
+    "Dedicated query helper(s) update practice_menus metadata through src/lib/practice/queries.ts only, without touching practice sessions, runtime persistence tables, or practiceStore",
+    "After a successful save, the admin menu list refreshes and the selected menu's summary/drilldown stays in sync with the saved metadata",
+    "The existing /practice read path continues to reflect updated menu metadata through fetchPracticeMenus without requiring runtime/store/helper changes",
+    "npx tsc --noEmit, npm run build, and npm run lint pass with no new warnings/errors beyond the pre-existing src/hooks/useGameTick.ts:73 warning and the pre-existing non-blocking Vite chunk-size warning"
+  ]
+}

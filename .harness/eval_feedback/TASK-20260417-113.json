@@ -1,0 +1,11 @@
+{
+  "id": "TASK-20260417-113",
+  "verdict": "approved",
+  "plan_alignment": 5,
+  "checklist_pass_rate": 100,
+  "extra_changes": false,
+  "plan_rounds": 2,
+  "execution_rounds": 1,
+  "summary": "Practice pages now consume the approved practice store with minimal UI wiring for menu browse, session start, hydrate/resume, legal action triggering, and persist/error visibility, while preserving sim boundaries.",
+  "findings": []
+}

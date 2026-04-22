@@ -1,0 +1,29 @@
+{
+  "id": "TASK-20260418-119",
+  "title": "Practice Menu Text Tacit Body Preview",
+  "status": "pending",
+  "goal": "Expand the existing step-group tacit preview on /practice/menu/:menuId from title-only into text-body-capable browse detail using the already-fetched PracticeMenuBundle, without changing practice store/runtime/query boundaries or sim/admin flows.",
+  "depends_on": ["TASK-20260418-118"],
+  "scope": [
+    "src/lib/practice/menuView.ts",
+    "src/lib/practice/__tests__/menuView.test.ts",
+    "src/pages/practice/PracticeMenuPage.tsx",
+    "src/pages/practice/PracticePlaceholder.module.css"
+  ],
+  "constraints": [
+    "Keep src/stores/practiceStore.ts, src/lib/practice/runtime.ts, src/lib/practice/queries.ts, src/types/practice.ts, src/lib/practice/sessionView.ts, router, sim pages, and admin flows unchanged unless a blocker is proven from code",
+    "Derive menu browse detail only from the existing PracticeMenuBundle already loaded by PracticeMenuPage; add no extra Supabase reads/writes and no session DB writes",
+    "Keep src/lib/practice/menuView.ts bundle-only and avoid importing session-state helpers or PracticeSessionPage-local components",
+    "Limit this task to text tacit body expansion in the existing expanded browse UI; defer sensory tag preview, tacit media preview, signed/private URL handling, admin authoring, debug console work, and runtime/store derived promotion",
+    "No any, as any, ts-ignore, eslint-disable, admin/game cross-import, display:none, or inline filter/map inside Zustand selectors",
+    "Reuse existing gameVariables.css tokens first and keep PracticePlaceholder.module.css changes additive under browse-prefixed classes",
+    "No extra changes outside the approved write set and the session-start dirty snapshot baseline"
+  ],
+  "acceptance": [
+    "The menu browse view-model exposes stable non-media tacit preview data including optional body text while preserving display_step_no and sort_order ordering",
+    "PracticeMenuPage keeps the existing menu details, step-group expand/collapse interaction, and safe start-session CTA, and shows tacit body text only when a body exists",
+    "If a tacit item body is null or empty, the UI omits the body block cleanly without leaving broken spacing or placeholder text",
+    "Queries, types, practiceStore, runtime, sessionView, sim routes/pages, and PracticeAdminPage remain behaviorally unchanged",
+    "npx vitest run src/lib/practice/__tests__/menuView.test.ts, npx tsc --noEmit, npm run build, and npm run lint complete with no new warnings/errors beyond the pre-existing warning at src/hooks/useGameTick.ts:73 and the pre-existing non-blocking Vite chunk warning"
+  ]
+}

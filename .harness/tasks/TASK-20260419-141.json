@@ -1,0 +1,14 @@
+{
+  "trace_id": "TASK-20260419-141",
+  "title": "Practice Admin Pure-Media Parent Title Inline Edit",
+  "status": "planned",
+  "depends_on": "TASK-20260419-140",
+  "truth_priority": "actual code + worker docs + current approval truth > stale .harness state",
+  "dirty_baseline": "2026-04-19 session-start git status --short snapshot",
+  "carry_forward_approved_truth": "TASK-20260419-140 write set is already approved and must not be re-counted as extra_changes",
+  "expected_write_set": "src/pages/practice/PracticeAdminPage.tsx",
+  "allowed_aux_files": "docs/worker/LAST_SESSION.md, docs/worker/LEARNINGS.md, docs/worker/MISTAKES.md",
+  "phase4_order": "npm run build -> npm run lint -> @self-reviewer -> npx tsc --noEmit",
+  "targeted_tests": "src/lib/practice/tests/adminView.test.ts, src/lib/practice/tests/menuView.test.ts, src/lib/practice/tests/sessionView.test.ts, src/lib/practice/engine/tests/ingredientAdd.test.ts, src/lib/practice/engine/tests/phaseAdvance.test.ts",
+  "scope_guard": "reuse existing updatePracticeTacitItem helper; title-only correction; no summary updates; no helper or CSS changes"
+}

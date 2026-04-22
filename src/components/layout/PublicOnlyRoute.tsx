@@ -9,7 +9,7 @@ const PublicOnlyRoute = () => {
     return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', fontSize: 16, color: '#666' }}>로딩 중...</div>;
   }
 
-  if (user) return <Navigate to="/join" replace />;
+  if (user) return <Navigate to="/sim/join" replace />;
 
   return <Outlet />;
 };

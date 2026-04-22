@@ -1,0 +1,35 @@
+{
+  "id": "TASK-20260417-113",
+  "title": "Practice Session Basic UI Wiring",
+  "status": "pending",
+  "goal": "Wire the approved practiceStore into the separated practice pages so users can browse practice menus, start a session safely, and resume a session route with minimal status/progress/legal-action visibility without touching sim runtime.",
+  "depends_on": ["TASK-20260417-112"],
+  "scope": [
+    "src/pages/practice/PracticePage.tsx",
+    "src/pages/practice/PracticeMenuPage.tsx",
+    "src/pages/practice/PracticeSessionPage.tsx",
+    "src/pages/practice/PracticePlaceholder.module.css",
+    "src/lib/practice/sessionView.ts",
+    "src/lib/practice/__tests__/sessionView.test.ts"
+  ],
+  "constraints": [
+    "Keep sim store/engine/routes/pages untouched and do not modify sim runtime behavior",
+    "Keep practice session lifecycle and DB writes inside usePracticeStore plus src/lib/practice/queries.ts only",
+    "Allow /practice and /practice/menu browsing with selectedStore only, but never call startSession without selectedUser",
+    "No any, as any, ts-ignore, eslint-disable, or admin/game cross-import",
+    "No inline filter/map inside Zustand selectors; compute view models outside selectors or in pure helpers",
+    "Do not expand into ghost guide, tacit detail UI, practice admin authoring, or debug console work",
+    "Do not change practice engine rules or create ingredient instances outside approved store actions",
+    "No extra changes outside the approved write set and current session dirty snapshot"
+  ],
+  "acceptance": [
+    "/practice loads practice menus for the selected store and renders loading, empty, and error states",
+    "/practice/menu/:menuId loads the menu bundle, shows a minimal menu and step overview, and exposes a safe start-session CTA",
+    "If selectedUser is missing on browse routes, the UI blocks session creation cleanly and routes the user toward avatar selection instead of failing",
+    "Starting a session uses usePracticeStore.startSession and navigates to /practice/session/:sessionId without page-level direct session DB writes",
+    "/practice/session/:sessionId calls usePracticeStore.resumeSession and renders phase, session status, progress, legal actions, and persist/error state",
+    "Active session UI can trigger approved store actions from the legal action list and reflects updated derived progress",
+    "Completed or abandoned sessions render read-only status with no stale active runtime leakage",
+    "npm run build, npx tsc --noEmit, npm run test, and npm run lint all pass"
+  ]
+}

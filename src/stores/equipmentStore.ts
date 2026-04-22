@@ -4,8 +4,6 @@ import { tickWokPhysics, canAccumulateStir } from '../lib/physics/wok';
 import { canAccumulateFry } from '../lib/physics/fryingBasket';
 import { tickMicrowavePhysics, canAccumulateMicrowave } from '../lib/physics/microwave';
 import { useGameStore } from './gameStore';
-import { useScoringStore } from './scoringStore';
-import { SCORE_CONFIG } from '../lib/scoring/constants';
 
 /** action_history에 1초 추가 (기존 entry 있으면 +1, 없으면 새 entry) */
 function appendActionHistory(instanceId: string, actionType: ActionType) {
@@ -110,7 +108,6 @@ export const useEquipmentStore = create<EquipmentStoreState>((set, get) => ({
     );
     const hasWater = wokIngredients.some((i) => waterIngredientIds.has(i.ingredient_id));
 
-    const prevStatus = equip.wok_status;
     const preOverheatStatus = get().pre_overheat_status_map.get(id) ?? null;
     const result = tickWokPhysics({
       wok_temp: equip.wok_temp,
@@ -126,27 +123,6 @@ export const useEquipmentStore = create<EquipmentStoreState>((set, get) => ({
       next.set(id, result.pre_overheat_status);
       return { pre_overheat_status_map: next };
     });
-
-    // burned 전이 순간 1회만 감점
-    if (prevStatus !== 'burned' && result.wok_status === 'burned') {
-      const sessionId = useGameStore.getState().sessionId;
-      if (sessionId) {
-        const { addScoreEvent, addActionLog } = useScoringStore.getState();
-        addScoreEvent({
-          session_id: sessionId,
-          event_type: 'wok_burned',
-          points: SCORE_CONFIG.WOK_BURNED,
-          timestamp_ms: Date.now(),
-          metadata: { equipment_id: id },
-        });
-        addActionLog({
-          session_id: sessionId,
-          action_type: 'wok_burned',
-          timestamp_ms: Date.now(),
-          metadata: { equipment_id: id },
-        });
-      }
-    }
 
     set((s) => ({
       equipments: s.equipments.map((e) =>

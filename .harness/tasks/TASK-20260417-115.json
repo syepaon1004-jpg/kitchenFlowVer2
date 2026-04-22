@@ -1,0 +1,29 @@
+{
+  "id": "TASK-20260417-115",
+  "title": "Practice Session Learning Unit + Tacit Detail Basic UI",
+  "status": "pending",
+  "goal": "Add a minimal current-learning-unit view-model and text-first tacit detail panel to /practice/session/:sessionId using existing step-group/tacit bundle data, without changing engine rules, store persistence, or sim/admin flows.",
+  "depends_on": ["TASK-20260417-114"],
+  "scope": [
+    "src/lib/practice/sessionView.ts",
+    "src/lib/practice/__tests__/sessionView.test.ts",
+    "src/pages/practice/PracticeSessionPage.tsx",
+    "src/pages/practice/PracticePlaceholder.module.css"
+  ],
+  "constraints": [
+    "Keep src/stores/practiceStore.ts, src/lib/practice/runtime.ts, src/lib/practice/queries.ts, and src/types/practice.ts unchanged unless a blocker is proven from code",
+    "Determine the current learning unit from engineState.node_progress plus bundle.step_group_nodes and grouped recipe nodes; do not infer it only from derived.legalActions",
+    "Do not change LegalAction shape, engine rules, persistence flow, session DB writes, or sim routes/pages",
+    "Treat tacit media rendering, PracticeMenuPage preview expansion, PracticeAdminPage authoring, and debug console work as out of scope",
+    "No any, as any, ts-ignore, eslint-disable, admin/game cross-import, display:none, or inline filter/map inside Zustand selectors",
+    "No extra changes outside the approved write set and the session-start dirty snapshot baseline"
+  ],
+  "acceptance": [
+    "A pure helper can derive a stable current step group/learning unit from existing bundle plus progress data even when duplicate ingredient IDs exist across different recipe nodes",
+    "The helper returns current step-group summary plus sorted text tacit items without React, Zustand, or Supabase imports and is covered by tests",
+    "PracticeSessionPage shows the current step group's title, summary, primary location label, and tacit text details with safe empty states",
+    "Existing legal action buttons, ghost guide wording, session lifecycle, and persistence behavior remain unchanged",
+    "PracticeMenuPage, PracticeAdminPage, sim routes/pages, tacit media rendering, and debug console remain unchanged",
+    "npm run build, npx tsc --noEmit, npm run test, and npm run lint complete with no new warnings/errors beyond the pre-existing warning at src/hooks/useGameTick.ts:73"
+  ]
+}

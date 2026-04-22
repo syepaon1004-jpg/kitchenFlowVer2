@@ -1,0 +1,16 @@
+{
+  "task_id": "TASK-20260419-149",
+  "title": "Action node child-meta inline edit",
+  "status": "planned",
+  "priority": "high",
+  "area": "practice-admin-authoring",
+  "goal": "/practice/admin에서 action node의 action_type, location_id, duration_sec를 inline correction하고 local bundle row를 in-place replace",
+  "files_expected": "src/lib/practice/queries.ts, src/pages/practice/PracticeAdminPage.tsx",
+  "allowed_support_files": "docs/worker/LAST_SESSION.md, docs/worker/LEARNINGS.md(if new learning), docs/worker/MISTAKES.md(if needed)",
+  "reference_rules": "docs/rules/forbidden.md, docs/rules/project-structure.md, docs/rules/maintenance.md",
+  "phase4_order": "npm run build -> npm run lint -> @self-reviewer -> npx tsc --noEmit",
+  "targeted_tests": "src/lib/practice/tests/adminView.test.ts, src/lib/practice/tests/menuView.test.ts, src/lib/practice/tests/sessionView.test.ts, src/lib/practice/engine/tests/ingredientAdd.test.ts, src/lib/practice/engine/tests/phaseAdvance.test.ts",
+  "extra_changes_rule": "session-start git status --short baseline 기준, write set + 허용 worker docs만 허용",
+  "truth_basis": "actual code + docs/worker/LAST_SESSION.md + approved TASK-110~148 truth",
+  "default_next": true
+}

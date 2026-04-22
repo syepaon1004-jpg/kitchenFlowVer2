@@ -1,0 +1,10 @@
+{
+  "id": "TASK-20260419-132",
+  "title": "Practice Admin Step Group Node Link Scaffold",
+  "status": "pending",
+  "goal": "Add a minimal /practice/admin scaffold that links existing practice recipe nodes into practice step groups so current/next group session UX and admin drilldown become meaningful without touching runtime/store/session helper boundaries.",
+  "depends_on": "TASK-20260419-131",
+  "scope": "src/lib/practice/queries.ts; src/lib/practice/adminView.ts; src/lib/practice/__tests__/adminView.test.ts; src/pages/practice/PracticeAdminPage.tsx; src/pages/practice/PracticePlaceholder.module.css",
+  "constraints": "Keep menuView.ts, sessionView.ts, runtime.ts, practiceStore.ts, types/practice.ts, router, and sim flows unchanged unless a concrete blocker is proven from code; add only a practice_step_group_nodes insert helper in queries.ts with no page-level Supabase writes; limit this slice to link-create only and defer unlink/reassign, node edit/delete, multi-hop path editing, step-group edit, and tacit/media authoring; use the fresh 2026-04-19 dirty baseline for extra_changes, with task-related worker docs allowed per CLAUDE.md and AGENTS.md",
+  "acceptance": "Selected menu on /practice/admin shows current group-node linkage and supports linking an existing unlinked ingredient/action node to a step group; successful link updates local bundle plus admin summary/drilldown immediately without breaking menu/location/action/ingredient/step-group create flows; newly linked groups participate in the existing session current/next group and tacit behavior through the shared fetchPracticeMenuBundle path with no runtime/store/session helper changes; Phase 4 completes in order build -> lint -> self-reviewer -> tsc, allowing only the documented pre-existing warnings"
+}

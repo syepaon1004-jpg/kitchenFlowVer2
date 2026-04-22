@@ -1,0 +1,34 @@
+{
+  "id": "TASK-20260417-112",
+  "title": "Wire practice runtime store to approved engine",
+  "status": "pending",
+  "goal": "Add an isolated practice runtime store that hydrates from practice session data, reuses the approved pure engine for all transitions, and persists runtime snapshots without touching sim runtime code.",
+  "depends_on": ["TASK-20260416-111"],
+  "scope": [
+    "src/stores/practiceStore.ts",
+    "src/lib/practice/queries.ts",
+    "src/lib/practice/runtime.ts",
+    "src/stores/__tests__/practiceStore.test.ts"
+  ],
+  "constraints": [
+    "Do not modify src/stores/gameStore.ts, src/pages/GamePage.tsx, src/pages/GameSetupPage.tsx, or sim hooks/routes",
+    "Keep src/lib/practice/engine/* pure with no React, Zustand, Supabase, or store imports",
+    "No admin/game cross-import",
+    "No any, as any, ts-ignore, or ad-hoc eslint-disable",
+    "No inline filter/map inside Zustand selectors; precompute derived slices in store state",
+    "All Supabase reads/writes stay in query helpers, not in engine functions",
+    "Persist runtime state only after successful engine transitions",
+    "Practice session UI, debug UI, and ghost guide stay out of scope for this task",
+    "No extra changes outside the approved write set"
+  ],
+  "acceptance": [
+    "A new src/stores/practiceStore.ts exists and owns practice runtime state separately from sim stores",
+    "The store can bootstrap and hydrate a session from PracticeMenuBundle plus practice session runtime rows",
+    "The store exposes transition actions that reuse approved engine APIs for place/action/pour without nodeId-based public inputs",
+    "src/lib/practice/queries.ts can create/read/write practice session runtime rows needed by the store",
+    "A pure adapter module maps DB rows to PracticeEngineState and precomputes derived runtime data needed for safe selectors",
+    "No changes are made to sim runtime files or admin/game cross-import boundaries",
+    "No any usage and no Zustand selector rule violations are introduced",
+    "Vitest coverage exists for store/runtime orchestration, and npm run build, npx tsc --noEmit, npm run test all pass"
+  ]
+}

@@ -11,14 +11,14 @@ const AdminHeader = () => {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     clearAuth();
-    navigate('/');
+    navigate('/sim');
   };
 
   return (
     <header className={styles.header}>
       <button
         className={styles.backButton}
-        onClick={() => navigate('/join')}
+        onClick={() => navigate('/sim/join')}
       >
         &larr; 돌아가기
       </button>

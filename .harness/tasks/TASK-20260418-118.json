@@ -1,0 +1,30 @@
+{
+  "id": "TASK-20260418-118",
+  "title": "Practice Menu Tacit Preview Enhancement",
+  "status": "pending",
+  "goal": "Expand /practice/menu/:menuId from a step-summary list into a compact text-first tacit preview using the already-fetched PracticeMenuBundle, without changing practice store/runtime/query boundaries or sim/admin flows.",
+  "depends_on": ["TASK-20260418-117"],
+  "scope": [
+    "src/lib/practice/menuView.ts",
+    "src/lib/practice/__tests__/menuView.test.ts",
+    "src/pages/practice/PracticeMenuPage.tsx",
+    "src/pages/practice/PracticePlaceholder.module.css"
+  ],
+  "constraints": [
+    "Keep src/stores/practiceStore.ts, src/lib/practice/runtime.ts, src/lib/practice/queries.ts, src/types/practice.ts, src/lib/practice/sessionView.ts, router, sim pages, and admin flows unchanged unless a blocker is proven from code",
+    "Derive menu preview only from the existing PracticeMenuBundle already loaded by PracticeMenuPage; add no extra Supabase reads/writes and no session DB writes",
+    "Use a separate pure menuView helper for static browse view-models rather than mixing menu-preview logic into session-state helpers",
+    "Limit this task to compact text tacit preview on the menu page; defer tacit body expansion, media preview, signed/private URL handling, admin authoring, debug console work, and runtime/store derived promotion",
+    "No any, as any, ts-ignore, eslint-disable, admin/game cross-import, display:none, or inline filter/map inside Zustand selectors",
+    "Reuse existing gameVariables.css tokens first; if tokenized styling is needed on the menu page, prefer importing existing variables rather than modifying the token file unless a missing token is proven",
+    "No extra changes outside the approved write set and the session-start dirty snapshot baseline"
+  ],
+  "acceptance": [
+    "A pure helper can derive stable per-step-group menu preview view-models from PracticeMenuBundle using step_groups, locations, and text tacit items sorted by display_step_no and sort_order",
+    "The helper excludes media-type tacit items and returns compact text preview data for each step group without React, Zustand, or Supabase imports",
+    "PracticeMenuPage keeps the existing menu details and safe start-session CTA, and adds a compact tacit preview section beneath the current step overview",
+    "If a step group has no text tacit items, the UI omits or empties the tacit preview cleanly without breaking the existing step overview",
+    "PracticeSessionPage, practiceStore, runtime, queries, sessionView, sim routes/pages, and PracticeAdminPage remain behaviorally unchanged",
+    "npx vitest run src/lib/practice/__tests__/menuView.test.ts, npx tsc --noEmit, npm run build, and npm run lint complete with no new warnings/errors beyond the pre-existing warning at src/hooks/useGameTick.ts:73 and the pre-existing non-blocking Vite chunk warning"
+  ]
+}

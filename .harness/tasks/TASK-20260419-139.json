@@ -1,0 +1,13 @@
+{
+  "id": "TASK-20260419-139",
+  "title": "Practice Admin non-media tacit item inline meta edit",
+  "status": "approved",
+  "goal": "Add a minimal metadata correction path for existing non-media practice_tacit_items by editing title, body, and sensory fields inline from the admin drilldown without changing type, group, or sort order",
+  "depends_on": "TASK-20260418-125, TASK-20260419-133",
+  "scope": "src/lib/practice/queries.ts, src/pages/practice/PracticeAdminPage.tsx",
+  "constraints": "non-media tacit items only; do not edit step_group_id, tacit_type, or sort_order; no CSS/schema/RPC changes; preserve selectedMenuIdRef stale-guard; do not call setSummary; worker docs only as allowed auxiliary files",
+  "acceptance": "build pass; lint pass with only pre-existing src/hooks/useGameTick.ts:73 warning; self-reviewer approved; tsc pass; regression vitest 5종 pass; files_changed limited to scope plus allowed worker docs; extra_changes false; admin drilldown text tacit card updates immediately after save; body and sensory empty strings normalized to null; menu change resets edit draft/error/saving safely",
+  "result": "pass",
+  "verified_by": "codex_commander",
+  "next_default": "TASK-20260419-140"
+}

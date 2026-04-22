@@ -1,0 +1,45 @@
+{
+  "id": "TASK-20260421-204",
+  "title": "Phase 2 shared kitchen shell 스켈레톤 초안 작성",
+  "status": "approved",
+  "owner": "Claude Code",
+  "goal": "Gate A 기준으로 shared kitchen shell / kitchen mode adapter 구조를 본 구현 없이 스켈레톤 초안 수준으로 고정한다.",
+  "constraints": [
+    "기준 문서 6종 사전 독해 필수",
+    "본 구현 금지",
+    "기존 런타임 동작 변경 금지",
+    "GamePage/GameKitchenView/useGameTick/equipmentStore 직접 wiring 변경 금지",
+    "새 skeleton 파일은 기존 runtime/page/router에 import 금지",
+    "sim/practice rules 구현 금지",
+    "제출물 5요소 필수: 파일 트리, 빈 껍데기, 설계 결정 문서, 변경 영향 목록, 검증",
+    "최종 보고에 '스켈레톤 초안 완료, 본 구현 미착수' 명시"
+  ],
+  "files": [
+    "docs/practice/PHASE2_SKELETON_DRAFT_2026-04-21.md",
+    "src/components/game/shared-shell/SharedKitchenShell.tsx",
+    "src/components/game/shared-shell/SharedKitchenHudSlots.tsx",
+    "src/components/game/shared-shell/index.ts",
+    "src/lib/kitchen-mode/KitchenModeAdapter.ts",
+    "src/lib/kitchen-mode/KitchenModeAdapterContext.tsx",
+    "src/lib/kitchen-mode/createSimModeAdapter.ts",
+    "src/lib/kitchen-mode/createPracticeModeAdapter.ts",
+    "src/lib/kitchen-mode/index.ts"
+  ],
+  "allowed_aux_files": [
+    "docs/worker/LAST_SESSION.md",
+    "docs/worker/LEARNINGS.md",
+    "docs/worker/MISTAKES.md"
+  ],
+  "references": [
+    "docs/practice/MASTER_IMPLEMENTATION_PLAN_2026-04-21.md",
+    "docs/practice/ENGINE_SPEC_APPENDIX_2026-04-21.md",
+    "docs/practice/SHARED_SHELL_BOUNDARY_APPENDIX_2026-04-21.md",
+    "docs/practice/CURRENT_CODE_INVENTORY_2026-04-21.md",
+    "docs/practice/SIM_REGRESSION_CHECKLIST_2026-04-21.md",
+    "docs/practice/EXECUTION_PLAN_2026-04-21.md",
+    "docs/rules/forbidden.md",
+    "docs/rules/project-structure.md",
+    "docs/rules/maintenance.md",
+    "docs/rules/css-3d.md"
+  ]
+}

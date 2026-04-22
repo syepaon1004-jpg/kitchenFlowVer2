@@ -24,10 +24,10 @@ const ProtectedRoute = ({
     return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', fontSize: 16, color: '#666' }}>로딩 중...</div>;
   }
 
-  if (requireAuth && !user) return <Navigate to="/" replace />;
-  if (requireStore && !selectedStore) return <Navigate to="/join" replace />;
-  if (requireUser && !selectedUser) return <Navigate to="/join/avatar" replace />;
-  if (requireAdmin && !isAdmin) return <Navigate to="/join/avatar" replace />;
+  if (requireAuth && !user) return <Navigate to="/sim" replace />;
+  if (requireStore && !selectedStore) return <Navigate to="/sim/join" replace />;
+  if (requireUser && !selectedUser) return <Navigate to="/sim/join/avatar" replace />;
+  if (requireAdmin && !isAdmin) return <Navigate to="/sim/join/avatar" replace />;
 
   return <Outlet />;
 };

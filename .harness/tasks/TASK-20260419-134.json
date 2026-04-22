@@ -1,0 +1,10 @@
+{
+  "id": "TASK-20260419-134",
+  "title": "Practice Admin Tacit Media Authoring Scaffold",
+  "status": "pending",
+  "goal": "Add URL-based authoring on /practice/admin for practice_tacit_media plus pure-media tacit parents so existing admin/menu/session read paths surface real media without changing runtime/store/helper boundaries.",
+  "depends_on": "TASK-20260419-133",
+  "scope": "src/lib/practice/queries.ts; src/pages/practice/PracticeAdminPage.tsx; src/pages/practice/PracticePlaceholder.module.css",
+  "constraints": "Keep menuView.ts, sessionView.ts, adminView.ts, runtime.ts, practiceStore.ts, types/practice.ts, router, and sim flows unchanged unless a concrete blocker is proven from code; limit writes to practice_tacit_items and practice_tacit_media only; use raw url + media_type + sort_order authoring only and defer upload/signing/edit/delete; preserve selectedMenuIdRef stale-response guards and targeted local summary/bundle updates; judge extra_changes against the fresh 2026-04-19 session-start dirty baseline with task-related worker docs allowed per CLAUDE.md and AGENTS.md",
+  "acceptance": "/practice/admin can create a tacit_type='media' tacit parent for a selected step group and can attach image/video rows to either pure-media or existing text tacit items using media_type, url, and sort_order; successful create updates local bundle plus summary.tacitItemCount, summary.tacitMediaCount, and per-group pureMediaTacitCount or linkedMediaCount without breaking existing menu/location/action/ingredient/step-group/link/text-tacit flows; existing admin drilldown, /practice/menu/:menuId, and /practice/session/:sessionId surface the new media through the unchanged fetchPracticeMenuBundle read path; Phase 4 completes in order npm run build -> npm run lint -> @self-reviewer -> npx tsc --noEmit, allowing only the documented pre-existing warnings, and targeted vitest adminView/menuView/sessionView remains green"
+}

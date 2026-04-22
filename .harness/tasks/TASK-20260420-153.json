@@ -1,0 +1,13 @@
+{
+  "id": "TASK-20260420-153",
+  "status": "proposed",
+  "mode": "planner",
+  "title": "practice ingredient node child-only inline edit",
+  "goal": "open correction path for practice_ingredient_nodes.ingredient_id, is_deco, quantity only",
+  "files_changed": "src/lib/practice/queries.ts, src/pages/practice/PracticeAdminPage.tsx",
+  "allowed_auxiliary_files": "docs/worker/LAST_SESSION.md, docs/worker/LEARNINGS.md, docs/worker/MISTAKES.md",
+  "rules": "docs/rules/forbidden.md, docs/rules/project-structure.md, docs/rules/maintenance.md",
+  "baseline_git_status": "captured at 2026-04-20 session start with git status --short; existing dirty practice/non-practice changes must be excluded from future extra_changes",
+  "approval_truth": "TASK-110~152 approved baseline, latest locked approvals are TASK-149/150/151/152",
+  "notes": "no setSummary unless a real consumer requires it; no parent step_no edits, no location_path edits, no commonization in this slice"
+}

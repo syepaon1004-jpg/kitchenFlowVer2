@@ -1,0 +1,30 @@
+{
+  "id": "TASK-20260418-123",
+  "title": "Practice Menu Pure Media Tacit Browse Cards",
+  "status": "pending",
+  "goal": "Expose standalone tacit items with tacit_type === 'media' as minimal native image/video browse cards on /practice/menu/:menuId using the already-fetched PracticeMenuBundle, without changing practice store/runtime/query boundaries or expanding into signed/private URL handling.",
+  "depends_on": ["TASK-20260418-122"],
+  "scope": [
+    "src/lib/practice/menuView.ts",
+    "src/lib/practice/__tests__/menuView.test.ts",
+    "src/pages/practice/PracticeMenuPage.tsx",
+    "src/pages/practice/PracticePlaceholder.module.css"
+  ],
+  "constraints": [
+    "Keep src/lib/practice/menuView.ts bundle-only and do not import sessionView, React state helpers from other pages, Zustand, or Supabase",
+    "Keep src/lib/practice/queries.ts, src/stores/practiceStore.ts, src/lib/practice/runtime.ts, src/lib/practice/sessionView.ts, src/types/practice.ts, router, sim pages, and PracticeAdminPage unchanged unless a blocker is proven from code",
+    "Render pure media tacit items as a separate browse card section inside the expanded step-group UI; do not rewrite the existing non-media tacit preview contract into a mixed union list for this task",
+    "Limit media rendering to native image/video with directly usable URLs; defer signed/private URL handling, modal/gallery/custom player work, and cross-type browse-order unification",
+    "Keep CSS changes additive under browse-prefixed classes and reuse existing gameVariables.css tokens first; do not widen scope into legacy selector cleanup",
+    "No any, as any, ts-ignore, eslint-disable, display:none, admin/game cross-import, or inline filter/map inside Zustand selectors",
+    "No extra changes outside the approved write set and the session-start dirty snapshot baseline"
+  ],
+  "acceptance": [
+    "A pure menu browse helper can derive stable standalone media-tacit preview cards from existing PracticeMenuBundle.tacit_items and tacit_media using media-type tacit items only, with deterministic per-item and per-media ordering",
+    "The helper preserves the current non-media tacit preview behavior for title/body/sensory/media-attached items and adds a separate per-step-group pure-media preview collection without importing React, Zustand, Supabase, or sessionView helpers",
+    "PracticeMenuPage keeps the existing menu details, step-group expand/collapse UI, non-media tacit preview, and safe start-session CTA, and adds standalone image/video browse cards for pure media tacit items within expanded groups",
+    "If a step group has only pure media tacit items, the page shows those cards instead of the current empty hint; if a pure media item has no usable linked media, the UI omits it cleanly without placeholder chrome",
+    "Queries, types, practiceStore, runtime, sessionView, PracticePage, sim routes/pages, and PracticeAdminPage remain behaviorally unchanged",
+    "npx vitest run src/lib/practice/__tests__/menuView.test.ts, npx tsc --noEmit, npm run build, and npm run lint complete with no new warnings/errors beyond the pre-existing warning at src/hooks/useGameTick.ts:73 and the pre-existing non-blocking Vite chunk warning"
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "id": "TASK-20260419-135",
+  "title": "practice ingredient multi-hop path append scaffold",
+  "status": "pending",
+  "goal": "practice admin에서 기존 ingredient node에 seq>0 location_path hop을 append할 수 있게 하여 multi-hop path와 pour authoring 공백을 메운다",
+  "depends_on": "TASK-20260419-134",
+  "scope": "src/lib/practice/queries.ts에 practice_node_location_path insert helper 추가; src/pages/practice/PracticeAdminPage.tsx의 ingredient section에 path-hop append form/state/handler 추가; docs/worker/LAST_SESSION.md 기록 갱신",
+  "constraints": "read helper/runtime/types/migrations 불변; full path edit/reorder/delete 금지; summary count 불변; stale async guard 유지; 기존 CSS/form class 재사용 우선; extra_changes 평가는 2026-04-19 세션 시작 git status baseline 기준",
+  "acceptance": "build pass; lint pass with existing src/hooks/useGameTick.ts:73 warning 1 only; @self-reviewer approved; npx tsc --noEmit pass; npx vitest run src/lib/practice/tests/adminView.test.ts pass; npx vitest run src/lib/practice/engine/tests/ingredientAdd.test.ts pass; npx vitest run src/lib/practice/engine/tests/phaseAdvance.test.ts pass; /practice/admin에서 hop append 후 ingredient path 표시가 즉시 A → B → C 형태로 갱신; files_changed는 queries.ts, PracticeAdminPage.tsx, 허용 보조 파일만; extra_changes false"
+}

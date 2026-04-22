@@ -1,0 +1,43 @@
+{
+  "id": "TASK-20260421-206",
+  "title": "Phase 2 remaining slice map freeze",
+  "status": "approved",
+  "owner": "Claude Code",
+  "goal": "Gate A 이후 남은 Phase 2를 문서 1건으로 고정해 slice 순서, 회귀 축, 검증, 롤백 단위를 먼저 확정한다.",
+  "constraints": [
+    "소스코드 및 skeleton 수정 금지",
+    "docs/practice/PHASE2_SLICE_MAP_2026-04-21.md 단일 문서만 작성",
+    "practice 파일/route/store/engine 0 touch",
+    "slice 순서는 GameKitchenView -> useGameTick -> equipmentStore 로 고정",
+    "병렬 slice 지시서 작성 금지, Slice N은 Slice N-1 approved 전제",
+    "각 slice는 단일 회귀 축만 연다",
+    "각 slice에 목표/범위/비범위/전제 조건/예상 수정 파일/노출 SIM_REGRESSION 축/필수 leak-check grep/adapter 안정화 규칙/boot effect dependency 규칙/롤백 단위를 명시",
+    "Slice 1은 GameKitchenView의 useEquipmentStore 직접 구독 유지 여부를 명시하고, adapter 경유 전환이면 slice 순서 재검토 경고를 적는다",
+    "Slice 2는 shared physical tick 끝단의 adapter.onRuntimeTick() 단일 호출과 sim adapter no-op를 명시한다",
+    "문서 말미에 Phase 2에서 열지 않는 SIM_REGRESSION 축(§3, §4, §7)을 명시한다",
+    "same kitchen / same equipment / same tick engine, open_step, deco-first, sim regression 0 원칙 유지",
+    "dirty worktree에서 extra changes는 task scope diff 기준으로만 판단한다"
+  ],
+  "files": [
+    "docs/practice/PHASE2_SLICE_MAP_2026-04-21.md"
+  ],
+  "allowed_aux_files": [
+    "docs/worker/LAST_SESSION.md",
+    "docs/worker/LEARNINGS.md",
+    "docs/worker/MISTAKES.md"
+  ],
+  "references": [
+    "docs/practice/MASTER_IMPLEMENTATION_PLAN_2026-04-21.md",
+    "docs/practice/ENGINE_SPEC_APPENDIX_2026-04-21.md",
+    "docs/practice/SHARED_SHELL_BOUNDARY_APPENDIX_2026-04-21.md",
+    "docs/practice/CURRENT_CODE_INVENTORY_2026-04-21.md",
+    "docs/practice/SIM_REGRESSION_CHECKLIST_2026-04-21.md",
+    "docs/practice/EXECUTION_PLAN_2026-04-21.md",
+    "docs/practice/PHASE2_SKELETON_DRAFT_2026-04-21.md",
+    "CLAUDE.md",
+    "docs/rules/forbidden.md",
+    "docs/rules/project-structure.md",
+    "docs/rules/maintenance.md",
+    "docs/rules/css-3d.md"
+  ]
+}

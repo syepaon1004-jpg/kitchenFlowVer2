@@ -1,0 +1,12 @@
+{
+  "track_id": "TASK-20260420-157",
+  "title": "practice admin recipe-node step_no commonization",
+  "status": "planned",
+  "priority": "P1",
+  "truth_base": "TASK-110~153 approved, TASK-20260420-155 approved, TASK-20260420-156 approved",
+  "goal": "preserve behavior while removing duplicated parent step_no correction logic in PracticeAdminPage",
+  "scope_files": "src/pages/practice/PracticeAdminPage.tsx",
+  "allowed_aux_files": "docs/worker/LAST_SESSION.md, docs/worker/LEARNINGS.md, docs/worker/MISTAKES.md",
+  "phase4_order": "npm run build -> npm run lint -> @self-reviewer -> npx tsc --noEmit",
+  "finish_line": "action/ingredient parent step_no correction logic delegated to shared page-local helper path with zero behavior drift"
+}

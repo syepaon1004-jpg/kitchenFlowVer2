@@ -42,6 +42,8 @@ import GameHeader from '../components/game/GameHeader';
 import SessionResultOverlay from '../components/game/SessionResultOverlay';
 import OrderSelectModal from '../components/ui/OrderSelectModal';
 import QuantityInputModal from '../components/ui/QuantityInputModal';
+import { createSimModeAdapter, KitchenModeAdapterProvider } from '../lib/kitchen-mode';
+import { SharedKitchenShell, SharedKitchenHudSlots } from '../components/game/shared-shell';
 import '../styles/gameVariables.css';
 import styles from './GamePage.module.css';
 
@@ -77,6 +79,7 @@ function panelToPhysicsType(panelType: PanelEquipmentType): EquipmentType | null
 const GamePage = () => {
   const navigate = useNavigate();
   const selectedStore = useAuthStore((s) => s.selectedStore)!;
+  const selectedUser = useAuthStore((s) => s.selectedUser);
   const storeId = useGameStore((s) => s.storeId) ?? selectedStore.id;
   const sessionId = useGameStore((s) => s.sessionId);
   const addActionLog = useScoringStore((s) => s.addActionLog);
@@ -105,8 +108,21 @@ const GamePage = () => {
   const addScoreEvent = useScoringStore((s) => s.addScoreEvent);
   const addRecipeResult = useScoringStore((s) => s.addRecipeResult);
 
+  // Gate A skeleton: sim mode adapter (stub). page-level pass-through wiring only.
+  const adapter = useMemo(() => createSimModeAdapter(), []);
+
+  useEffect(() => {
+    if (!selectedStore?.id || !selectedUser?.id || !sessionId) return;
+    void adapter.boot({
+      store_id: selectedStore.id,
+      user_id: selectedUser.id,
+      mode: 'sim',
+      sim_session_id: sessionId,
+    });
+  }, [adapter, selectedStore.id, selectedUser?.id, sessionId]);
+
   // 물리엔진 tick 활성화
-  useGameTick();
+  useGameTick({ onPostTick: () => adapter.onRuntimeTick() });
 
   // 주문 자동 생성
   useOrderGenerator();
@@ -1107,85 +1123,98 @@ const GamePage = () => {
       <div className={styles.gamePage}>
         <div className={styles.gameArea} onContextMenu={(e) => e.preventDefault()}>
           <GameHeader />
-          <div className={styles.mainViewport}>
-            <GameKitchenView
-              panelHeights={panelLayout?.panel_heights ?? [0.3, 0.4, 0.3]}
-              perspectiveDeg={panelLayout?.perspective_deg ?? 45}
-              previewYOffset={panelLayout?.preview_y_offset ?? 0.5}
-              backgroundImageUrl={panelLayout?.background_image_url ?? null}
-              cameraOffsetX={cameraOffsetX}
-              equipment={panelEquipmentList.map((eq) => ({
-                id: eq.id,
-                panelIndex: eq.panel_number - 1,
-                equipmentType: eq.equipment_type,
-                x: eq.x,
-                y: eq.y,
-                width: eq.width,
-                height: eq.height,
-                equipmentIndex: eq.equipment_index,
-                config: eq.config,
-                placeable: eq.placeable,
-                sortOrder: eq.sort_order,
-              }))}
-              items={panelItemList.map((item) => {
-                let label = '';
-                if (item.item_type === 'ingredient' && item.ingredient_id) {
-                  label = storeIngredientsMap.get(item.ingredient_id)?.display_name ?? '';
-                } else if (item.item_type === 'container' && item.container_id) {
-                  label = containersMap.get(item.container_id)?.name ?? '';
-                }
-                return {
-                  id: item.id,
-                  panelIndex: item.panel_number - 1,
-                  itemType: item.item_type,
-                  x: item.x,
-                  y: item.y,
-                  width: item.width,
-                  height: item.height,
-                  label,
-                  ingredientId: item.ingredient_id ?? undefined,
-                  containerId: item.container_id ?? undefined,
-                };
-              })}
-              ingredientLabelsMap={new Map(
-                Array.from(storeIngredientsMap.entries()).map(([id, si]) => [id, si.display_name])
-              )}
-              wokContentsMap={wokContentsMap}
-              placedContainers={placedContainers}
-              hasSelection={!!selection}
-              selection={selection}
-              panelToStateIdMap={panelToStateIdMap}
-              onSceneClick={handleSceneClick}
-              onRegisterCollapseBaskets={handleRegisterCollapseBaskets}
-            >
-              <BillQueue getRecipeName={getRecipeName} getRecipeNaturalText={getRecipeNaturalText} />
-            </GameKitchenView>
-          </div>
-          {/* HUD: 미니맵 + 이동 */}
-          <MinimapHUD
-            gridRows={gridRows}
-            gridCols={gridCols}
-            cells={sectionCells}
-            currentSection={currentSection}
-          />
-          <NavigationHUD
-            movable={movableDirections}
-            onMove={(dir: MoveDirection) => moveSection(dir, allEquipmentByRow)}
-          />
-          {/* HUD: 좌측 상단 (선택 표시 + 핸드바) */}
-          <div className={styles.topLeftHud}>
-            <SelectionDisplay selection={selection} onDeselect={deselect} onCollapseBaskets={collapseBaskets} />
-            <Handbar onCollapseBaskets={collapseBaskets} onIngredientToHandbar={(sel) => {
-              if (sel.ingredientId) {
-                handleResolvedAction({
-                  type: 'add-ingredient',
-                  ingredientId: sel.ingredientId,
-                  sourceEquipmentId: sel.sourceEquipmentId,
-                  destination: { locationType: 'hand' },
-                });
+          <KitchenModeAdapterProvider adapter={adapter}>
+            <SharedKitchenShell
+              hudSlots={
+                <SharedKitchenHudSlots
+                  topLeft={
+                    <div className={styles.topLeftHud}>
+                      <SelectionDisplay selection={selection} onDeselect={deselect} onCollapseBaskets={collapseBaskets} />
+                      <Handbar onCollapseBaskets={collapseBaskets} onIngredientToHandbar={(sel) => {
+                        if (sel.ingredientId) {
+                          handleResolvedAction({
+                            type: 'add-ingredient',
+                            ingredientId: sel.ingredientId,
+                            sourceEquipmentId: sel.sourceEquipmentId,
+                            destination: { locationType: 'hand' },
+                          });
+                        }
+                      }} />
+                    </div>
+                  }
+                  topRight={
+                    <MinimapHUD
+                      gridRows={gridRows}
+                      gridCols={gridCols}
+                      cells={sectionCells}
+                      currentSection={currentSection}
+                    />
+                  }
+                  bottomRight={
+                    <NavigationHUD
+                      movable={movableDirections}
+                      onMove={(dir: MoveDirection) => moveSection(dir, allEquipmentByRow)}
+                    />
+                  }
+                />
               }
-            }} />
-          </div>
+            >
+              <div className={styles.mainViewport}>
+                <GameKitchenView
+                  panelHeights={panelLayout?.panel_heights ?? [0.3, 0.4, 0.3]}
+                  perspectiveDeg={panelLayout?.perspective_deg ?? 45}
+                  previewYOffset={panelLayout?.preview_y_offset ?? 0.5}
+                  backgroundImageUrl={panelLayout?.background_image_url ?? null}
+                  cameraOffsetX={cameraOffsetX}
+                  equipment={panelEquipmentList.map((eq) => ({
+                    id: eq.id,
+                    panelIndex: eq.panel_number - 1,
+                    equipmentType: eq.equipment_type,
+                    x: eq.x,
+                    y: eq.y,
+                    width: eq.width,
+                    height: eq.height,
+                    equipmentIndex: eq.equipment_index,
+                    config: eq.config,
+                    placeable: eq.placeable,
+                    sortOrder: eq.sort_order,
+                  }))}
+                  items={panelItemList.map((item) => {
+                    let label = '';
+                    if (item.item_type === 'ingredient' && item.ingredient_id) {
+                      label = storeIngredientsMap.get(item.ingredient_id)?.display_name ?? '';
+                    } else if (item.item_type === 'container' && item.container_id) {
+                      label = containersMap.get(item.container_id)?.name ?? '';
+                    }
+                    return {
+                      id: item.id,
+                      panelIndex: item.panel_number - 1,
+                      itemType: item.item_type,
+                      x: item.x,
+                      y: item.y,
+                      width: item.width,
+                      height: item.height,
+                      label,
+                      ingredientId: item.ingredient_id ?? undefined,
+                      containerId: item.container_id ?? undefined,
+                    };
+                  })}
+                  ingredientLabelsMap={new Map(
+                    Array.from(storeIngredientsMap.entries()).map(([id, si]) => [id, si.display_name])
+                  )}
+                  wokContentsMap={wokContentsMap}
+                  placedContainers={placedContainers}
+                  hasSelection={!!selection}
+                  selection={selection}
+                  panelToStateIdMap={panelToStateIdMap}
+                  onSceneClick={handleSceneClick}
+                  onRegisterCollapseBaskets={handleRegisterCollapseBaskets}
+                >
+                  <BillQueue getRecipeName={getRecipeName} getRecipeNaturalText={getRecipeNaturalText} />
+                </GameKitchenView>
+              </div>
+            </SharedKitchenShell>
+          </KitchenModeAdapterProvider>
         </div>
       </div>
       <OrderSelectModal getRecipeName={getRecipeName} />

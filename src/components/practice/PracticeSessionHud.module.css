@@ -1,0 +1,135 @@
+.progressBadge {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--game-border);
+  border-radius: var(--radius-md);
+  background: var(--game-card-bg);
+}
+
+.progressTitle {
+  font-weight: 600;
+  font-size: var(--font-sm);
+  color: var(--game-text-primary);
+}
+
+.progressCount {
+  font-size: var(--font-xs);
+  color: var(--game-text-secondary);
+}
+
+.stepGroupCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--game-border);
+  border-radius: var(--radius-md);
+  background: var(--game-card-bg);
+}
+
+.stepGroupPrimary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2xs);
+}
+
+.stepNo {
+  font-weight: 700;
+  font-size: var(--font-sm);
+  color: var(--color-primary);
+}
+
+.stepTitle {
+  font-weight: 600;
+  font-size: var(--font-base);
+  color: var(--game-text-primary);
+}
+
+.stepSummary {
+  margin: 0;
+  font-size: var(--font-xs);
+  color: var(--game-text-secondary);
+}
+
+.stepGroupNext {
+  display: flex;
+  gap: var(--spacing-xs);
+  align-items: baseline;
+  padding-top: var(--spacing-xs);
+  border-top: 1px solid var(--game-border);
+}
+
+.nextLabel {
+  font-size: var(--font-xs);
+  font-weight: 600;
+  color: var(--game-text-tertiary);
+}
+
+.nextStepNo {
+  font-weight: 700;
+  font-size: var(--font-xs);
+  color: var(--game-text-tertiary);
+}
+
+.nextTitle {
+  font-size: var(--font-xs);
+  color: var(--game-text-secondary);
+}
+
+.triggerPanel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm);
+  border: 1px solid var(--game-border);
+  border-radius: var(--radius-md);
+  background: var(--game-card-bg);
+}
+
+.triggerButton {
+  padding: var(--spacing-xs) var(--spacing-md);
+  font: inherit;
+  font-size: var(--font-sm);
+  font-weight: 600;
+  color: var(--game-card-bg);
+  background: var(--color-primary);
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.triggerButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.triggerHint {
+  margin: 0;
+  font-size: var(--font-xs);
+  color: var(--game-text-tertiary);
+}
+
+.rejectionToast {
+  display: flex;
+  gap: var(--spacing-xs);
+  align-items: baseline;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  background: var(--color-primary-light);
+}
+
+.rejectionLabel {
+  font-size: var(--font-xs);
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.rejectionCode {
+  font-family: monospace;
+  font-size: var(--font-xs);
+  color: var(--game-text-primary);
+}

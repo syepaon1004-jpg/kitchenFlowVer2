@@ -1,0 +1,17 @@
+{
+  "task_id": "TASK-20260419-144",
+  "title": "pure-media parent delete scaffold",
+  "status": "planned",
+  "priority": "P1",
+  "depends_on": "TASK-20260419-143",
+  "scope": "delete pure-media tacit parent only; keep last-media row detach prohibited",
+  "write_set": "src/lib/practice/queries.ts, src/pages/practice/PracticeAdminPage.tsx",
+  "allowed_aux_files": "docs/worker/LAST_SESSION.md, docs/worker/LEARNINGS.md, docs/worker/MISTAKES.md",
+  "truth_source": "actual code + worker docs + approved TASK-110~143",
+  "constraints": "add deletePracticeTacitItem helper only; no adminView/menuView/sessionView/CSS changes; no text tacit delete in this slice; no full summary rebuild",
+  "phase4_sequence": "npm run build -> npm run lint -> @self-reviewer -> npx tsc --noEmit",
+  "targeted_tests": "npx vitest run src/lib/practice/tests/adminView.test.ts src/lib/practice/tests/menuView.test.ts src/lib/practice/tests/sessionView.test.ts src/lib/practice/engine/tests/ingredientAdd.test.ts src/lib/practice/engine/tests/phaseAdvance.test.ts",
+  "expected_tests": "132/132 pass",
+  "extra_changes_baseline": "2026-04-19 session-start git status --short snapshot",
+  "success_criteria": "pure-media card can be deleted as a parent unit, cascade removes child media locally, summary decrements only tacitItemCount/tacitMediaCount/pureMediaTacitCount/linkedMediaCount, TASK-143 safe-detach behavior remains intact"
+}

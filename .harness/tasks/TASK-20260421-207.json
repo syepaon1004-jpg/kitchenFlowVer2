@@ -1,0 +1,47 @@
+{
+  "id": "TASK-20260421-207",
+  "title": "Phase 2 Slice 2 onPostTick seam wiring",
+  "status": "approved",
+  "owner": "Claude Code",
+  "goal": "useGameTick의 기존 단일 scheduler 끝단에 onPostTick seam 1개를 추가하고 GamePage가 adapter.onRuntimeTick()을 page 계층에서 바인딩하게 해 SHARED_SHELL §9.1 순서를 코드로 고정한다.",
+  "constraints": [
+    "Slice number source is docs/practice/PHASE2_SLICE_MAP_2026-04-21.md §4: TASK-20260421-205 is Slice 1 closed baseline and this task TASK-20260421-207 is Slice 2",
+    "변경 대상은 src/hooks/useGameTick.ts 와 src/pages/GamePage.tsx 2건만",
+    "useGameTick는 options?: { onPostTick?: () => void } 로만 확장",
+    "기존 단일 setInterval 콜백 끝단에 onPostTickRef.current?.() 1줄만 추가",
+    "useGameTick interval effect는 [] mount-once 유지",
+    "useGameTick에서 adapter 타입/모듈/심볼 import 금지",
+    "GamePage는 useGameTick({ onPostTick: () => adapter.onRuntimeTick() }) 로만 연결",
+    "GamePage에 새 setInterval/setTimeout 추가 금지",
+    "createSimModeAdapter.ts, equipmentStore.ts, GameKitchenView.tsx, gameStore.ts, scoringStore.ts, shared-shell/*, practice 파일 전체 0 touch",
+    "Slice 3 영역인 useScoringStore/addActionLog/checkIdlePenalty/wok_burned 경로는 그대로 유지",
+    "tick 주기와 호출 순서(tickWok -> tickBasket -> tickMicrowave -> tickMix -> stir log -> checkIdlePenalty -> onPostTick) 의미 변경 금지",
+    "sim adapter onRuntimeTick은 이번 slice에서 no-op 유지",
+    "as any, @ts-ignore, eslint-disable 금지",
+    "Phase 4에서 build -> lint -> self-reviewer -> tsc -> worker docs 갱신 수행",
+    "leak-check grep 결과를 실행 결과 보고에 포함",
+    "rg -n \"onPostTick\" src --glob '!src/hooks/useGameTick.ts' --glob '!src/pages/GamePage.tsx' 결과는 0건이어야 한다"
+  ],
+  "files": [
+    "src/hooks/useGameTick.ts",
+    "src/pages/GamePage.tsx"
+  ],
+  "allowed_aux_files": [
+    "docs/worker/LAST_SESSION.md",
+    "docs/worker/LEARNINGS.md",
+    "docs/worker/MISTAKES.md"
+  ],
+  "references": [
+    "docs/practice/PHASE2_SLICE_MAP_2026-04-21.md",
+    "docs/practice/SHARED_SHELL_BOUNDARY_APPENDIX_2026-04-21.md",
+    "docs/practice/SIM_REGRESSION_CHECKLIST_2026-04-21.md",
+    "docs/practice/EXECUTION_PLAN_2026-04-21.md",
+    "docs/practice/PHASE2_SKELETON_DRAFT_2026-04-21.md",
+    "docs/practice/CURRENT_CODE_INVENTORY_2026-04-21.md",
+    "CLAUDE.md",
+    "docs/rules/forbidden.md",
+    "docs/rules/project-structure.md",
+    "docs/rules/maintenance.md",
+    "docs/rules/css-3d.md"
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "id": "TASK-20260419-130",
+  "title": "Practice Admin Ingredient Node Create via RPC Scaffold",
+  "status": "pending",
+  "goal": "Add a minimal /practice/admin scaffold that lists and creates practice_ingredient_nodes with one initial practice_node_location_path row through a single RPC so recipe-node authoring is no longer action-only without breaking the deferred DB invariant.",
+  "depends_on": ["TASK-20260419-129"],
+  "scope": [
+    "supabase/migrations/009_practice_ingredient_node_rpc.sql",
+    "src/lib/practice/queries.ts",
+    "src/lib/practice/adminView.ts",
+    "src/lib/practice/__tests__/adminView.test.ts",
+    "src/pages/practice/PracticeAdminPage.tsx",
+    "src/pages/practice/PracticePlaceholder.module.css"
+  ],
+  "constraints": [
+    "Keep menuView.ts, sessionView.ts, runtime.ts, practiceStore.ts, and types/practice.ts unchanged unless a concrete blocker is proven from code.",
+    "Do not implement ingredient create as two separate client-side insert calls; the parent recipe node, ingredient child row, and initial location path row must be created inside one SQL transaction exposed through a dedicated RPC.",
+    "Add the RPC only in supabase/migrations/009_practice_ingredient_node_rpc.sql and call it only from src/lib/practice/queries.ts; no page-level direct Supabase writes.",
+    "Limit this slice to ingredient node list/create with exactly one initial location-path row; defer multi-hop path editing, step-group create/link/edit, node delete/edit, and tacit/media authoring.",
+    "Read ingredient options from store_ingredients scoped to the selected store only, so same-store DB constraints are satisfied.",
+    "Keep derived admin list logic in a dedicated pure adminView helper without React, Zustand, or Supabase imports.",
+    "Treat docs/worker/LAST_SESSION.md, docs/worker/LEARNINGS.md, and docs/worker/MISTAKES.md as allowed auxiliary files when the updates are task-related, and judge extra_changes against the fresh session-start dirty baseline."
+  ],
+  "acceptance": [
+    "Selected menu on /practice/admin shows existing ingredient nodes in stable step_no order even when the menu has no step groups.",
+    "Admins can create an ingredient node with step_no, ingredient_id, quantity, is_deco, and one initial location path row for the selected menu.",
+    "The DB write path uses a dedicated RPC that creates practice_recipe_nodes, practice_ingredient_nodes, and the initial practice_node_location_path row in one transaction, preserving the deferred min-path invariant.",
+    "A pure adminView helper derives the menu-scope ingredient-node list from PracticeMenuBundle.ingredient_nodes plus locations, and targeted vitest coverage exists for ordering and path-label resolution.",
+    "After successful create, the ingredient-node list and existing summary counts stay in sync without breaking menu metadata edit, menu create, location create, action-node create, or step-group drilldown behavior.",
+    "Phase 4 completes in the required order: build -> lint -> self-reviewer -> tsc, allowing only the documented pre-existing useGameTick lint warning and pre-existing Vite chunk-size warning."
+  ]
+}

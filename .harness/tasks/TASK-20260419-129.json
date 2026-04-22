@@ -1,0 +1,31 @@
+{
+  "id": "TASK-20260419-129",
+  "title": "Practice Admin Action Node List + Create Scaffold",
+  "status": "pending",
+  "goal": "Add a minimal /practice/admin scaffold that lists and creates practice_action_nodes for the selected menu so blank menus with locations can author the first runnable node without touching runtime/store/session helper boundaries.",
+  "depends_on": ["TASK-20260419-128"],
+  "scope": [
+    "src/lib/practice/queries.ts",
+    "src/lib/practice/adminView.ts",
+    "src/lib/practice/__tests__/adminView.test.ts",
+    "src/pages/practice/PracticeAdminPage.tsx",
+    "src/pages/practice/PracticePlaceholder.module.css"
+  ],
+  "constraints": [
+    "Keep menuView.ts, sessionView.ts, runtime.ts, practiceStore.ts, and types/practice.ts untouched unless a concrete blocker is proven from code",
+    "Encapsulate the two-table insert inside src/lib/practice/queries.ts by creating a parent practice_recipe_nodes row with node_type='action' and a child practice_action_nodes row; do not add page-level Supabase calls",
+    "Limit this slice to action node list/create only; defer ingredient nodes, step-group create/link/edit, node delete/edit, and tacit/media authoring",
+    "Use existing practice_locations from the selected menu as the only location source; if the menu has zero locations, block create with a clear UI hint",
+    "Do not enforce unique step_no; validate only required positive step_no, action_type, and location_id, with duration_sec optional",
+    "Treat docs/worker/LAST_SESSION.md, docs/worker/LEARNINGS.md, and docs/worker/MISTAKES.md as allowed auxiliary files when the updates are task-related, per CLAUDE.md and AGENTS.md",
+    "Judge extra_changes against the fresh session-start git status baseline captured on 2026-04-19"
+  ],
+  "acceptance": [
+    "Selected menu on /practice/admin shows existing action nodes in stable step_no order even when the menu has no step groups",
+    "Admins can create an action node with step_no, action_type, location_id, and optional duration_sec for the selected menu",
+    "A pure adminView helper derives the admin action-node list from PracticeMenuBundle.action_nodes plus locations without React, Zustand, or Supabase imports, and targeted vitest coverage exists for its ordering and label resolution",
+    "After successful create, the admin action-node list and existing summary counts stay in sync without breaking menu metadata edit, menu create, location create, or step-group drilldown behavior",
+    "PracticeMenuPage, PracticeSessionPage, and engine/runtime/store boundaries remain behaviorally unchanged; the new node flows through the existing fetchPracticeMenuBundle read path",
+    "Phase 4 completes in the required order: build -> lint -> self-reviewer -> tsc, allowing only the documented pre-existing useGameTick lint warning and pre-existing Vite chunk-size warning"
+  ]
+}

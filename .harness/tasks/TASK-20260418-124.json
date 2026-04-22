@@ -1,0 +1,29 @@
+{
+  "id": "TASK-20260418-124",
+  "title": "Practice Admin Read-Only Overview",
+  "status": "pending",
+  "goal": "Replace the placeholder /practice/admin page with a minimal read-only overview that lets admins inspect existing practice menus and per-menu structure coverage using only current read queries, without introducing authoring writes or widening runtime/store boundaries.",
+  "depends_on": ["TASK-20260418-123"],
+  "scope": [
+    "src/pages/practice/PracticeAdminPage.tsx",
+    "src/pages/practice/PracticePlaceholder.module.css",
+    "src/lib/practice/adminView.ts",
+    "src/lib/practice/__tests__/adminView.test.ts"
+  ],
+  "constraints": [
+    "Keep router, ProtectedRoute, authStore, practiceStore, runtime, queries, types, menuView, and sessionView unchanged unless a blocker is proven from code",
+    "Use existing read helpers first: fetchPracticeMenus and fetchPracticeMenuBundle; do not add DB writes, session lifecycle actions, or authoring mutations",
+    "Keep the admin overview read-only and separate from browse/session helper responsibilities by using a dedicated pure adminView helper if derived summary logic is needed",
+    "No any, as any, ts-ignore, eslint-disable, admin/game cross-import, display:none, or inline hardcoded style values",
+    "Reuse existing gameVariables.css tokens first and keep CSS additive inside PracticePlaceholder.module.css",
+    "No extra changes outside the approved write set and the session-start dirty snapshot baseline"
+  ],
+  "acceptance": [
+    "/practice/admin loads under the existing protected admin route and no longer renders only a placeholder message",
+    "The page shows loading, empty, and error states for the selected store's practice menus using existing read paths only",
+    "Selecting or opening a menu shows a deterministic read-only structure summary derived from PracticeMenuBundle, including menu-level counts and per-step-group coverage data without React/Zustand/Supabase imports in the pure helper",
+    "The overview clearly separates text tacit, pure media tacit, and linked media counts without changing menuView/sessionView contracts",
+    "No session creation, persistence writes, or practice authoring forms are introduced, and practiceStore/runtime/query/type boundaries remain behaviorally unchanged",
+    "Vitest coverage exists for adminView summary derivation, and npx tsc --noEmit, npm run build, npm run lint, and the targeted vitest command pass with no new warnings/errors beyond the pre-existing src/hooks/useGameTick.ts:73 lint warning and the pre-existing non-blocking Vite chunk warning"
+  ]
+}

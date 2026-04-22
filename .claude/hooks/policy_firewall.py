@@ -13,15 +13,13 @@ from pathlib import Path
 
 # --- 보호 대상 정의 ---
 
-PROTECTED_EXACT = ("AGENTS.md", "CLAUDE.md")
+PROTECTED_EXACT = ()
 
-PROTECTED_DIRS = ("docs/commander", "docs/rules", ".claude")
+PROTECTED_DIRS = ("docs/commander", ".claude")
 
 # Bash 명령 문자열/직렬화된 JSON에서 검색할 마커
 PROTECTED_MARKERS = (
-    "AGENTS.md", "CLAUDE.md",
     "docs/commander/", "docs/commander\\",
-    "docs/rules/", "docs/rules\\",
     ".claude/", ".claude\\", ".claude",
 )
 

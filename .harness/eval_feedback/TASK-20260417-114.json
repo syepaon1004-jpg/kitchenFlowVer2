@@ -1,0 +1,11 @@
+{
+  "id": "TASK-20260417-114",
+  "verdict": "approved",
+  "plan_alignment": 5,
+  "checklist_pass_rate": 100,
+  "extra_changes": false,
+  "plan_rounds": 3,
+  "execution_rounds": 1,
+  "summary": "Practice session now shows a basic ghost guide with representative friendly wording, intensity toggles, and full legal-action guidance while preserving practiceStore persistence boundaries and sim isolation.",
+  "findings": []
+}

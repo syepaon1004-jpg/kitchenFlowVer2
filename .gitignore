@@ -25,3 +25,20 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Automation harness runtime (.harness/auto/)
+.harness/auto/node_modules/
+.harness/auto/phase_0/*
+!.harness/auto/phase_0/.gitkeep
+.harness/auto/phase_1/
+.harness/auto/phase_2/
+.harness/auto/phase_3/
+.harness/auto/phase_4/
+.harness/auto/phase_5/
+.harness/auto/approvals/*
+!.harness/auto/approvals/.gitkeep
+.harness/auto/errors/
+.harness/auto/debug/
+.harness/auto/WATCHER_BUSY
+.harness/auto/registry.json
+.harness/auto/registry.json.bak

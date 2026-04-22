@@ -1,0 +1,17 @@
+{
+  "task_id": "TASK-20260419-145",
+  "title": "text tacit parent delete scaffold",
+  "status": "planned",
+  "priority": "P1",
+  "depends_on": "TASK-20260419-144",
+  "scope": "delete text tacit parent only, including cascaded linked media cleanup in local bundle/summary",
+  "write_set": "src/pages/practice/PracticeAdminPage.tsx",
+  "allowed_aux_files": "docs/worker/LAST_SESSION.md, docs/worker/LEARNINGS.md, docs/worker/MISTAKES.md",
+  "truth_source": "actual code + worker docs + approved TASK-110~144",
+  "constraints": "reuse existing deletePracticeTacitItem helper; no queries/adminView/menuView/sessionView/CSS changes; keep TASK-143/TASK-144 pure-media behavior unchanged; no full summary rebuild",
+  "phase4_sequence": "npm run build -> npm run lint -> @self-reviewer -> npx tsc --noEmit",
+  "targeted_tests": "npx vitest run src/lib/practice/tests/adminView.test.ts src/lib/practice/tests/menuView.test.ts src/lib/practice/tests/sessionView.test.ts src/lib/practice/engine/tests/ingredientAdd.test.ts src/lib/practice/engine/tests/phaseAdvance.test.ts",
+  "expected_tests": "132/132 pass",
+  "extra_changes_baseline": "2026-04-19 session-start git status --short snapshot",
+  "success_criteria": "text tacit card can be deleted as a parent unit, linked media rows are removed locally via cascade mirror, summary decrements only tacitItemCount/tacitMediaCount/textTacitCount/linkedMediaCount, TASK-143 and TASK-144 behaviors remain intact"
+}

@@ -1,0 +1,25 @@
+{
+  "id": "TASK-20260418-127",
+  "title": "Practice Admin Menu Create Scaffold",
+  "status": "pending",
+  "goal": "Add a minimal create flow on /practice/admin that inserts a new practice_menus row for the selected store, auto-selects the created menu, and reuses the existing metadata edit path for optional fields without touching runtime/store/session/menu/admin helper boundaries.",
+  "depends_on": ["TASK-20260418-126"],
+  "scope": [
+    "src/lib/practice/queries.ts",
+    "src/pages/practice/PracticeAdminPage.tsx",
+    "src/pages/practice/PracticePlaceholder.module.css"
+  ],
+  "constraints": [
+    "Only practice_menus single-table create write is allowed in this slice",
+    "Keep menuView.ts, sessionView.ts, adminView.ts, runtime.ts, practiceStore.ts, and types/practice.ts untouched unless a blocker is proven",
+    "Reuse existing selectedStore context and updatePracticeMenuMeta boundary patterns",
+    "Normalize nullable metadata inputs with trim() || null when optional fields are submitted",
+    "Judge extra_changes against this session's git status baseline, with docs/worker/LAST_SESSION.md, docs/worker/LEARNINGS.md, and docs/worker/MISTAKES.md treated as allowed auxiliary files when task-related"
+  ],
+  "acceptance": [
+    "Admins can create a new menu from /practice/admin even when the current menu list is empty",
+    "The created menu appears in the admin list immediately and becomes selectable without breaking the existing metadata editor flow",
+    "The new menu is visible through the existing fetchPracticeMenus read path used by both /practice and /practice/admin",
+    "npm run build, npm run lint, and npx tsc --noEmit pass, allowing only the documented pre-existing lint/build warnings"
+  ]
+}

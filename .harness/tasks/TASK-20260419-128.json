@@ -1,0 +1,25 @@
+{
+  "id": "TASK-20260419-128",
+  "title": "Practice Admin Location Create Scaffold",
+  "status": "pending",
+  "goal": "Add a minimal /practice/admin scaffold that shows and creates practice_locations for the selected menu so later action-node, ingredient-path, and step-group authoring has valid location IDs without touching runtime/store/session helper boundaries.",
+  "depends_on": ["TASK-20260418-127"],
+  "scope": [
+    "src/lib/practice/queries.ts",
+    "src/pages/practice/PracticeAdminPage.tsx",
+    "src/pages/practice/PracticePlaceholder.module.css"
+  ],
+  "constraints": [
+    "Keep menuView.ts, sessionView.ts, adminView.ts, runtime.ts, practiceStore.ts, and types/practice.ts unchanged unless a concrete blocker is proven.",
+    "Add practice_locations write helpers only in src/lib/practice/queries.ts; do not introduce DB writes in Zustand or page-level direct Supabase calls.",
+    "Do not add delete flow, recipe node authoring, or step-group authoring in this slice.",
+    "Treat docs/worker/LAST_SESSION.md, docs/worker/LEARNINGS.md, and docs/worker/MISTAKES.md as allowed auxiliary files per CLAUDE.md and AGENTS.md."
+  ],
+  "acceptance": [
+    "Selected menu on /practice/admin shows current practice_locations from the existing bundle read path, with a clean empty state when the menu has zero locations.",
+    "Admins can create a practice location with label and loc_key for the selected menu even when that menu currently has zero locations.",
+    "After successful create, the selected menu bundle refreshes or remains in sync so the new location is immediately visible without breaking existing menu create, metadata edit, or drilldown behavior.",
+    "PracticeMenuPage, PracticeSessionPage, practice runtime/store boundaries, and sim routes/pages remain behaviorally unchanged.",
+    "Phase 4 follows build -> lint -> @self-reviewer -> tsc, and only the documented pre-existing warnings are allowed."
+  ]
+}

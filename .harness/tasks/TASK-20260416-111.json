@@ -1,0 +1,51 @@
+{
+  "id": "TASK-20260416-111",
+  "title": "Implement pure practice engine core and test infra",
+  "status": "pending",
+  "goal": "Build a pure-function practice engine and Vitest test harness on top of the approved TASK-110 schema/type contract, without touching sim logic, practice UI, or runtime store wiring.",
+  "depends_on": ["TASK-20260416-110"],
+  "scope": [
+    "package.json",
+    "package-lock.json",
+    "vitest.config.ts",
+    "src/lib/practice/engine/types.ts",
+    "src/lib/practice/engine/openStep.ts",
+    "src/lib/practice/engine/ingredientAdd.ts",
+    "src/lib/practice/engine/actionExecute.ts",
+    "src/lib/practice/engine/pourDryRun.ts",
+    "src/lib/practice/engine/phaseAdvance.ts",
+    "src/lib/practice/engine/legalActions.ts",
+    "src/lib/practice/engine/index.ts",
+    "src/lib/practice/engine/__tests__/openStep.test.ts",
+    "src/lib/practice/engine/__tests__/ingredientAdd.test.ts",
+    "src/lib/practice/engine/__tests__/pourDryRun.test.ts",
+    "src/lib/practice/engine/__tests__/phaseAdvance.test.ts",
+    "src/lib/practice/engine/__tests__/legalActions.test.ts"
+  ],
+  "constraints": [
+    "Keep sim game/admin logic untouched",
+    "Keep practice and sim physically separated",
+    "No any, as any, ts-ignore, or ad-hoc eslint-disable",
+    "No admin/game cross-import",
+    "No React, Zustand, Supabase, or src/stores imports inside src/lib/practice/engine/*",
+    "No DB write in engine core",
+    "Do not create ingredient instances before a successful commit",
+    "Public engine APIs must not take nodeId parameters",
+    "Use practice_locations.id for all location parameters",
+    "Open-number and advance logic must be location-local, not global",
+    "No extra changes outside the approved write set"
+  ],
+  "acceptance": [
+    "package.json adds vitest and a test script, and package-lock.json is updated consistently",
+    "vitest.config.ts exists and runs tests in node environment",
+    "src/lib/practice/engine/* exports a pure engine core with no React/Zustand/Supabase/store imports",
+    "Engine runtime types are session-free and do not require DB row id/session_id fields",
+    "Ingredient instances are created only after successful placement commit",
+    "computeOpenNumber is location-local and respects both ingredient required-location and action location rules",
+    "tryPlaceIngredient, tryExecuteAction, tryPour, advanceLocation, and computeLegalActions are implemented and covered by tests",
+    "computeLegalActions exposes place/action/pour at player-action level without nodeId inputs",
+    "At least 5 engine test files exist and npm run test passes",
+    "npm run build and npx tsc --noEmit pass",
+    "No any usage, no sim/admin cross-import, and no extra changes relative to the session-start dirty snapshot"
+  ]
+}

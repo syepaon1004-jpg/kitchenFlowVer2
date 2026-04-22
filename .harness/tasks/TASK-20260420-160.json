@@ -1,0 +1,19 @@
+{
+  "task_id": "TASK-20260420-160",
+  "title": "practiceStore terminal session lifecycle commonization",
+  "status": "todo",
+  "owner": "claude_code",
+  "mode": "generator",
+  "baseline_git_status_entries": 127,
+  "scope_default": "single-file behavior-preserving refactor",
+  "scope_allowed_prod_files": "src/stores/practiceStore.ts",
+  "scope_allowed_test_files": "src/stores/tests/practiceStore.test.ts",
+  "scope_allowed_helper_files": "docs/worker/LAST_SESSION.md;docs/worker/LEARNINGS.md;docs/worker/MISTAKES.md",
+  "forbidden_expansion": "src/pages/practice/PracticeAdminPage.tsx;src/pages/practice/PracticeSessionPage.tsx;src/lib/practice/runtime.ts;src/lib/practice/queries.ts;src/lib/practice/adminView.ts;src/lib/practice/sessionView.ts;src/lib/practice/engine/openStep.ts;src/lib/practice/engine/phaseAdvance.ts",
+  "risk_level": "high_due_to_zustand_store_change",
+  "phase4_order": "npm run build -> npm run lint -> @self-reviewer -> npx tsc --noEmit",
+  "extra_changes_rule": "baseline_snapshot_plus_hash_plus_write_set",
+  "success_condition": "completeSession_and_abandonSession_share_one_internal_finalize_helper_with_no_behavior_change",
+  "abort_condition": "requires_more_than_one_production_file_or_changes_public_store_behavior",
+  "next_if_pass": "TASK-20260420-161 documentation compression or project stop line"
+}

@@ -1,0 +1,33 @@
+{
+  "id": "TASK-20260420-162",
+  "title": "Add store-entry mode chooser and guard /practice list by store",
+  "status": "pending",
+  "depends_on": ["TASK-20260419-150"],
+  "goal": "Replace the /practice list dead-end with a store-first mode-choice flow: after selecting or creating a store in /sim/join, show a Simulator/Menu Practice chooser and route /practice through store selection without returnTo propagation.",
+  "scope": [
+    "src/router.tsx",
+    "src/pages/JoinPage.tsx",
+    "src/pages/JoinPage.module.css",
+    "src/pages/practice/PracticePage.tsx"
+  ],
+  "constraints": [
+    "Keep PublicOnlyRoute and AvatarSelectPage navigate behavior unchanged",
+    "Do not touch /practice/session/:sessionId and /practice/admin guards",
+    "Do not introduce returnTo queries, navigation-state redirect chains, or open-redirect helpers",
+    "Do not change practice queries, migrations, or schema; report missing practice tables as an environment blocker if encountered",
+    "Normalize selectedUser on store selection to prevent cross-store stale user leakage",
+    "Keep HomePage menu-practice button present",
+    "No any, as any, ts-ignore, or ad-hoc eslint-disable",
+    "No extra changes outside the approved write set"
+  ],
+  "acceptance": [
+    "Store card click and new-store success both open the same mode-selection modal instead of navigating directly to /sim/join/avatar",
+    "Selecting Simulator routes to /sim/join/avatar with existing simulator behavior unchanged",
+    "Selecting Menu Practice routes to /practice",
+    "/practice is protected by requireStore and direct access without a selected store redirects into /sim/join",
+    "PracticePage no longer renders the current user-facing dead-end copy for missing store state",
+    "Store selection also normalizes selectedUser to a same-store current-user avatar or null",
+    "/practice/menu/:menuId remains auth-only browse, and /practice/session/:sessionId plus /practice/admin remain unchanged",
+    "npm run build, npm run lint, and npx tsc --noEmit pass"
+  ]
+}

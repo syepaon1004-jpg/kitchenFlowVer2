@@ -1,0 +1,13 @@
+{
+  "id": "TASK-20260419-137",
+  "title": "Practice Admin Step Group Metadata Edit Scaffold",
+  "status": "approved",
+  "goal": "practice admin에서 기존 practice_step_groups의 metadata(display_step_no, title, summary, primary_location_id)를 inline edit할 수 있게 하여 create-only authoring 공백을 메운다",
+  "depends_on": "TASK-20260419-136",
+  "scope": "src/lib/practice/queries.ts, src/pages/practice/PracticeAdminPage.tsx, task-related docs/worker/LAST_SESSION.md|LEARNINGS.md|MISTAKES.md only",
+  "constraints": "no delete; no node/tacit/media write expansion; no schema/RPC; no CSS file change; stale async guard 유지; summary counts immutable; display_step_no uniqueness client/server 이중 방어; extra_changes baseline은 이번 세션 시작 git status --short 기준",
+  "acceptance": "npm run build pass; npm run lint pass with only existing src/hooks/useGameTick.ts:73 warning 1건 유지; @self-reviewer approved; npx tsc --noEmit pass; npx vitest run src/lib/practice/__tests__/adminView.test.ts pass; npx vitest run src/lib/practice/__tests__/menuView.test.ts pass; npx vitest run src/lib/practice/__tests__/sessionView.test.ts pass; npx vitest run src/lib/practice/engine/__tests__/ingredientAdd.test.ts pass; npx vitest run src/lib/practice/engine/__tests__/phaseAdvance.test.ts pass; /practice/admin에서 기존 step group 한 행을 편집 시작/저장/취소 가능; 저장 후 list/summary/drilldown에 수정된 title/summary/primary_location/display_step_no가 즉시 반영; step group count/node count/tacit/media count는 불변; 중복 display_step_no는 선검증 또는 DB 에러로 차단; files_changed는 scope + 허용 보조 파일만; extra_changes false",
+  "result": "pass",
+  "verified_by": "codex_commander",
+  "next_default": "TASK-20260419-138"
+}

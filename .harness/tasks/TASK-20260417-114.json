@@ -1,0 +1,33 @@
+{
+  "id": "TASK-20260417-114",
+  "title": "Practice Ghost Guide Basic UI",
+  "status": "pending",
+  "goal": "Add a minimal ghost guide layer to the practice session page that shows one representative recommendation plus the current legal action list with human-readable wording, while keeping practiceStore persistence boundaries and sim code untouched.",
+  "depends_on": ["TASK-20260417-113"],
+  "scope": [
+    "src/pages/practice/PracticeSessionPage.tsx",
+    "src/pages/practice/PracticePlaceholder.module.css",
+    "src/lib/practice/sessionView.ts",
+    "src/lib/practice/__tests__/sessionView.test.ts",
+    "src/types/practice.ts",
+    "src/lib/practice/queries.ts"
+  ],
+  "constraints": [
+    "Do not modify sim store/engine/routes/pages or cross the admin/game import boundary",
+    "Keep session lifecycle, engine transitions, and DB writes inside usePracticeStore plus src/lib/practice/queries.ts only",
+    "Reuse derived.legalActions as engine ground truth; compute guide ranking and wording in a pure helper, not in Zustand selectors",
+    "Guide intensity may exist only as local UI state for this task and must not require DB or store schema changes",
+    "If ingredient labels are needed, allow only an additive query/type extension for display names; do not expand into tacit detail/media or practice admin work",
+    "No any, as any, ts-ignore, eslint-disable, display:none, or new inline hardcoded style values",
+    "No inline filter/map inside Zustand selectors and no extra changes outside the approved write set plus current dirty snapshot baseline"
+  ],
+  "acceptance": [
+    "/practice/session/:sessionId shows a representative recommendation card and a full legal action list derived from the approved engine state",
+    "The action list still executes the existing place/action/pour store actions and session persistence behavior remains unchanged",
+    "Guide wording uses practice location labels and stable action copy; place actions use human-readable ingredient names when available and fall back safely otherwise",
+    "A Full/Hint/Off intensity control exists at the UI level without changing engine rules, DB writes, or session routing",
+    "Recommendation selection is deterministic and covered by pure helper tests",
+    "tacit detail/media panels, practice admin authoring, debug console, and sim runtime remain unchanged",
+    "npm run build, npx tsc --noEmit, npm run test, and npm run lint complete with no new warnings/errors beyond the pre-existing warning at src/hooks/useGameTick.ts:73"
+  ]
+}

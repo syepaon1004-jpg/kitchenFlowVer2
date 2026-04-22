@@ -1,0 +1,54 @@
+{
+  "id": "TASK-20260422-212",
+  "title": "Phase 3 practice adapter implementation",
+  "status": "pending",
+  "owner": "Claude Code",
+  "goal": "Close Phase 3 in one implementation task by turning createPracticeModeAdapter into a working thin adapter and completing the minimal engine/store/sessionView changes it depends on, without starting Phase 4 route conversion.",
+  "constraints": [
+    "No extra planning docs or slice-map by default",
+    "Default is to close Phase 3 in this one task; only split if a real blocker appears",
+    "No Phase 4 route conversion or shared-kitchen practice UI work",
+    "Keep PracticeSessionPage as fallback asset only; no shared-shell imports there",
+    "No sim-path changes unless strictly required for compile safety",
+    "Do not modify .harness/*.json",
+    "Do not modify docs/commander/*",
+    "Phase 4 verification order is fixed: npm run build -> npm run lint -> @self-reviewer -> npx tsc --noEmit"
+  ],
+  "files": [
+    "src/lib/kitchen-mode/createPracticeModeAdapter.ts",
+    "src/stores/practiceStore.ts",
+    "src/lib/practice/engine/types.ts",
+    "src/lib/practice/engine/ingredientAdd.ts",
+    "src/lib/practice/engine/actionExecute.ts",
+    "src/lib/practice/engine/pourDryRun.ts",
+    "src/lib/practice/engine/legalActions.ts",
+    "src/lib/practice/engine/index.ts",
+    "src/lib/practice/sessionView.ts",
+    "src/pages/practice/PracticeSessionPage.tsx",
+    "src/lib/practice/engine/__tests__/ingredientAdd.test.ts",
+    "src/lib/practice/engine/__tests__/pourDryRun.test.ts",
+    "src/lib/practice/engine/__tests__/legalActions.test.ts",
+    "src/stores/__tests__/practiceStore.test.ts"
+  ],
+  "allowed_aux_files": [
+    "docs/worker/LAST_SESSION.md",
+    "docs/worker/LEARNINGS.md",
+    "docs/worker/MISTAKES.md"
+  ],
+  "references": [
+    "docs/practice/EXECUTION_PLAN_2026-04-21.md",
+    "docs/practice/GATE_B_DECISIONS_2026-04-22.md",
+    "docs/practice/ENGINE_SPEC_APPENDIX_2026-04-21.md",
+    "docs/practice/SHARED_SHELL_BOUNDARY_APPENDIX_2026-04-21.md",
+    "src/lib/kitchen-mode/KitchenModeAdapter.ts",
+    "src/lib/practice/runtime.ts",
+    "src/lib/practice/fixtures.ts",
+    "CLAUDE.md"
+  ],
+  "implementation_choice": [
+    "Use Gate B option A by default: refine engine reasons instead of duplicating rule trees in adapter preflight",
+    "Keep source-not-clean as engine-internal and do not force a best-fit spec rejection_code",
+    "Keep PracticeSessionPage as fallback only; Phase 4 route conversion stays blocked"
+  ],
+  "final_line": "실행 완료 후 대기"
+}

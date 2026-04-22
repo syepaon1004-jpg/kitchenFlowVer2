@@ -1,0 +1,17 @@
+{
+  "id": "TASK-20260419-140",
+  "trace_id": "TASK-20260419-140",
+  "title": "Practice Admin Tacit Media URL Correction Scaffold",
+  "status": "planned",
+  "depends_on": "TASK-20260419-139",
+  "goal": "practice_tacit_media에 잘못 붙은 URL을 practice admin에서 inline correction할 수 있게 한다. 첨부된 media row의 url만 교정하고, admin/menu/session read path가 fresh fetch 없이 즉시 반영되게 유지한다.",
+  "constraints": "TASK-110~139 승인 truth를 되돌리거나 재논쟁하지 말 것. 이번 slice는 url correction만 허용하며 detach/delete, media_type 변경, sort_order 변경, pure-media parent meta edit, helper 경계 확장, CSS 신규 작성은 금지한다. extra_changes 평가는 2026-04-19 세션 시작 git status --short baseline 대비로만 판단한다.",
+  "truth_priority": "actual code + worker docs + current approval prompt > stale .harness state",
+  "dirty_baseline": "session-start git status --short snapshot captured on 2026-04-19",
+  "expected_write_set": "src/lib/practice/queries.ts, src/pages/practice/PracticeAdminPage.tsx",
+  "allowed_aux_files": "docs/worker/LAST_SESSION.md, docs/worker/LEARNINGS.md, docs/worker/MISTAKES.md",
+  "reference_rules": "docs/rules/forbidden.md, docs/rules/project-structure.md, docs/rules/maintenance.md",
+  "phase4_order": "npm run build -> npm run lint -> @self-reviewer -> npx tsc --noEmit",
+  "targeted_tests": "src/lib/practice/tests/adminView.test.ts, src/lib/practice/tests/menuView.test.ts, src/lib/practice/tests/sessionView.test.ts, src/lib/practice/engine/tests/ingredientAdd.test.ts, src/lib/practice/engine/tests/phaseAdvance.test.ts",
+  "cautions": "⚠️ setSummary는 count 불변 slice이므로 원칙적으로 건드리지 않는 방향으로 먼저 판단할 것. ⚠️ text tacit linked media row와 pure-media row 양쪽에 correction 경로를 열되, adminView.ts, menuView.ts, sessionView.ts helper 계약은 그대로 유지할 것. ⚠️ Phase 4 순서는 반드시 npm run build -> npm run lint -> @self-reviewer -> npx tsc --noEmit이며, targeted vitest 5종(adminView, menuView, sessionView, ingredientAdd, phaseAdvance)도 함께 확인할 것."
+}

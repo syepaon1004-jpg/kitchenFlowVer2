@@ -41,7 +41,7 @@ const AvatarSelectPage = () => {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     clearAuth();
-    navigate('/');
+    navigate('/sim');
   };
 
   const [allUsers, setAllUsers] = useState<StoreUser[]>([]);
@@ -369,22 +369,30 @@ const AvatarSelectPage = () => {
             </p>
             <div className={styles.modalButtons}>
               {selectedUser?.role === 'admin' && (
-                <button
-                  className={styles.modalButtonPrimary}
-                  onClick={() => navigate('/admin')}
-                >
-                  관리자 페이지
-                </button>
+                <>
+                  <button
+                    className={styles.modalButtonPrimary}
+                    onClick={() => navigate('/sim/admin')}
+                  >
+                    시뮬레이터 관리자
+                  </button>
+                  <button
+                    className={styles.modalButtonPrimary}
+                    onClick={() => navigate('/practice/admin')}
+                  >
+                    연습 관리자
+                  </button>
+                </>
               )}
               <button
                 className={styles.modalButtonSecondary}
-                onClick={() => navigate('/game/setup')}
+                onClick={() => navigate('/sim/game/setup')}
               >
                 게임 시작
               </button>
               <button
                 className={styles.modalButtonSecondary}
-                onClick={() => navigate('/feed')}
+                onClick={() => navigate('/sim/feed')}
               >
                 내 피드
               </button>

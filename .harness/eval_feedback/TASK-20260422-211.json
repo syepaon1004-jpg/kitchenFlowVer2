@@ -1,0 +1,16 @@
+{
+  "id": "TASK-20260422-211",
+  "status": "approved",
+  "plan_alignment": 5,
+  "checklist_pass_rate": 100,
+  "extra_changes": false,
+  "plan_rounds": 3,
+  "execution_rounds": 1,
+  "notes": [
+    "Gate B decision document exists and includes all six required sections.",
+    "The rejection mapping table records all 10 spec rejection_code entries and preserves unresolved translation gaps instead of forcing incorrect 1:1 mappings.",
+    "docs/worker/LAST_SESSION.md records TASK-20260422-211, the new Gate B document, Phase 2 closed confirmed, and Phase 3 implementation still blocked pending Gate B approval.",
+    "Build, lint, and tsc were revalidated successfully; the lint warning at src/hooks/useGameTick.ts:52 is pre-existing.",
+    "@self-reviewer was accepted from the reported approved result."
+  ]
+}

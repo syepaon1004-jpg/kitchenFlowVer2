@@ -1,0 +1,33 @@
+{
+  "id": "TASK-20260417-116",
+  "title": "Practice Session Tacit Media Basic UI",
+  "status": "pending",
+  "goal": "Expose the current step group's tacit image/video media in /practice/session/:sessionId by extending the existing pure tacit detail view-model, without changing practice runtime persistence or sim/admin boundaries.",
+  "depends_on": ["TASK-20260417-115"],
+  "scope": [
+    "src/lib/practice/sessionView.ts",
+    "src/lib/practice/__tests__/sessionView.test.ts",
+    "src/pages/practice/PracticeSessionPage.tsx",
+    "src/pages/practice/PracticePlaceholder.module.css",
+    "src/styles/gameVariables.css"
+  ],
+  "constraints": [
+    "Keep current step-group ground truth based on engineState.node_progress plus bundle.step_group_nodes; do not infer the active learning unit from legalActions or media presence",
+    "Join tacit_items and tacit_media in a pure helper/view-model inside src/lib/practice/sessionView.ts, not inside Zustand selectors or practiceStore",
+    "Do not modify src/stores/practiceStore.ts, src/lib/practice/runtime.ts, src/lib/practice/queries.ts, src/types/practice.ts, router, sim pages, or admin flows unless a blocker is proven from code",
+    "Render both image and video in a minimal native way if URLs are directly usable; do not expand into modal/gallery/custom player work",
+    "No any, as any, ts-ignore, eslint-disable, admin/game cross-import, display:none, or inline filter/map inside Zustand selectors",
+    "Reuse existing gameVariables tokens first; only touch src/styles/gameVariables.css if a truly missing token is proven for the media layout",
+    "Treat PracticeMenuPage tacit preview, next-step-group preview, practice admin authoring, debug console, and signed/private media URL handling as out of scope",
+    "No extra changes outside the approved write set and the session-start dirty snapshot baseline"
+  ],
+  "acceptance": [
+    "A pure helper/view-model can return the current step group's tacit items with media grouped by tacit_item_id and sorted stably by sort_order",
+    "The helper is covered by tests for current-group selection continuity, per-item media grouping, media sort order, and both image/video media types",
+    "/practice/session/:sessionId shows the current step group's tacit media inside the existing tacit detail panel while keeping the current title, summary, sensory tags, and empty-state behavior",
+    "If a tacit item has no media, the UI stays text-first and does not regress existing tacit item rendering",
+    "Existing legal action buttons, ghost guide wording/intensity, session lifecycle, persistence flow, and current learning-unit logic remain unchanged",
+    "PracticeMenuPage, PracticeAdminPage, runtime/store derived state, queries/types, sim routes/pages, and debug UI remain unchanged",
+    "npx vitest run src/lib/practice/__tests__/sessionView.test.ts, npx tsc --noEmit, npm run build, and npm run lint complete with no new warnings/errors beyond the pre-existing warning at src/hooks/useGameTick.ts:73"
+  ]
+}

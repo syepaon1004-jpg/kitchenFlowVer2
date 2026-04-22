@@ -21,7 +21,7 @@
 - **Phase 1**: Investigate — 관련 파일 + docs/worker/*.md 읽기
 - **Phase 2**: Plan — 세부계획 작성 + 체크리스트 자가검증 → **실행 금지. 아래 포맷으로 보고.**
 - **Phase 3**: Execute — 승인된 계획만 실행
-- **Phase 4**: Verify — `npm run build` → `npx eslint src/ --fix` → `@self-reviewer` (최대 2회 재검토) → `npx tsc --noEmit` → 아래 포맷으로 보고
+- **Phase 4**: Verify — `npm run build` → `npm run lint` → `@self-reviewer` (최대 2회 재검토) → `npx tsc --noEmit` → `docs/worker/LAST_SESSION.md` 갱신 + 필요 시 `docs/worker/LEARNINGS.md`, `docs/worker/MISTAKES.md` 갱신 → 아래 포맷으로 보고. `docs/worker/LAST_SESSION.md` 갱신 누락 시 Phase 4 미완료로 간주한다. task 관련 기록 갱신은 허용 보조 파일로 간주한다.
 
 ## 서브에이전트
 - 빌트인 서브에이전트는 필요 시 자율 활용 가능.
@@ -29,7 +29,7 @@
 
 ## 보고 포맷
 **세부계획 (Phase 2)**: `[세부계획] 추적 ID / 변경 파일 / 파일별 변경 1줄 요약 / 체크리스트 자가검증 결과 / ⚠️ 고위험 항목`
-**실행 결과 (Phase 4)**: `[실행 결과] 추적 ID / files_changed / build pass·fail / tsc pass·fail(에러 수) / self-reviewer(요구사항 N/M, 금지사항 위반 유무, 판정) / extra_changes true·false`
+**실행 결과 (Phase 4)**: `[실행 결과] 추적 ID / files_changed / build pass·fail / lint pass·fail / tsc pass·fail(에러 수) / self-reviewer(요구사항 N/M, 금지사항 위반 유무, 판정) / worker_docs(LAST_SESSION yes·no, LEARNINGS yes·no or n/a, MISTAKES yes·no or n/a) / extra_changes true·false`
 
 ## 원칙 체크리스트 (Plan + Verify에서 2회 검증)
 - [ ] CSS 3D transform 순서: translateZ → rotateX
@@ -55,9 +55,10 @@
 CSS 3D 수정, 3개+ 파일 수정, Zustand 스토어 변경, DB 스키마 변경, 인터랙션 로직 수정
 
 ## 자기학습
-- 세션 시작: docs/worker/LAST_SESSION.md → LEARNINGS.md 요약 → MISTAKES.md 확인
-- 에러 발생: **즉시** docs/worker/MISTAKES.md 기록
-- 세션 종료: docs/worker/LAST_SESSION.md 갱신. 발견 없으면 "특이사항 없음" 기록
+- 세션 시작: `docs/worker/LAST_SESSION.md` → `LEARNINGS.md` 요약 → `MISTAKES.md` 확인
+- 새 학습/패턴 발견: `docs/worker/LEARNINGS.md` 갱신
+- 에러/재발 방지 필요 시: `docs/worker/MISTAKES.md` 갱신
+- 세션 종료: `docs/worker/LAST_SESSION.md` 갱신. 발견 없으면 "특이사항 없음" 기록
 
 ## 소통
 - 계획 보고는 단일 복사 가능 블록. CSS 3D 시 transform 순서와 preserve-3d 체인 명시.

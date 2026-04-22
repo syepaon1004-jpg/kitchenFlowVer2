@@ -1,0 +1,12 @@
+{
+  "track_id": "TASK-20260420-156",
+  "title": "/practice/admin local dry-run simulator",
+  "status": "planned",
+  "priority": "P0",
+  "truth_base": "TASK-110~153 approved, TASK-20260420-155 approved",
+  "goal": "authored bundle 기반 로컬 step-by-step engine validation without DB writes",
+  "scope_files": "src/pages/practice/PracticeAdminPage.tsx",
+  "allowed_aux_files": "docs/worker/LAST_SESSION.md, docs/worker/LEARNINGS.md, docs/worker/MISTAKES.md",
+  "deferred_after_this": "TASK-20260420-154 commonization",
+  "finish_line": "TASK-20260420-156 승인 시 admin authoring/validation chain 사실상 closure 판정"
+}

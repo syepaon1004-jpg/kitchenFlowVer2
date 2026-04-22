@@ -23,7 +23,7 @@ export default function GameHeader() {
     }
 
     resetGame();
-    navigate('/join/avatar');
+    navigate('/sim/join/avatar');
   };
 
   const handleLogout = async () => {
@@ -41,7 +41,7 @@ export default function GameHeader() {
     resetGame();
     await supabase.auth.signOut();
     clearAuth();
-    navigate('/');
+    navigate('/sim');
   };
 
   return (

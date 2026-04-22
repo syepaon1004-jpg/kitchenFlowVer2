@@ -1,0 +1,42 @@
+{
+  "id": "TASK-20260421-208",
+  "title": "Phase 2 Slice 3 sim scoring/log ownership migration",
+  "status": "approved",
+  "owner": "Claude Code",
+  "goal": "equipmentStore/useGameTick의 sim-only scoring 결합을 제거하고, 동일한 score/log semantics를 createSimModeAdapter.onRuntimeTick()으로 이관한다.",
+  "constraints": [
+    "TASK-20260421-207 manual verification PASS 전제",
+    "기본 변경 대상은 src/stores/equipmentStore.ts, src/hooks/useGameTick.ts, src/lib/kitchen-mode/createSimModeAdapter.ts 3건만",
+    "GamePage.tsx, GameKitchenView.tsx, gameStore.ts, scoringStore.ts, shared-shell/*, practice 파일 전체 0 touch",
+    "equipmentStore의 물리 전이와 ingredient action_history 누적은 유지, scoring 결합만 제거",
+    "useGameTick는 addActionLog(stir)와 checkIdlePenalty만 제거하고 onPostTick seam/interval deps []는 유지",
+    "sim adapter onRuntimeTick은 read-only getState()만 사용하고 same-tick score/log 의미를 보존",
+    "첫 tick false-positive burn 금지, adapter 인스턴스 내부 스냅샷으로 처리",
+    "same kitchen / same equipment / same tick engine, open_step, deco-first, sim regression 0 원칙 유지",
+    "as any, @ts-ignore, eslint-disable 금지",
+    "단일 slice가 과하면 3a/3b 분할안을 먼저 제출하고 실행은 보류"
+  ],
+  "files": [
+    "src/stores/equipmentStore.ts",
+    "src/hooks/useGameTick.ts",
+    "src/lib/kitchen-mode/createSimModeAdapter.ts"
+  ],
+  "allowed_aux_files": [
+    "docs/worker/LAST_SESSION.md",
+    "docs/worker/LEARNINGS.md",
+    "docs/worker/MISTAKES.md"
+  ],
+  "references": [
+    "docs/practice/PHASE2_SLICE_MAP_2026-04-21.md",
+    "docs/practice/SIM_REGRESSION_CHECKLIST_2026-04-21.md",
+    "docs/practice/SHARED_SHELL_BOUNDARY_APPENDIX_2026-04-21.md",
+    "docs/practice/EXECUTION_PLAN_2026-04-21.md",
+    "docs/practice/MASTER_IMPLEMENTATION_PLAN_2026-04-21.md",
+    "docs/practice/CURRENT_CODE_INVENTORY_2026-04-21.md",
+    "CLAUDE.md",
+    "docs/rules/forbidden.md",
+    "docs/rules/project-structure.md",
+    "docs/rules/maintenance.md",
+    "docs/rules/css-3d.md"
+  ]
+}

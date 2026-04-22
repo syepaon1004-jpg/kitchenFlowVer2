@@ -1,0 +1,13 @@
+{
+  "id": "TASK-20260419-138",
+  "title": "Practice Admin step-group node unlink scaffold",
+  "status": "approved",
+  "goal": "Add a minimal inverse operation for TASK-132 by deleting one practice_step_group_nodes row from /practice/admin and updating bundle/summary locally without touching node base tables",
+  "depends_on": "TASK-20260419-132, TASK-20260419-137",
+  "scope": "src/lib/practice/queries.ts, src/pages/practice/PracticeAdminPage.tsx",
+  "constraints": "no schema or RPC changes; no recipe/action/ingredient row delete; no CSS edits; preserve selectedMenuIdRef stale-guard; zero-node group allowed; worker docs only as allowed auxiliary files",
+  "acceptance": "build pass; lint pass with only pre-existing src/hooks/useGameTick.ts:73 warning; self-reviewer approved; tsc pass; regression vitest pass; files_changed limited to scope plus allowed worker docs; extra_changes false",
+  "result": "pass",
+  "verified_by": "codex_commander",
+  "next_default": "TASK-20260419-139"
+}

@@ -1,0 +1,15 @@
+{
+  "id": "TASK-20260422-213",
+  "status": "changes_requested",
+  "plan_alignment": 3,
+  "checklist_pass_rate": 100,
+  "extra_changes": false,
+  "plan_rounds": 6,
+  "execution_rounds": 1,
+  "notes": [
+    "Main-route shared HUD is not reactive to normal practice store updates.",
+    "PracticeSessionPage subscribes only to phase/session/error/isComplete, so successful non-terminal actions may not rerender the page.",
+    "PracticePrimaryActionTrigger memoizes the dispatchable action with [adapter], but adapter identity is stable, so the chosen action can remain stale after state changes.",
+    "Build, lint, tsc, and the focused practiceDispatch Vitest all passed; the blocker is runtime UI behavior, not compilation."
+  ]
+}

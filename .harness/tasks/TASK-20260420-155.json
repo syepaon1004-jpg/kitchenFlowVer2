@@ -1,0 +1,13 @@
+{
+  "id": "TASK-20260420-155",
+  "status": "proposed",
+  "mode": "planner",
+  "title": "practice admin bootstrap engine preview",
+  "goal": "show read-only bootstrap legal actions and current/next step preview in /practice/admin without creating a session",
+  "files_changed": "src/pages/practice/PracticeAdminPage.tsx",
+  "allowed_auxiliary_files": "docs/worker/LAST_SESSION.md, docs/worker/LEARNINGS.md, docs/worker/MISTAKES.md",
+  "rules": "docs/rules/forbidden.md, docs/rules/project-structure.md, docs/rules/maintenance.md",
+  "baseline_git_status": "captured at 2026-04-20 after TASK-153 approval with git status --short; extra_changes must be measured against this snapshot",
+  "approval_truth": "TASK-110~153 approved baseline, latest locked approval is TASK-20260420-153",
+  "notes": "keep preview read-only, prefer existing sessionView/runtime/engine helpers and existing CSS classes, do not touch practiceStore or session write flow"
+}

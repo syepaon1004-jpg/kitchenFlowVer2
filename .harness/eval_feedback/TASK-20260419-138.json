@@ -1,0 +1,22 @@
+{
+  "id": "TASK-20260419-138",
+  "verdict": "approved",
+  "plan_alignment": "5/5",
+  "checklist_pass_rate": 100,
+  "extra_changes": false,
+  "plan_rounds": 1,
+  "execution_rounds": 1,
+  "phase4_build": "pass",
+  "phase4_lint": "pass",
+  "phase4_lint_notes": "pre-existing warning only at src/hooks/useGameTick.ts:73",
+  "phase4_self_reviewer": "approved 8/8",
+  "phase4_tsc": "pass",
+  "vitest_adminView": "40/40 pass",
+  "vitest_menuView": "38/38 pass",
+  "vitest_sessionView": "42/42 pass",
+  "vitest_ingredientAdd": "6/6 pass",
+  "vitest_phaseAdvance": "6/6 pass",
+  "vitest_total": "132/132 pass",
+  "files_changed_validated": "src/lib/practice/queries.ts, src/pages/practice/PracticeAdminPage.tsx, docs/worker/LAST_SESSION.md",
+  "notes": "step-group node unlink approved; drilldown disappearance, summary nodeCount decrement, and unlinked-option recovery path verified"
+}

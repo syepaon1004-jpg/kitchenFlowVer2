@@ -1,0 +1,18 @@
+{
+  "task_id": "TASK-20260420-162",
+  "stage": "execution_review",
+  "verdict": "approved",
+  "plan_alignment": 5,
+  "checklist_pass_rate": 100,
+  "extra_changes": false,
+  "plan_rounds": 2,
+  "execution_rounds": 1,
+  "notes": [
+    "/practice is now protected by requireStore while /practice/menu/:menuId remains auth-only browse",
+    "JoinPage adds a mode-selection modal after store selection and clears selectedUser to block cross-store stale user leakage without weakening existing /sim requireUser guards",
+    "PracticePage dead-end UI was reduced to a safety redirect to /sim/join",
+    "build and tsc passed; lint passed with only the pre-existing src/hooks/useGameTick.ts:73 warning",
+    "LAST_SESSION.md update for TASK-20260420-162 is present"
+  ],
+  "final_verdict": "최종 승인"
+}

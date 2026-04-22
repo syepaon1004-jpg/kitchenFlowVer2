@@ -1,0 +1,17 @@
+{
+  "task_id": "TASK-20260419-143",
+  "title": "pure-media multi-row detach scaffold",
+  "status": "planned",
+  "priority": "P1",
+  "depends_on": "TASK-20260419-142",
+  "scope": "/practice/admin pure-media card media row detach only when pm.media.length > 1",
+  "write_set": "src/pages/practice/PracticeAdminPage.tsx",
+  "allowed_aux_files": "docs/worker/LAST_SESSION.md, docs/worker/LEARNINGS.md, docs/worker/MISTAKES.md",
+  "truth_source": "actual code + worker docs + approved TASK-110~142",
+  "constraints": "reuse existing deletePracticeTacitMedia helper; no queries/adminView/menuView/sessionView/CSS changes; no last-row detach",
+  "phase4_sequence": "npm run build -> npm run lint -> @self-reviewer -> npx tsc --noEmit",
+  "targeted_tests": "npx vitest run src/lib/practice/tests/adminView.test.ts src/lib/practice/tests/menuView.test.ts src/lib/practice/tests/sessionView.test.ts src/lib/practice/engine/tests/ingredientAdd.test.ts src/lib/practice/engine/tests/phaseAdvance.test.ts",
+  "expected_tests": "132/132 pass",
+  "extra_changes_baseline": "2026-04-19 session-start git status --short snapshot",
+  "success_criteria": "pure-media row with 2+ media shows detach button, 1-media row hides detach, summary decrements only tacitMediaCount and target linkedMediaCount, text-tacit detach behavior unchanged"
+}

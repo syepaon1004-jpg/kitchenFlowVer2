@@ -1,0 +1,16 @@
+{
+  "task_id": "TASK-20260420-161",
+  "title": "practice closure handoff documentation compression",
+  "status": "todo",
+  "owner": "claude_code",
+  "mode": "generator",
+  "baseline_git_status_entries": 129,
+  "scope_default": "docs_only",
+  "scope_allowed_helper_files": "docs/worker/LAST_SESSION.md;docs/worker/LEARNINGS.md;docs/worker/MISTAKES.md",
+  "scope_forbidden_prod_changes": "all_src_files",
+  "scope_forbidden_other_docs": ".harness/;docs/commander/",
+  "phase4_order": "npm run build -> npm run lint -> @self-reviewer -> npx tsc --noEmit",
+  "success_condition": "LAST_SESSION top section compressed around current truth and includes [남은 작업 로드맵/계획서] with a clear stop-line",
+  "extra_changes_rule": "non_harness_non_worker_doc_path_set_equality_plus_worker_doc_hash_plus_actual_write_set",
+  "next_if_pass": "practice_stop_line_or_future_bugfix_only"
+}

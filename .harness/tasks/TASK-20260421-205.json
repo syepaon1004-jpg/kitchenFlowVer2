@@ -1,0 +1,38 @@
+{
+  "id": "TASK-20260421-205",
+  "title": "Phase 2 sim route shared-shell pass-through wiring",
+  "status": "approved",
+  "owner": "Claude Code",
+  "goal": "GamePage에서 approved shared shell skeleton을 sim route에 최초 연결하되, sim behavior 변화 없이 route-level adapter boot + provider + shell/hud slot wiring까지만 수행한다.",
+  "constraints": [
+    "본 구현 범위는 GamePage pass-through wiring only",
+    "GameKitchenView/useGameTick/equipmentStore/gameStore/scoringStore 수정 금지",
+    "createSimModeAdapter는 stub 유지, sim rules/order/scoring 연결 금지",
+    "adapter instance는 useMemo 또는 useState initializer로 안정화, 매 render 재생성 금지",
+    "adapter.boot은 useEffect에서만 호출, dependency는 [adapter, selectedStore.id, selectedUser.id, sessionId]로 한정",
+    "teardown/retry/ref guard/idempotency 로직 추가 금지",
+    "BillQueue는 GameKitchenView child로 유지",
+    "SessionResultOverlay/RejectionPopup/WokBlockedPopup/모달/GameHeader는 shell 밖 기존 위치 유지",
+    "MinimapHUD/NavigationHUD/topLeft HUD만 SharedKitchenHudSlots 경유",
+    "practice 파일/route/store/engine 수정 금지",
+    "최종 보고에 'pass-through wiring only, sim rules 분리 미착수' 명시"
+  ],
+  "files": [
+    "src/pages/GamePage.tsx"
+  ],
+  "allowed_aux_files": [
+    "docs/worker/LAST_SESSION.md",
+    "docs/worker/LEARNINGS.md",
+    "docs/worker/MISTAKES.md"
+  ],
+  "references": [
+    "docs/practice/MASTER_IMPLEMENTATION_PLAN_2026-04-21.md",
+    "docs/practice/PHASE2_SKELETON_DRAFT_2026-04-21.md",
+    "docs/practice/SIM_REGRESSION_CHECKLIST_2026-04-21.md",
+    "docs/practice/EXECUTION_PLAN_2026-04-21.md",
+    "docs/rules/forbidden.md",
+    "docs/rules/project-structure.md",
+    "docs/rules/maintenance.md",
+    "docs/rules/css-3d.md"
+  ]
+}

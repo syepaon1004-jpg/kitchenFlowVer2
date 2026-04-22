@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../stores/authStore';
 import type { Store, StoreUser } from '../types/db';
+import '../styles/gameVariables.css';
 import styles from './JoinPage.module.css';
 
 interface StoreCard {
@@ -15,11 +16,15 @@ const JoinPage = () => {
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const setSelectedStore = useAuthStore((s) => s.setSelectedStore);
+  const setSelectedUser = useAuthStore((s) => s.setSelectedUser);
   const clearAuth = useAuthStore((s) => s.clear);
 
   const [storeCards, setStoreCards] = useState<StoreCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // 모드 선택 모달 (시뮬레이터 / 메뉴 연습)
+  const [modeModalStore, setModeModalStore] = useState<Store | null>(null);
 
   // 생성 모드
   const [showCreate, setShowCreate] = useState(false);
@@ -89,12 +94,17 @@ const JoinPage = () => {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     clearAuth();
-    navigate('/');
+    navigate('/sim');
   };
 
   const handleSelectStore = (store: Store) => {
     setSelectedStore(store);
-    navigate('/join/avatar');
+    setSelectedUser(null);
+    setModeModalStore(store);
+  };
+
+  const handleModeCancel = () => {
+    setModeModalStore(null);
   };
 
   // ── 새 매장 만들기 ──
@@ -145,7 +155,9 @@ const JoinPage = () => {
     }
 
     setSelectedStore(newStore as Store);
-    navigate('/join/avatar');
+    setSelectedUser(null);
+    setModeModalStore(newStore as Store);
+    setShowCreate(false);
   };
 
   const hasStores = storeCards.length > 0;
@@ -260,6 +272,32 @@ const JoinPage = () => {
           </>
         )}
       </div>
+
+      {modeModalStore && (
+        <div className={styles.modeOverlay} onClick={handleModeCancel}>
+          <div className={styles.modeModal} onClick={(e) => e.stopPropagation()}>
+            <h2 className={styles.modeTitle}>{modeModalStore.name}</h2>
+            <p className={styles.modeSubtitle}>이동할 모드를 선택하세요</p>
+            <div className={styles.modeButtons}>
+              <button
+                className={styles.modeButtonPrimary}
+                onClick={() => navigate('/sim/join/avatar')}
+              >
+                시뮬레이터
+              </button>
+              <button
+                className={styles.modeButtonSecondary}
+                onClick={() => navigate('/practice')}
+              >
+                메뉴 연습
+              </button>
+            </div>
+            <button className={styles.modeClose} onClick={handleModeCancel}>
+              취소
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

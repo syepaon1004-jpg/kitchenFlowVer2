@@ -251,3 +251,97 @@
   background: #a0c4e8;
   cursor: not-allowed;
 }
+
+/* ── 모드 선택 모달 (시뮬레이터 / 메뉴 연습) ── */
+.modeOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 20px;
+}
+
+.modeModal {
+  background: #fff;
+  border-radius: 10px;
+  padding: 28px 24px;
+  width: 100%;
+  max-width: 360px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.modeTitle {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #333;
+  text-align: center;
+}
+
+.modeSubtitle {
+  margin: 0;
+  font-size: 13px;
+  color: #666;
+  text-align: center;
+}
+
+.modeButtons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.modeButtonPrimary {
+  padding: 12px;
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.modeButtonPrimary:hover {
+  background: var(--color-primary-hover);
+}
+
+.modeButtonSecondary {
+  padding: 12px;
+  background: #fff;
+  color: #333;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.modeButtonSecondary:hover {
+  background: #f4f6f9;
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.modeClose {
+  align-self: center;
+  margin-top: 4px;
+  background: none;
+  border: none;
+  color: #999;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.modeClose:hover {
+  color: var(--color-error);
+}

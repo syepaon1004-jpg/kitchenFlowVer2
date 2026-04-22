@@ -1,0 +1,20 @@
+{
+  "id": "TASK-20260416-100",
+  "title": "Practice Site Re-Architecture execution plan",
+  "status": "done",
+  "goal": "Execute the practice-site re-architecture in small, reviewable slices without destabilizing sim.",
+  "completed": ["TASK-20260416-001"],
+  "next": "TASK-20260416-110",
+  "children": [
+    "TASK-20260416-110",
+    "TASK-20260416-111",
+    "TASK-20260416-112",
+    "TASK-20260416-120",
+    "TASK-20260416-121",
+    "TASK-20260416-130",
+    "TASK-20260416-140",
+    "TASK-20260416-150",
+    "TASK-20260416-151",
+    "TASK-20260416-170"
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "id": "TASK-20260416-001",
+  "title": "Rebase existing sim routes under /sim and add top-level home plus practice skeleton routes",
+  "status": "done",
+  "goal": "Move the current sim site under /sim/* without changing its behavior, and add a new top-level home page plus practice skeleton routes for the separated practice site.",
+  "scope": [
+    "src/router.tsx",
+    "src/components/layout/ProtectedRoute.tsx",
+    "src/components/layout/PublicOnlyRoute.tsx",
+    "src/pages/JoinPage.tsx",
+    "src/pages/AvatarSelectPage.tsx",
+    "src/pages/GameSetupPage.tsx",
+    "src/pages/GamePage.tsx",
+    "src/components/game/GameHeader.tsx",
+    "src/components/admin/AdminHeader.tsx",
+    "src/pages/HomePage.tsx",
+    "src/pages/HomePage.module.css",
+    "src/pages/practice/PracticePage.tsx",
+    "src/pages/practice/PracticeMenuPage.tsx",
+    "src/pages/practice/PracticeSessionPage.tsx",
+    "src/pages/practice/PracticeAdminPage.tsx",
+    "src/pages/practice/PracticePlaceholder.module.css"
+  ],
+  "constraints": [
+    "Keep existing sim admin and in-game logic unchanged",
+    "Only rebase sim paths under /sim/*",
+    "Do not move /dev/master-ingredients",
+    "Practice pages must remain physically separated from sim pages",
+    "No any type",
+    "No admin/game cross-import",
+    "No extra changes"
+  ],
+  "acceptance": [
+    "/ renders the new HomePage",
+    "Existing sim login and flows work under /sim/*",
+    "ProtectedRoute and PublicOnlyRoute redirect to /sim/* paths correctly",
+    "/practice, /practice/menu/:menuId, /practice/session/:sessionId, and /practice/admin render placeholder pages",
+    "New placeholder pages do not use inline style hardcoding",
+    "npm run build passes",
+    "npx tsc --noEmit passes",
+    "eslint passes without new errors"
+  ]
+}

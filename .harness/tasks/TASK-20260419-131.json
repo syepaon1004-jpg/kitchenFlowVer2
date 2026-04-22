@@ -1,0 +1,27 @@
+{
+  "id": "TASK-20260419-131",
+  "title": "Practice Admin Step Group Create Scaffold",
+  "status": "pending",
+  "goal": "Add a minimal /practice/admin scaffold that lists and creates practice_step_groups for the selected menu so step-level browse/admin authoring can start before node-link, tacit, and media slices.",
+  "depends_on": ["TASK-20260419-130"],
+  "scope": [
+    "src/lib/practice/queries.ts",
+    "src/pages/practice/PracticeAdminPage.tsx",
+    "src/pages/practice/PracticePlaceholder.module.css"
+  ],
+  "constraints": [
+    "Keep menuView.ts, sessionView.ts, adminView.ts, runtime.ts, practiceStore.ts, types/practice.ts, router, and sim flows unchanged unless a concrete blocker is proven from code.",
+    "Add the step-group write helper only in src/lib/practice/queries.ts; no page-level direct Supabase calls.",
+    "Limit this slice to step-group list/create only; allow primary_location_id to be null.",
+    "Defer step_group_nodes link/edit, node edit/delete, multi-hop path editing, and tacit/media authoring.",
+    "Use the fresh 2026-04-19 session dirty baseline for extra_changes, and treat task-related docs/worker/LAST_SESSION.md, docs/worker/LEARNINGS.md, and docs/worker/MISTAKES.md as allowed auxiliary files."
+  ],
+  "acceptance": [
+    "Selected menu on /practice/admin shows existing step groups through the current bundle read path with a clear empty state.",
+    "Admins can create a step group with display_step_no, title, optional summary, and optional primary_location_id for the selected menu.",
+    "When the selected menu has zero locations, step-group create still succeeds with null primary_location_id.",
+    "After successful create, the admin summary stays in sync and the new group appears in /practice/admin as well as the existing /practice/menu/:menuId step overview in display_step_no order.",
+    "runtime/store/session boundaries and sim flows remain behaviorally unchanged.",
+    "Phase 4 completes in the required order build -> lint -> self-reviewer -> tsc, allowing only the documented pre-existing useGameTick lint warning and pre-existing Vite chunk-size warning."
+  ]
+}

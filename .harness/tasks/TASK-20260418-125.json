@@ -1,0 +1,29 @@
+{
+  "id": "TASK-20260418-125",
+  "title": "Practice Admin Read-Only Step Group Drilldown",
+  "status": "pending",
+  "goal": "Extend /practice/admin from menu-level coverage counts into a read-only step-group drilldown that exposes linked node and tacit detail using the already-fetched PracticeMenuBundle, without introducing admin writes or widening runtime/store boundaries.",
+  "depends_on": ["TASK-20260418-124"],
+  "scope": [
+    "src/pages/practice/PracticeAdminPage.tsx",
+    "src/lib/practice/adminView.ts",
+    "src/lib/practice/__tests__/adminView.test.ts",
+    "src/pages/practice/PracticePlaceholder.module.css"
+  ],
+  "constraints": [
+    "Keep router, ProtectedRoute, authStore, practiceStore, runtime, queries, types, menuView, and sessionView unchanged unless a blocker is proven from code",
+    "Use existing read helpers only: fetchPracticeMenus and fetchPracticeMenuBundle; do not add DB writes, authoring mutations, session lifecycle actions, or extra admin fetch paths",
+    "Keep derived admin drilldown logic inside a dedicated pure adminView helper without React, Zustand, or Supabase imports",
+    "Render read-only step-group detail from existing bundle data only; do not fetch ingredient display names or signed media URLs for this task",
+    "No any, as any, ts-ignore, eslint-disable, display:none, admin/game cross-import, or inline hardcoded style values",
+    "Keep CSS additive inside PracticePlaceholder.module.css and evaluate extra changes against the current session dirty snapshot baseline"
+  ],
+  "acceptance": [
+    "/practice/admin still shows the existing menu list and top-level structure summary, and additionally allows drilling into per-step-group detail for the selected menu",
+    "A pure adminView helper can derive stable per-step-group detail from PracticeMenuBundle including step metadata, linked node detail, and tacit/media structure without importing React, Zustand, Supabase, menuView, or sessionView",
+    "The drilldown distinguishes ingredient-node and action-node detail using bundle data only and exposes enough read-only structure to inspect authoring readiness without introducing mutation controls",
+    "The drilldown distinguishes non-media tacit items, pure media tacit items, and linked media attachment state per step group without changing PracticeMenuPage or PracticeSessionPage contracts",
+    "No session creation, persistence writes, or practice authoring forms are introduced, and practiceStore/runtime/query/type boundaries remain behaviorally unchanged",
+    "Vitest coverage exists for the new adminView drilldown derivation, and targeted vitest, npx tsc --noEmit, npm run lint, and npm run build pass with no new warnings/errors beyond the pre-existing src/hooks/useGameTick.ts:73 lint warning and the pre-existing non-blocking Vite chunk warning"
+  ]
+}

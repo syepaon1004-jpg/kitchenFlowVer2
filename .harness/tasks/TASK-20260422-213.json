@@ -1,0 +1,47 @@
+{
+  "id": "TASK-20260422-213",
+  "title": "Phase 4 shared kitchen practice session conversion",
+  "status": "pending",
+  "owner": "Claude Code",
+  "goal": "Close Phase 4 in one implementation task by converting /practice/session/:sessionId from the text-first fallback page to a shared-kitchen practice session surface while keeping the old text-first view as fallback-only.",
+  "constraints": [
+    "No extra planning docs or slice-map by default",
+    "Default is to close Phase 4 in this one task; only split if a real blocker appears",
+    "No Phase 5 ghost-guide or tacit UX expansion",
+    "Do not keep the old text-first legal action list on the main practice session route",
+    "Keep the old text-first session view as fallback-only",
+    "No .harness/*.json edits",
+    "No docs/commander/* edits",
+    "KitchenModeAdapter contract stays unchanged unless truly blocked",
+    "Phase 4 verification order is fixed: npm run build -> npm run lint -> @self-reviewer -> npx tsc --noEmit"
+  ],
+  "files": [
+    "src/router.tsx",
+    "src/pages/practice/PracticeSessionPage.tsx",
+    "src/pages/practice/PracticeSessionFallbackPage.tsx",
+    "src/components/practice/*",
+    "src/pages/practice/*.module.css"
+  ],
+  "allowed_aux_files": [
+    "docs/worker/LAST_SESSION.md",
+    "docs/worker/LEARNINGS.md",
+    "docs/worker/MISTAKES.md"
+  ],
+  "references": [
+    "docs/practice/EXECUTION_PLAN_2026-04-21.md",
+    "docs/practice/GATE_B_DECISIONS_2026-04-22.md",
+    "docs/practice/SHARED_SHELL_BOUNDARY_APPENDIX_2026-04-21.md",
+    "src/router.tsx",
+    "src/pages/practice/PracticeSessionPage.tsx",
+    "src/pages/GamePage.tsx",
+    "src/components/game/shared-shell/SharedKitchenShell.tsx",
+    "src/components/game/shared-shell/SharedKitchenHudSlots.tsx",
+    "src/components/game/GameKitchenView.tsx",
+    "src/lib/kitchen-mode/KitchenModeAdapter.ts",
+    "src/lib/kitchen-mode/KitchenModeAdapterContext.tsx",
+    "src/lib/kitchen-mode/createPracticeModeAdapter.ts",
+    "src/stores/practiceStore.ts",
+    "CLAUDE.md"
+  ],
+  "final_line": "실행 완료 후 대기"
+}

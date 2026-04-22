@@ -1,0 +1,31 @@
+{
+  "id": "TASK-20260420-163",
+  "title": "/practice 빈 상태 관리자 CTA + /practice/admin 진입 경로 보강",
+  "status": "planned",
+  "owner": "Claude Code",
+  "goal": "빈 practice 화면에서 메뉴 생성 동선을 드러내고 admin avatar 선택 후 practice admin으로 직접 들어갈 수 있게 한다.",
+  "constraints": [
+    "라우트 가드 의미 유지",
+    "selectedUser 자동 선택 금지",
+    "returnTo 쿼리/state 전파 금지",
+    "recipes/practice_menus 통합 금지",
+    "스키마/마이그레이션 변경 금지"
+  ],
+  "files": [
+    "src/pages/practice/PracticePage.tsx",
+    "src/pages/practice/PracticePlaceholder.module.css",
+    "src/pages/AvatarSelectPage.tsx",
+    "src/pages/AvatarSelectPage.module.css"
+  ],
+  "allowed_aux_files": [
+    "docs/worker/LAST_SESSION.md",
+    "docs/worker/LEARNINGS.md",
+    "docs/worker/MISTAKES.md"
+  ],
+  "references": [
+    "docs/rules/forbidden.md",
+    "docs/rules/project-structure.md",
+    "docs/rules/maintenance.md",
+    "docs/rules/css-3d.md"
+  ]
+}

@@ -81,6 +81,14 @@
   --minimap-cell: 20px;
   --minimap-gap: 2px;
 
+  /* === Border Radius === */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+
+  /* === Content Max Width === */
+  --content-max-width: 480px;
+
   /* === 장비 컴포넌트 === */
   --equip-btn-min-size: 0;
   --equip-bg: rgba(0, 0, 0, 0.2);

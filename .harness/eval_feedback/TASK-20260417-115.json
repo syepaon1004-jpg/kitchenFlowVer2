@@ -1,0 +1,11 @@
+{
+  "id": "TASK-20260417-115",
+  "verdict": "approved",
+  "plan_alignment": 5,
+  "checklist_pass_rate": 100,
+  "extra_changes": false,
+  "plan_rounds": 2,
+  "execution_rounds": 2,
+  "summary": "Practice session now derives the current step group through a pure helper and shows a text-first tacit detail panel with primary location labeling and empty-state handling, while preserving practiceStore/query/runtime boundaries and sim isolation.",
+  "findings": []
+}

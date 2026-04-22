@@ -1,0 +1,18 @@
+{
+  "task_id": "TASK-20260419-146",
+  "title": "step-group parent delete scaffold",
+  "status": "approved",
+  "verdict": "approved",
+  "priority": "P1",
+  "depends_on": "TASK-20260419-145",
+  "scope": "delete practice_step_groups parent only, keeping recipe nodes alive and unlinked",
+  "write_set": "src/lib/practice/queries.ts, src/pages/practice/PracticeAdminPage.tsx",
+  "allowed_aux_files": "docs/worker/LAST_SESSION.md, docs/worker/LEARNINGS.md, docs/worker/MISTAKES.md",
+  "truth_source": "actual code + worker docs + approved TASK-110~145",
+  "constraints": "add deletePracticeStepGroup helper only; no adminView/menuView/sessionView/CSS changes; no node/menu delete in this slice; no full summary rebuild",
+  "phase4_sequence": "npm run build -> npm run lint -> @self-reviewer -> npx tsc --noEmit",
+  "targeted_tests": "npx vitest run src/lib/practice/tests/adminView.test.ts src/lib/practice/tests/menuView.test.ts src/lib/practice/tests/sessionView.test.ts src/lib/practice/engine/tests/ingredientAdd.test.ts src/lib/practice/engine/tests/phaseAdvance.test.ts",
+  "expected_tests": "132/132 pass",
+  "extra_changes_baseline": "2026-04-19 session-start git status --short snapshot",
+  "success_criteria": "step-group row can be deleted as a parent unit, local bundle removes step_group_nodes/tacit_items/tacit_media for that group, summary decrements only stepGroupCount/tacitItemCount/tacitMediaCount and removes the group row, totalNodes and node-type counts remain unchanged"
+}

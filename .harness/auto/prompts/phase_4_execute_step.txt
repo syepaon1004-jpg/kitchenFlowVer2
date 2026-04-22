@@ -1,0 +1,39 @@
+[시스템 맥락]
+{{LEARNINGS}}
+{{MISTAKES}}
+{{RULES_FILES}}
+
+[작업 지시]
+지금은 Phase 4: 분할 실행 단계다. 이번 호출은 step_{{STEP_NUMBER}}만 수행한다.
+
+이 step의 범위를 엄격히 지켜라. step_{{STEP_NUMBER}} 목표 외 변경 금지. 이전 step의 산출물이 필요하면 아래 "이전 step 결과"를 참조하라.
+
+실행 규칙:
+1. step 범위 밖 파일 수정 금지.
+2. 이전 step 산출물 덮어쓰기 금지 (명시적 수정이 이번 step 목표인 경우 제외).
+3. 이번 step의 산출물을 완성한 뒤 스스로 검토한다 (self-reviewer 서브에이전트 활용).
+4. 검토 문제 발견 시 즉시 수정. 최대 2회 재작업 내.
+5. 응답 말미에 다음 섹션을 **정확히** 포함한다:
+   ## step_{{STEP_NUMBER}} 결과
+   - 변경 파일: (경로 목록)
+   - 검증: (자가 검증 요약)
+   - 다음 step 전달 사항: (다음 step이 알아야 할 상태/가정)
+
+추적 ID: {{TASK_ID}}
+
+[step_{{STEP_NUMBER}} 지시]
+- 전제 조건: {{STEP_PREREQ}}
+- 목표: {{STEP_GOAL}}
+- 산출물: {{STEP_DELIVERABLE}}
+
+[원본 요청]
+{{ORIGINAL_REQUEST}}
+
+[Phase 2 세부계획]
+{{PHASE_2_CONTENT}}
+
+[Phase 3 검토 (분할 계획 포함)]
+{{PHASE_3_CONTENT}}
+
+[이전 step 결과]
+{{PREVIOUS_STEPS_CONTENT}}

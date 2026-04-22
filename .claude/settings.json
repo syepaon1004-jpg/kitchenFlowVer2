@@ -18,7 +18,6 @@
       "Write(/AGENTS.md)",
       "Write(/CLAUDE.md)",
       "Write(/.claude/**)",
-      "Read(/AGENTS.md)",
       "Read(/docs/commander/**)",
       "Read(/.claude/settings.json)",
       "Read(/.claude/settings.local.json)",

@@ -1,0 +1,41 @@
+{
+  "basePath": "c:\\dev\\cusor\\kitchen-simulator-Ver2",
+  "harnessPath": "c:\\dev\\cusor\\kitchen-simulator-Ver2\\.harness\\auto",
+  "cliBinaries": {
+    "codex": "codex.cmd",
+    "claude": "claude"
+  },
+  "timeouts": {
+    "codex": 600000,
+    "claude": 600000
+  },
+  "retries": {
+    "maxPerPhase": 3,
+    "backoffMs": 2000
+  },
+  "approval": {
+    "requiredPhases": ["phase_3"],
+    "timeoutHours": 24
+  },
+  "phase4": {
+    "allowSplit": true,
+    "midReview": true,
+    "maxSteps": 12
+  },
+  "pollingInterval": 500,
+  "stabilityThreshold": 500,
+  "rulesRouting": {
+    "always": ["docs/rules/forbidden.md"],
+    "css3d": ["docs/rules/css-3d.md"],
+    "db": ["docs/rules/project-structure.md"],
+    "maintenance": ["docs/rules/maintenance.md"]
+  },
+  "learningsFiles": {
+    "worker": "docs/worker/LEARNINGS.md",
+    "commander": "docs/commander/LEARNINGS.md"
+  },
+  "mistakesFiles": {
+    "worker": "docs/worker/MISTAKES.md",
+    "commander": "docs/commander/MISTAKES.md"
+  }
+}

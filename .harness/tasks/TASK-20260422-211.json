@@ -1,0 +1,50 @@
+{
+  "id": "TASK-20260422-211",
+  "title": "Gate B predecision document",
+  "status": "pending",
+  "owner": "Claude Code",
+  "goal": "Create one Gate B decision document that closes the five pre-Phase-3 decision axes using current code ground truth, without starting implementation.",
+  "constraints": [
+    "No code file edits",
+    "No tests, schema, or route wiring changes",
+    "No Phase 3 implementation work",
+    "No practice/shared-shell implementation edits",
+    "Do not modify .harness/*.json",
+    "Do not modify docs/commander/*",
+    "Only docs/practice/GATE_B_DECISIONS_2026-04-22.md and docs/worker/LAST_SESSION.md are in write scope",
+    "Keep fixed invariants unchanged: same kitchen/shared equipment/shared physics-tick, location-based open_step, deco-first, no sim regression, text-first practice UI is not final",
+    "Do not pre-fix Phase 3 slice count",
+    "Phase 4 verification order is fixed: npm run build -> npm run lint -> @self-reviewer -> npx tsc --noEmit"
+  ],
+  "files": [
+    "docs/practice/GATE_B_DECISIONS_2026-04-22.md",
+    "docs/worker/LAST_SESSION.md"
+  ],
+  "allowed_aux_files": [
+    "docs/worker/LEARNINGS.md",
+    "docs/worker/MISTAKES.md"
+  ],
+  "references": [
+    "docs/practice/MASTER_IMPLEMENTATION_PLAN_2026-04-21.md",
+    "docs/practice/ENGINE_SPEC_APPENDIX_2026-04-21.md",
+    "docs/practice/SHARED_SHELL_BOUNDARY_APPENDIX_2026-04-21.md",
+    "docs/practice/CURRENT_CODE_INVENTORY_2026-04-21.md",
+    "docs/practice/SIM_REGRESSION_CHECKLIST_2026-04-21.md",
+    "docs/practice/EXECUTION_PLAN_2026-04-21.md",
+    "docs/practice/PHASE2_SKELETON_DRAFT_2026-04-21.md",
+    "docs/practice/PHASE2_SLICE_MAP_2026-04-21.md",
+    "src/lib/practice/engine/*",
+    "src/lib/practice/runtime.ts",
+    "src/stores/practiceStore.ts",
+    "src/lib/practice/sessionView.ts",
+    "src/pages/practice/PracticeSessionPage.tsx",
+    "src/lib/kitchen-mode/KitchenModeAdapter.ts",
+    "src/lib/kitchen-mode/createPracticeModeAdapter.ts",
+    "CLAUDE.md"
+  ],
+  "deliverables": [
+    "One Gate B document with fixed invariants, current code snapshot, five decision axes, rejection mapping section, Phase 3 slicing recommendation, and explicit non-goals",
+    "A docs/worker/LAST_SESSION.md update recording TASK-20260422-211 and keeping Phase 3 implementation blocked pending Gate B approval"
+  ],
+  "final_line": "실행 완료 후 대기"
+}

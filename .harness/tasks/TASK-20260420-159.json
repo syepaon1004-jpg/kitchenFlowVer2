@@ -1,0 +1,19 @@
+{
+  "task_id": "TASK-20260420-159",
+  "title": "/practice/admin post-closure stabilization sweep",
+  "status": "todo",
+  "owner": "claude_code",
+  "mode": "generator",
+  "summary": "combine priority 1 optional polish, priority 2 broader regression evidence, priority 3 worker handoff cleanup without opening optional refactor scope",
+  "baseline_git_status_entries": 125,
+  "scope_default": "no_code_change",
+  "scope_allowed_prod_files": "src/pages/practice/PracticeAdminPage.tsx;src/pages/practice/PracticeSessionPage.tsx;src/lib/practice/runtime.ts;src/stores/practiceStore.ts",
+  "scope_allowed_test_files": "src/lib/practice/tests/adminView.test.ts;src/lib/practice/tests/menuView.test.ts;src/lib/practice/tests/sessionView.test.ts;src/lib/practice/engine/tests/ingredientAdd.test.ts;src/lib/practice/engine/tests/phaseAdvance.test.ts;src/lib/practice/engine/tests/pourDryRun.test.ts;src/stores/tests/practiceStore.test.ts",
+  "scope_allowed_helper_files": "docs/worker/LAST_SESSION.md;docs/worker/LEARNINGS.md;docs/worker/MISTAKES.md",
+  "forbidden_expansion": "queries/adminView/sessionView/engine_core refactor or commonization",
+  "phase4_order": "npm run build -> npm run lint -> @self-reviewer -> npx tsc --noEmit",
+  "success_condition": "code_change_zero_or_single_minimal_fix_or_single_minimal_test_proof_only",
+  "extra_changes_rule": "baseline_snapshot_plus_hash_plus_write_set",
+  "approved_truth": "TASK-110-153,TASK-20260420-155,TASK-20260420-156,TASK-20260420-157,TASK-20260420-158",
+  "next_if_pass": "TASK-20260420-160 optional refactor/commonization only after stabilization closes cleanly"
+}
