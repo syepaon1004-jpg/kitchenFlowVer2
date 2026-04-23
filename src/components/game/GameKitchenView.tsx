@@ -710,10 +710,7 @@ const GameKitchenView = ({
   const renderPanel = (index: number): React.ReactNode => {
     let rotateX = '0deg';
     if (index === 0) rotateX = '-20deg';
-    // iOS WebKit: exact 90deg 이면 자식의 rotateX(-90deg) 와 compound 가 정확히
-    // identity matrix 가 되어 rasterization 이 skip 됨 (basket cell, placedContainer 가
-    // panel 2 에서 invisible). 0.001deg 미세 offset 으로 degenerate 회피.
-    else if (index === 1) rotateX = '89.999deg';
+    else if (index === 1) rotateX = '90deg';
     else rotateX = '-90deg';
 
     const panelEquipment = equipment.filter((eq) => eq.panelIndex === index);
