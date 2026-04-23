@@ -250,6 +250,10 @@
   position: absolute;
   transform-style: preserve-3d;
   transition: transform 0.3s ease;
+  /* iOS Safari가 부모(rotateX 90deg) + 자기(rotateX -90deg) 합성에서
+     normal vector를 viewer 반대로 판정해 컬링하는 사례 차단. (패널 2 바구니) */
+  backface-visibility: visible;
+  -webkit-backface-visibility: visible;
 }
 
 .basketCellFace {
@@ -262,6 +266,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  backface-visibility: visible;
+  -webkit-backface-visibility: visible;
 }
 .basketCell.gameSelected .basketCellFace {
   background: var(--color-primary-light, #e8f0fe);
