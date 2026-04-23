@@ -1,0 +1,128 @@
+.stepSection {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sectionLabel {
+  font-size: 10px;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stepList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.step {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 6px;
+  padding: 6px 8px;
+  border-left: 3px solid #666;
+}
+
+.step_done {
+  border-left-color: #4caf50;
+  opacity: 0.75;
+}
+.step_in_progress {
+  border-left-color: #2196f3;
+  background: rgba(33, 150, 243, 0.1);
+}
+.step_pending {
+  border-left-color: #555;
+  opacity: 0.6;
+}
+
+.step_plain {
+  border-left-color: #555;
+  opacity: 1;
+}
+
+.stepHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.stepBadge {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #bbb;
+}
+
+.step_done .stepBadge {
+  background: rgba(76, 175, 80, 0.25);
+  color: #a5d6a7;
+}
+.step_in_progress .stepBadge {
+  background: rgba(33, 150, 243, 0.3);
+  color: #90caf9;
+}
+
+.stepTitle {
+  font-size: 12px;
+  font-weight: bold;
+  color: #ddd;
+}
+
+.ingList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ingList li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 4px;
+  font-size: 11px;
+  border-radius: 3px;
+}
+
+.ingOk {
+  color: #a5d6a7;
+}
+.ingMissing {
+  color: #b0bec5;
+}
+.ingError {
+  color: #ff8a80;
+  background: rgba(244, 67, 54, 0.08);
+}
+
+.ingName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ingQty {
+  flex: 0 0 auto;
+  font-size: 10px;
+  opacity: 0.85;
+}
+
+.ingBadge {
+  flex: 0 0 auto;
+  font-size: 9px;
+  padding: 1px 5px;
+  border-radius: 6px;
+  background: rgba(244, 67, 54, 0.2);
+  color: #ff8a80;
+}

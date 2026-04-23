@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { SectionCell, BillQueueArea, KitchenZone } from '../types/db';
-import type { RejectionInfo, WokBlockedReason } from '../types/game';
+import type { RejectionInfo, WokBlockedReason, ContainerGuideData } from '../types/game';
 import type { MovableDirections, MoveDirection } from '../types/section';
 import { supabase } from '../lib/supabase';
 import {
@@ -12,6 +12,17 @@ import {
 } from '../lib/sections/navigation';
 import { getSectionCenterX } from '../lib/sections/camera';
 import type { PanelEquipment } from '../types/db';
+
+export type ToastSeverity = 'info' | 'success' | 'warning' | 'danger';
+
+export interface ActionToast {
+  id: string;
+  message: string;
+  severity: ToastSeverity;
+  createdAt: number;
+}
+
+const MAX_ACTION_TOASTS = 5;
 
 interface UiState {
   // ——— 섹션 그리드 네비게이션 ———
@@ -50,6 +61,12 @@ interface UiState {
   wokBlockedPopupOpen: boolean;
   wokBlockedReason: WokBlockedReason | null;
 
+  // 그릇 가이드 팝오버
+  containerGuideOpen: boolean;
+  containerGuideAnchor: { x: number; y: number; w: number; h: number } | null;
+  containerGuideData: ContainerGuideData | null;
+  containerGuideInstanceId: string | null;
+
   // 수량 입력 모달
   quantityModalOpen: boolean;
   quantityModalUnit: string | null;
@@ -58,6 +75,9 @@ interface UiState {
   quantityModalMode: 'preset' | 'direct';
   quantityModalDefaultQty: number | null;
   quantityModalMaxQty: number | null;
+
+  // 액션 피드백 토스트
+  actionToasts: ActionToast[];
 
   // Zone 프리로드 ��시
   zoneCacheMap: Map<string, KitchenZone>;
@@ -95,8 +115,18 @@ interface UiState {
   closeRejectionPopup: () => void;
   openWokBlockedPopup: (reason: WokBlockedReason) => void;
   closeWokBlockedPopup: () => void;
+  openContainerGuide: (
+    containerInstanceId: string,
+    anchor: { x: number; y: number; w: number; h: number },
+    data: ContainerGuideData,
+  ) => void;
+  closeContainerGuide: () => void;
   prefetchZones: (zoneIds: string[]) => Promise<void>;
   resetZoneCache: () => void;
+
+  // 액션 피드백 토스트
+  pushActionToast: (message: string, severity?: ToastSeverity) => void;
+  dismissActionToast: (id: string) => void;
 }
 
 const NO_MOVE: MovableDirections = { up: false, down: false, left: false, right: false };
@@ -136,6 +166,11 @@ export const useUiStore = create<UiState>((set, get) => ({
   rejectionInfo: null,
   wokBlockedPopupOpen: false,
   wokBlockedReason: null,
+  containerGuideOpen: false,
+  containerGuideAnchor: null,
+  containerGuideData: null,
+  containerGuideInstanceId: null,
+  actionToasts: [],
   zoneCacheMap: new Map(),
   _prefetchingIds: new Set(),
 
@@ -226,6 +261,20 @@ export const useUiStore = create<UiState>((set, get) => ({
   closeRejectionPopup: () => set({ rejectionPopupOpen: false, rejectionInfo: null }),
   openWokBlockedPopup: (reason) => set({ wokBlockedPopupOpen: true, wokBlockedReason: reason }),
   closeWokBlockedPopup: () => set({ wokBlockedPopupOpen: false, wokBlockedReason: null }),
+  openContainerGuide: (containerInstanceId, anchor, data) =>
+    set({
+      containerGuideOpen: true,
+      containerGuideAnchor: anchor,
+      containerGuideData: data,
+      containerGuideInstanceId: containerInstanceId,
+    }),
+  closeContainerGuide: () =>
+    set({
+      containerGuideOpen: false,
+      containerGuideAnchor: null,
+      containerGuideData: null,
+      containerGuideInstanceId: null,
+    }),
   prefetchZones: async (zoneIds) => {
     const { zoneCacheMap, _prefetchingIds } = get();
     const missing = zoneIds.filter(
@@ -267,4 +316,20 @@ export const useUiStore = create<UiState>((set, get) => ({
 
   resetZoneCache: () =>
     set({ zoneCacheMap: new Map(), _prefetchingIds: new Set() }),
+
+  pushActionToast: (message, severity = 'info') =>
+    set((s) => {
+      const toast: ActionToast = {
+        id: crypto.randomUUID(),
+        message,
+        severity,
+        createdAt: Date.now(),
+      };
+      const next = [...s.actionToasts, toast];
+      if (next.length > MAX_ACTION_TOASTS) next.shift();
+      return { actionToasts: next };
+    }),
+
+  dismissActionToast: (id) =>
+    set((s) => ({ actionToasts: s.actionToasts.filter((t) => t.id !== id) })),
 }));

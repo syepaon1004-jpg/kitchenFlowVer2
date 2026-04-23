@@ -1,9 +1,11 @@
 import { useRef, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { evaluateContainer, evaluateActionAttempt, type AttemptingItem, type ActionAttemptResult } from '../lib/recipe/evaluate';
+import { buildContainerGuide, buildRecipeGuidePerContainer } from '../lib/recipe/buildGuide';
 import { useGameStore } from '../stores/gameStore';
 import { useScoringStore } from '../stores/scoringStore';
 import type { Recipe, RecipeIngredient } from '../types/db';
+import type { ContainerGuideData } from '../types/game';
 
 interface RecipeCache {
   recipes: Map<string, Recipe>;
@@ -131,9 +133,16 @@ export function useRecipeEval(storeId: string) {
     return cacheRef.current.recipeIngredients.get(recipeId) ?? [];
   }, []);
 
-  const getRecipeNaturalText = useCallback((recipeId: string): string | null => {
-    return cacheRef.current.recipes.get(recipeId)?.natural_text ?? null;
-  }, []);
+  const getRecipeGuides = useCallback(
+    (recipeId: string): Array<{ containerTypeId: string; data: ContainerGuideData }> | null => {
+      if (!cacheRef.current.loaded) return null;
+      const recipe = cacheRef.current.recipes.get(recipeId);
+      if (!recipe) return null;
+      const ingredients = cacheRef.current.recipeIngredients.get(recipeId) ?? [];
+      return buildRecipeGuidePerContainer(recipe, ingredients);
+    },
+    [],
+  );
 
   const getRecipeTargetContainerId = useCallback((recipeId: string): string | null => {
     return cacheRef.current.recipes.get(recipeId)?.target_container_id ?? null;
@@ -165,5 +174,37 @@ export function useRecipeEval(storeId: string) {
     [],
   );
 
-  return { loadRecipes, evaluate, evaluateAll, getRecipeName, getRecipeIngredients, getRecipeNaturalText, getRecipeTargetContainerId, evaluateAttempt, getRecipe };
+  /** 그릇 가이드 팝오버용 데이터. 순수 조회 — 부작용 없음. */
+  const getContainerGuide = useCallback(
+    (containerInstanceId: string): ContainerGuideData | null => {
+      if (!cacheRef.current.loaded) return null;
+      const { containerInstances, ingredientInstances, orders } = useGameStore.getState();
+      const ci = containerInstances.find((c) => c.id === containerInstanceId);
+      if (!ci || !ci.assigned_order_id) return null;
+      const order = orders.find((o) => o.id === ci.assigned_order_id);
+      if (!order) return null;
+      const recipe = cacheRef.current.recipes.get(order.recipe_id);
+      if (!recipe) return null;
+      const recipeIngredients = cacheRef.current.recipeIngredients.get(order.recipe_id) ?? [];
+      const inContainer = ingredientInstances.filter(
+        (i) => i.location_type === 'container' && i.container_instance_id === containerInstanceId,
+      );
+      const peers = containerInstances.filter(
+        (c) => c.assigned_order_id === ci.assigned_order_id && !c.is_served,
+      );
+      const peerAllComplete =
+        peers.length > 0 && peers.every((c) => c.is_complete || c.id === ci.id);
+      return buildContainerGuide(
+        inContainer,
+        recipeIngredients,
+        recipe,
+        ci.container_id,
+        recipe.name,
+        peerAllComplete,
+      );
+    },
+    [],
+  );
+
+  return { loadRecipes, evaluate, evaluateAll, getRecipeName, getRecipeIngredients, getRecipeGuides, getRecipeTargetContainerId, evaluateAttempt, getRecipe, getContainerGuide };
 }

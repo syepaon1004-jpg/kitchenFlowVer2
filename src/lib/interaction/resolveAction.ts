@@ -31,6 +31,12 @@ export function resolveAction(
     return { type: 'serve-order', orderId: target.orderId };
   }
 
+  // 그릇 가이드 버튼: 선택 상태와 무관하게 항상 가이드 팝오버 열기
+  if (target.type === 'container-guide-button') {
+    if (!target.containerInstanceId) return null;
+    return { type: 'show-container-guide', containerInstanceId: target.containerInstanceId };
+  }
+
   // ——— 선택 없는 상태 ———
 
   if (!currentSelection) {

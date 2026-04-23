@@ -19,6 +19,33 @@ export interface RecipeError {
 /** 웍 사용 차단 사유 (sink/dirty/burned) */
 export type WokBlockedReason = 'at_sink' | 'dirty' | 'burned';
 
+/** 그릇 가이드 팝오버: 단계별 상태 */
+export interface ContainerGuideStep {
+  plateOrder: number;
+  status: 'done' | 'in_progress' | 'pending';
+  ingredients: Array<{
+    ingredientId: string;
+    requiredQuantity: number;
+    currentQuantity: number | null;
+    isDeco: boolean;
+    errors: RecipeError[];
+  }>;
+}
+
+export type ContainerGuideBlocker =
+  | { kind: 'steps_remaining'; nextPlateOrder: number }
+  | { kind: 'existing_errors'; errors: RecipeError[] }
+  | { kind: 'deco_missing'; ingredientIds: string[] }
+  | { kind: 'peer_containers_incomplete'; peerCount: number }
+  | { kind: 'wrong_container' };
+
+export interface ContainerGuideData {
+  recipeName: string;
+  isComplete: boolean;
+  blockers: ContainerGuideBlocker[];
+  steps: ContainerGuideStep[];
+}
+
 /** 그릇 투입 액션 거부 시 팝업이 표시할 정보 */
 export interface RejectionInfo {
   recipeName: string;
@@ -178,6 +205,7 @@ export type ClickTargetType =
   | 'burner'
   | 'sink'
   | 'serve-button'
+  | 'container-guide-button'
   | 'equipment-toggle'
   | 'empty-area'
   | 'hud-area';
@@ -206,7 +234,8 @@ export type ResolvedActionType =
   | 'merge-containers'
   | 'dispose'
   | 'move-wok-to-sink'
-  | 'serve-order';
+  | 'serve-order'
+  | 'show-container-guide';
 
 export interface ResolvedAction {
   type: ResolvedActionType;

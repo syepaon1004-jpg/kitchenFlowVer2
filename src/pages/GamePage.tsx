@@ -23,6 +23,8 @@ import type { ResolvedAction } from '../types/game';
 import type { AttemptingItem } from '../lib/recipe/evaluate';
 import RejectionPopup from '../components/game/RejectionPopup';
 import WokBlockedPopup from '../components/game/WokBlockedPopup';
+import ContainerGuidePopover from '../components/game/ContainerGuidePopover';
+import ActionToastStack from '../components/game/ActionToastStack';
 import { INSTANT_UNITS } from '../lib/interaction/constants';
 import { SCORE_CONFIG } from '../lib/scoring/constants';
 import { generatePresets } from '../lib/interaction/generatePresets';
@@ -32,6 +34,8 @@ import GameKitchenView from '../components/game/GameKitchenView';
 import SelectionDisplay from '../components/game/SelectionDisplay';
 import type { FeedbackState } from '../components/game/SessionResultOverlay';
 import { useClickInteraction } from '../hooks/useClickInteraction';
+import { useActionToastSubscriptions } from '../hooks/useActionToastSubscriptions';
+import { buildActionMessage } from '../lib/notifications/buildActionMessage';
 import { useSelectionStore } from '../stores/selectionStore';
 import type { PanelLayout, PanelEquipment, PanelItem, PanelEquipmentType, SectionGrid, SectionCell } from '../types/db';
 import type { MoveDirection } from '../types/section';
@@ -91,8 +95,10 @@ const GamePage = () => {
   const bulkMoveIngredients = useGameStore((s) => s.bulkMoveIngredients);
   const openQuantityModal = useUiStore((s) => s.openQuantityModal);
   const openRejectionPopup = useUiStore((s) => s.openRejectionPopup);
+  const openContainerGuide = useUiStore((s) => s.openContainerGuide);
   const openOrderSelectModal = useUiStore((s) => s.openOrderSelectModal);
   const openWokBlockedPopup = useUiStore((s) => s.openWokBlockedPopup);
+  const pushActionToast = useUiStore((s) => s.pushActionToast);
 
   const setEquipments = useEquipmentStore((s) => s.setEquipments);
   const updateEquipment = useEquipmentStore((s) => s.updateEquipment);
@@ -112,7 +118,7 @@ const GamePage = () => {
   useOrderGenerator();
 
   // 레시피 판별
-  const { loadRecipes, evaluateAll, getRecipeName, getRecipeIngredients, getRecipeNaturalText, evaluateAttempt, getRecipe } = useRecipeEval(storeId);
+  const { loadRecipes, evaluateAll, getRecipeName, getRecipeIngredients, getRecipeGuides, evaluateAttempt, getRecipe, getContainerGuide } = useRecipeEval(storeId);
 
   /** 액션 단위 dry-run → 차단되면 거부 팝업 표시. true 반환 시 호출자가 액션을 즉시 중단해야 함. */
   const tryRejectAndShowPopup = useCallback(
@@ -207,6 +213,13 @@ const GamePage = () => {
   const storeIngredientsMap = useGameStore((s) => s.storeIngredientsMap);
   const [containersMap, setContainersMap] = useState<Map<string, Container>>(new Map());
 
+  // containerInstance id → instance (토스트 메시지 라벨 용)
+  const containerInstancesMap = useMemo(() => {
+    const m = new Map<string, GameContainerInstance>();
+    for (const ci of containerInstances) m.set(ci.id, ci);
+    return m;
+  }, [containerInstances]);
+
   // 레시피 요구량 조회 (클릭 투입 프리셋용)
   const findRecipeQuantity = useCallback(
     (ingredientId: string): number | null => {
@@ -224,6 +237,16 @@ const GamePage = () => {
 
   // 클릭 인터랙션 비즈니스 액션 핸들러
   const handleResolvedAction = useCallback((action: ResolvedAction) => {
+    const emitToast = (qty?: number) => {
+      const msg = buildActionMessage(action, {
+        ingredients: storeIngredientsMap,
+        containers: containersMap,
+        containerInstances: containerInstancesMap,
+        quantity: qty,
+      });
+      if (msg) pushActionToast(msg.message, msg.severity);
+    };
+
     if (action.type === 'add-ingredient') {
       const { ingredientId, destination, instanceId } = action;
       if (!ingredientId || !destination) return;
@@ -306,6 +329,7 @@ const GamePage = () => {
             });
           }
           decrementIngredientQuantity(instanceId, clamped);
+          emitToast(clamped);
           // 소스 소진 시 선택 해제
           const stillExists = useGameStore.getState().ingredientInstances.some((i) => i.id === instanceId);
           if (!stillExists) {
@@ -350,6 +374,7 @@ const GamePage = () => {
               plate_order: newPlateOrder,
             });
           }
+          emitToast(qty);
         };
 
         if (si?.allow_direct_input) {
@@ -399,6 +424,7 @@ const GamePage = () => {
       };
 
       addContainerInstance(containerInstance);
+      emitToast();
 
       // 그릇을 올린 직후 주문 선택 모달 자동 호출 (그릇 → 주문 매핑)
       openOrderSelectModal(containerInstance.id);
@@ -425,6 +451,7 @@ const GamePage = () => {
         placed_local_x: localRatio.x,
         placed_local_y: localRatio.y,
       });
+      emitToast();
 
       addActionLog({
         session_id: sessionId!,
@@ -514,6 +541,7 @@ const GamePage = () => {
 
       // 3. bulk 이동
       bulkMoveIngredients(instanceIds, updates);
+      emitToast();
 
       // 4. dirty 처리
       if (source.locationType === 'equipment' && source.equipmentStateId) {
@@ -565,6 +593,7 @@ const GamePage = () => {
       }
 
       removeContainerInstance(containerInstanceId);
+      emitToast();
 
       addActionLog({
         session_id: sessionId!,
@@ -606,6 +635,7 @@ const GamePage = () => {
 
       // 4. 선택 해제
       useSelectionStore.getState().deselect();
+      emitToast();
     }
 
     if (action.type === 'serve-order') {
@@ -672,6 +702,7 @@ const GamePage = () => {
 
       // 7. 주문 상태 갱신
       updateOrderStatus(orderId, 'completed');
+      emitToast();
 
       // 8. action log
       addActionLog({
@@ -681,7 +712,24 @@ const GamePage = () => {
         metadata: { order_id: orderId, serve_time_ms: serveTimeMs, container_count: targetContainers.length },
       });
     }
-  }, [sessionId, addIngredientInstance, incrementIngredientQuantity, decrementIngredientQuantity, addContainerInstance, moveContainer, openQuantityModal, addActionLog, findRecipeQuantity, bulkMoveIngredients, incrementContainerPlateOrder, updateEquipment, setContainerDirty, removeContainerInstance, panelToStateIdMap, tryRejectAndShowPopup, openOrderSelectModal, openWokBlockedPopup, setWokAtSink, markContainerServed, updateOrderStatus, addScoreEvent, addRecipeResult, storeIngredientsMap]);
+
+    if (action.type === 'show-container-guide') {
+      const { containerInstanceId } = action;
+      if (!containerInstanceId) return;
+      const guide = getContainerGuide(containerInstanceId);
+      if (!guide) return;
+      const el = document.querySelector(
+        `[data-click-target="placed-container"][data-click-meta*="${containerInstanceId}"]`,
+      ) as HTMLElement | null;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      openContainerGuide(
+        containerInstanceId,
+        { x: rect.left, y: rect.top, w: rect.width, h: rect.height },
+        guide,
+      );
+    }
+  }, [sessionId, addIngredientInstance, incrementIngredientQuantity, decrementIngredientQuantity, addContainerInstance, moveContainer, openQuantityModal, addActionLog, findRecipeQuantity, bulkMoveIngredients, incrementContainerPlateOrder, updateEquipment, setContainerDirty, removeContainerInstance, panelToStateIdMap, tryRejectAndShowPopup, openOrderSelectModal, openWokBlockedPopup, setWokAtSink, markContainerServed, updateOrderStatus, addScoreEvent, addRecipeResult, storeIngredientsMap, getContainerGuide, openContainerGuide, containersMap, containerInstancesMap, pushActionToast]);
 
   // 클릭/선택 인터랙션 시스템
   const { selection, handleSceneClick, deselect } = useClickInteraction({
@@ -689,6 +737,9 @@ const GamePage = () => {
     getContainerLabel: (id) => containersMap.get(id)?.name ?? id,
     onAction: handleResolvedAction,
   });
+
+  // 자동 이벤트(주문 도착/세척 완료/태움/컨테이너 완성) → 토스트
+  useActionToastSubscriptions({ containersMap, getRecipeName });
 
   // 바구니 접기 신호: GameKitchenView → HUD 전달
   const collapseAllBasketsRef = useRef<(() => void) | null>(null);
@@ -1170,7 +1221,12 @@ const GamePage = () => {
               onSceneClick={handleSceneClick}
               onRegisterCollapseBaskets={handleRegisterCollapseBaskets}
             >
-              <BillQueue getRecipeName={getRecipeName} getRecipeNaturalText={getRecipeNaturalText} />
+              <BillQueue
+                getRecipeName={getRecipeName}
+                getRecipeGuides={getRecipeGuides}
+                getContainerName={(id) => containersMap.get(id)?.name ?? ''}
+                storeIngredientsMap={storeIngredientsMap}
+              />
             </GameKitchenView>
           </div>
           {/* HUD: 미니맵 + 이동 */}
@@ -1204,6 +1260,8 @@ const GamePage = () => {
       <QuantityInputModal />
       <RejectionPopup storeIngredientsMap={storeIngredientsMap} />
       <WokBlockedPopup />
+      <ContainerGuidePopover storeIngredientsMap={storeIngredientsMap} />
+      <ActionToastStack />
       {sessionResult && (
         <SessionResultOverlay
           score={sessionResult.score}

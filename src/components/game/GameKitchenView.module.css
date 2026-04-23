@@ -3,12 +3,20 @@
   flex-direction: column;
   width: 100%;
   height: 100%;
+  position: relative;
 }
 
 .billQueueArea {
   flex-shrink: 0;
   padding: 4px 8px;
   z-index: 5;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
 }
 
 .kitchenSceneArea {
@@ -83,6 +91,7 @@
   height: 100%;
   transform-style: preserve-3d;
   touch-action: none;
+  transition: perspective-origin 0.3s ease-out;
 }
 
 /* touch-action은 inherit되지 않는다. scene 내부 자식이 default(auto) 상태이면
@@ -326,6 +335,46 @@
   text-align: center;
 }
 
+/* 볶는 중: 홀로그램 배경 붉은 계열 */
+.hologramStirring {
+  background: rgba(220, 60, 40, 0.55);
+  border-color: rgba(255, 120, 80, 0.85);
+  box-shadow: 0 0 12px rgba(255, 90, 50, 0.6) inset;
+  transition: background 160ms ease-out, border-color 160ms ease-out, box-shadow 160ms ease-out;
+}
+
+.stirOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: #fff;
+  font-size: var(--font-game-cell);
+  font-weight: 700;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.stirFlame {
+  display: inline-block;
+  font-size: 1.5em;
+  animation: stirFlameWiggle 0.5s ease-in-out infinite alternate;
+  transform-origin: 50% 100%;
+}
+
+.stirCounter {
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes stirFlameWiggle {
+  0%   { transform: translateY(0) rotate(-8deg) scale(1);     }
+  50%  { transform: translateY(-3px) rotate(0deg) scale(1.15); }
+  100% { transform: translateY(0) rotate(8deg) scale(1);      }
+}
+
 /* 올려놓인 그릇 */
 .placedContainer {
   pointer-events: none;
@@ -399,6 +448,32 @@
 
 .serveButton:hover {
   filter: brightness(1.1);
+}
+
+.guideButton {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(25, 118, 210, 0.95);
+  color: #fff;
+  border: none;
+  font-size: 12px;
+  font-weight: bold;
+  line-height: 1;
+  cursor: pointer;
+  pointer-events: auto;
+  z-index: 11;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+}
+.guideButton:hover {
+  filter: brightness(1.15);
 }
 
 /* 폴드냉장고 내부 패널 */

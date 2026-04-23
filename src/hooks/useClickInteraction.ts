@@ -75,6 +75,11 @@ export function useClickInteraction(options: UseClickInteractionOptions = {}) {
         options.onAction?.(action);
         break;
 
+      case 'show-container-guide':
+        // 그릇 가이드는 선택 상태를 건드리지 않음 (pour 중에도 조회 가능)
+        options.onAction?.(action);
+        break;
+
       default:
         break;
     }

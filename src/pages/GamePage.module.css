@@ -24,15 +24,6 @@
   inset: 0;
 }
 
-.billQueue {
-  position: absolute;
-  top: var(--spacing-sm);
-  left: var(--billqueue-left);
-  z-index: 25;
-  max-width: calc(100% - var(--billqueue-right-reserve));
-  pointer-events: none;
-}
-
 .topLeftHud {
   position: absolute;
   top: var(--spacing-sm);

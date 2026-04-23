@@ -71,7 +71,7 @@ const EQUIPMENT_COLORS: Record<PanelEquipmentType, string> = {
 const EQUIP_RADIUS = 6;
 
 const BURNER_COLORS: Record<0 | 1 | 2, string> = { 0: '#888888', 1: '#E8820C', 2: '#CC2200' };
-const STIR_DURATION = 30000;
+const STIR_DURATION = 5000;
 const SCENE_WASH_DURATION = 3000;
 
 const INITIAL_INTERACTION: EquipmentInteractionState = {
@@ -177,6 +177,66 @@ function degToPerspectivePx(deg: number, h: number): number {
 function getBasketCorrection(panelIndex: number): string {
   if (panelIndex === 1) return 'none';
   return 'translateZ(1px) rotateX(90deg)';
+}
+
+// ——— 볶기 진행 오버레이 (화구 홀로그램 중앙) ———
+
+function StirProgressOverlay({ totalSec }: { totalSec: number }) {
+  const [elapsedSec, setElapsedSec] = useState(0);
+  useEffect(() => {
+    const started = Date.now();
+    const id = setInterval(() => {
+      const e = Math.min(totalSec, Math.floor((Date.now() - started) / 1000));
+      setElapsedSec(e);
+    }, 200);
+    return () => clearInterval(id);
+  }, [totalSec]);
+  return (
+    <div className={styles.stirOverlay}>
+      <span className={styles.stirFlame}>🔥</span>
+      <span className={styles.stirCounter}>{elapsedSec}s / {totalSec}s</span>
+    </div>
+  );
+}
+
+interface BurnerHologramProps {
+  burner: LocalEquipment;
+  stateId: string | undefined;
+  contents: WokContentEntry[];
+  selection: SelectionState | null | undefined;
+  styleProps: React.CSSProperties;
+}
+
+function BurnerHologram({ burner, stateId, contents, selection, styleProps }: BurnerHologramProps) {
+  const isStirring = useEquipmentStore(
+    (s) => (stateId ? s.stirring_equipment_ids.has(stateId) : false),
+  );
+  const wokSelected = isWokContentSelected(selection, stateId);
+  const classNames = [styles.hologram];
+  if (wokSelected) classNames.push(styles.gameSelected);
+  if (isStirring) classNames.push(styles.hologramStirring);
+  return (
+    <div
+      className={classNames.join(' ')}
+      data-click-target="hologram"
+      data-click-meta={JSON.stringify({ equipmentId: burner.id, equipmentStateId: stateId })}
+      style={styleProps}
+    >
+      {isStirring ? (
+        <StirProgressOverlay totalSec={STIR_DURATION / 1000} />
+      ) : (
+        contents.length > 0 && (
+          <div className={styles.hologramContents}>
+            {contents.map((c) => (
+              <span key={c.ingredientId} className={styles.hologramItem}>
+                {c.displayName} {c.quantity}{c.unit}
+              </span>
+            ))}
+          </div>
+        )
+      )}
+    </div>
+  );
 }
 
 // ——— 컴포넌트 ———
@@ -766,6 +826,17 @@ const GameKitchenView = ({
                       ))}
                     </div>
                   )}
+                  {pc.orderId && (
+                    <button
+                      type="button"
+                      className={styles.guideButton}
+                      data-click-target="container-guide-button"
+                      data-click-meta={JSON.stringify({ containerInstanceId: pc.instanceId })}
+                      aria-label="그릇 상태 보기"
+                    >
+                      ?
+                    </button>
+                  )}
                   {pc.isComplete && (
                     <>
                       <span className={styles.placedContainerCheck}>✓</span>
@@ -791,30 +862,20 @@ const GameKitchenView = ({
             .map((burner) => {
               const contents = wokContentsMap?.get(burner.id) ?? [];
               const stateId = panelToStateIdMap?.get(burner.id);
-              const wokSelected = isWokContentSelected(selection, stateId);
               return (
-                <div
+                <BurnerHologram
                   key={`holo-${burner.id}`}
-                  className={wokSelected ? `${styles.hologram} ${styles.gameSelected}` : styles.hologram}
-                  data-click-target="hologram"
-                  data-click-meta={JSON.stringify({ equipmentId: burner.id, equipmentStateId: stateId })}
-                  style={{
+                  burner={burner}
+                  stateId={stateId}
+                  contents={contents}
+                  selection={selection}
+                  styleProps={{
                     left: `${burner.x * 100}%`,
                     bottom: 0,
                     width: `${burner.width * 100}%`,
                     height: `${panelHeights[0] > 0 ? burner.height * (panelHeights[1] / panelHeights[0]) * 100 : burner.height * 100}%`,
                   }}
-                >
-                  {contents.length > 0 && (
-                    <div className={styles.hologramContents}>
-                      {contents.map((c) => (
-                        <span key={c.ingredientId} className={styles.hologramItem}>
-                          {c.displayName} {c.quantity}{c.unit}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                />
               );
             })}
         </div>
@@ -838,6 +899,12 @@ const GameKitchenView = ({
     transform: `translateX(${worldTranslateX}px)`,
     ...(imageFitMode === 'natural' && worldWidthPx > 0 ? { width: `${worldWidthPx}px` } : {}),
   };
+
+  // imageWorld가 worldTranslateX(≤0)만큼 밀려 있으므로 viewport 중앙의
+  // imageWorld 내 좌표 = -worldTranslateX + viewportWidth/2. 이 값을 scene의
+  // perspective-origin X로 주면 소실점이 섹션 이동과 무관하게 viewport 중앙 고정.
+  const perspectiveOriginX =
+    worldWidthPx > 0 ? -worldTranslateX + viewportWidth / 2 : 0;
 
   return (
     <div className={styles.kitchenViewRoot}>
@@ -869,7 +936,11 @@ const GameKitchenView = ({
             <div
               ref={sceneRef}
               className={styles.scene}
-              style={{ perspective: `${perspectivePx}px`, cursor: 'pointer' }}
+              style={{
+                perspective: `${perspectivePx}px`,
+                perspectiveOrigin: `${perspectiveOriginX}px 50%`,
+                cursor: 'pointer',
+              }}
               onPointerDown={handleScenePointerDown}
               onPointerUp={handleScenePointerUp}
               onPointerCancel={handleScenePointerUp}

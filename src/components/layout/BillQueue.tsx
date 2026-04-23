@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useGameStore } from '../../stores/gameStore';
+import RecipeStepList from '../game/RecipeStepList';
+import type { StoreIngredient } from '../../types/db';
+import type { ContainerGuideData } from '../../types/game';
 import styles from './BillQueue.module.css';
 
 function formatElapsed(createdAt: string, now: number): string {
@@ -12,10 +15,19 @@ function formatElapsed(createdAt: string, now: number): string {
 
 interface Props {
   getRecipeName: (recipeId: string) => string;
-  getRecipeNaturalText?: (recipeId: string) => string | null;
+  getRecipeGuides: (
+    recipeId: string,
+  ) => Array<{ containerTypeId: string; data: ContainerGuideData }> | null;
+  getContainerName: (containerTypeId: string) => string;
+  storeIngredientsMap: Map<string, StoreIngredient>;
 }
 
-export default function BillQueue({ getRecipeName, getRecipeNaturalText }: Props) {
+export default function BillQueue({
+  getRecipeName,
+  getRecipeGuides,
+  getContainerName,
+  storeIngredientsMap,
+}: Props) {
   const orders = useGameStore((s) => s.orders);
 
   const activeOrders = useMemo(
@@ -56,6 +68,7 @@ export default function BillQueue({ getRecipeName, getRecipeNaturalText }: Props
   };
 
   const openOrder = openOrderId ? activeOrders.find((o) => o.id === openOrderId) : null;
+  const guides = openOrder ? getRecipeGuides(openOrder.recipe_id) : null;
 
   return (
     <>
@@ -80,7 +93,23 @@ export default function BillQueue({ getRecipeName, getRecipeNaturalText }: Props
           className={styles.dropdown}
           style={{ top: dropdownPos.top, left: dropdownPos.left }}
         >
-          {getRecipeNaturalText?.(openOrder.recipe_id) || '레시피 정보 없음'}
+          <div className={styles.dropdownHeader}>{getRecipeName(openOrder.recipe_id)}</div>
+          {!guides || guides.length === 0 ? (
+            <div className={styles.dropdownEmpty}>레시피 정보 없음</div>
+          ) : (
+            guides.map(({ containerTypeId, data }) => (
+              <section key={containerTypeId} className={styles.containerSection}>
+                {guides.length > 1 && (
+                  <div className={styles.containerName}>{getContainerName(containerTypeId)}</div>
+                )}
+                <RecipeStepList
+                  data={data}
+                  storeIngredientsMap={storeIngredientsMap}
+                  showStatusBadge={false}
+                />
+              </section>
+            ))
+          )}
         </div>,
         document.body,
       )}
