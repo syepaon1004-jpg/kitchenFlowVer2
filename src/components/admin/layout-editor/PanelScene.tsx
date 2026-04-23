@@ -239,7 +239,12 @@ const PanelScene = ({
     }
 
     const faceStyle: React.CSSProperties = isPreview
-      ? { background: 'transparent', border: 'none' }
+      ? {
+          background: 'transparent',
+          border: 'none',
+          // iOS WebKit: panel 2 panelFace 를 fresh 3D render plane 으로 승격 (preview 동기화).
+          ...(index === 1 ? { transform: 'translate3d(0, 0, 0.01px)' } : {}),
+        }
       : { background: PANEL_COLORS[index], border: '1px dashed rgba(0,0,0,0.25)' };
 
     return (

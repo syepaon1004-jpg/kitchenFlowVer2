@@ -385,7 +385,9 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
+  /* overflow: hidden 제거 — CSS Transforms Level 2 의 grouping property 에 해당,
+     transform-style: preserve-3d 를 flat 으로 강제 override 하여 기존 backface 우회를
+     무력화시킴 (iOS WebKit 에서 특히 rotateX(±90deg) 패턴에서 culling 발생). */
   z-index: 10;
   /* iOS Safari가 부모(rotateX 90deg) + 자기(rotateX -90deg) 합성에서
      normal vector를 viewer 반대로 판정해 컬링하는 사례 차단.

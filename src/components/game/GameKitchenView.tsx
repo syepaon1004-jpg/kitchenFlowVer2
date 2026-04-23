@@ -5,7 +5,6 @@ import { computeWorldWidthPx, computeWorldTranslateX } from '../../lib/sections/
 import { useEquipmentStore } from '../../stores/equipmentStore';
 import { useGameStore } from '../../stores/gameStore';
 import { useShallow } from 'zustand/react/shallow';
-import { PLACED_CONTAINER_SIZE_VH } from '../../lib/interaction/constants';
 import { resolveAction } from '../../lib/interaction/resolveAction';
 import { getEquipmentPositionStyle } from '../../lib/equipment-position';
 import { isGridConfig, isFoldFridgeConfig, getBindAnchor } from '../../types/game';
@@ -724,7 +723,14 @@ const GameKitchenView = ({
           transform: `rotateX(${rotateX})`,
         }}
       >
-        <div className={styles.panelFace} style={{ background: 'transparent', border: 'none' }}>
+        <div className={styles.panelFace} style={{
+          background: 'transparent',
+          border: 'none',
+          // iOS WebKit: panel 2 에서 panelFace 를 fresh 3D render plane 으로 승격.
+          // 0.01px 극소 Z translate 로 시각 차이 없이 compositor 가 이 지점에서
+          // 새 render surface 를 생성하도록 유도 → 상위 intermediate plane culling 회피.
+          ...(index === 1 ? { transform: 'translate3d(0, 0, 0.01px)' } : {}),
+        }}>
           {/* 장비 렌더링 */}
           <div className={styles.equipmentLayer}>
             {panelEquipment.map((eq) => {
@@ -794,7 +800,6 @@ const GameKitchenView = ({
               const eq = panelEquipment.find((e) => e.id === pc.equipmentId)!;
               const absX = eq.x + pc.localX * eq.width;
               const absY = eq.y + pc.localY * eq.height;
-              const sizeVh = PLACED_CONTAINER_SIZE_VH;
 
               const isPcSel = isPlacedContainerSelected(selection, pc.instanceId);
               const completeClass = pc.isComplete ? ` ${styles.placedContainerComplete}` : '';
@@ -808,8 +813,8 @@ const GameKitchenView = ({
                     position: 'absolute',
                     left: `${absX * 100}%`,
                     top: `${absY * 100}%`,
-                    width: `${sizeVh}vh`,
-                    height: `${sizeVh}vh`,
+                    width: 'var(--placed-container-size)',
+                    height: 'var(--placed-container-size)',
                     // translateZ(1px)로 panel 표면과의 z-fighting 회피.
                     // 모바일 GPU는 부동소수점 정밀도가 낮아 동일 평면일 때 panel이
                     // bowl을 가리는 사례가 있음.
