@@ -714,14 +714,27 @@ const GameKitchenView = ({
     else rotateX = '-90deg';
 
     const panelEquipment = equipment.filter((eq) => eq.panelIndex === index);
+    const h = panelPxHeights[index];
+
+    // panel 2 (index 1): iOS WebKit CATransformLayer coverage-rect 가
+    // top center anchor + rotateX(90) 조합에서 degenerate 하여 descendant
+    // separate plane (basketCell, placedContainer 등) 의 tile 할당 실패.
+    // center center anchor 로 바꾸면 AABB 가 대칭 분포되어 coverage 정상.
+    // 외부 translate3d(0, -h/2, h/2) 로 top-center origin 과 기하 동등성 유지.
+    const transformOrigin = index === 1
+      ? 'center center'
+      : (index === 0 ? 'center center' : 'top center');
+    const transform = index === 1
+      ? `translate3d(0, ${-h / 2}px, ${h / 2}px) rotateX(${rotateX})`
+      : `rotateX(${rotateX})`;
 
     return (
       <div
         className={styles.panelWrapper}
         style={{
-          height: panelPxHeights[index],
-          transformOrigin: index === 0 ? 'center center' : 'top center',
-          transform: `rotateX(${rotateX})`,
+          height: h,
+          transformOrigin,
+          transform,
         }}
       >
         <div className={styles.panelFace} style={{ background: 'transparent', border: 'none' }}>

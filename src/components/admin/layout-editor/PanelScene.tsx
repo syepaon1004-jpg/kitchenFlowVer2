@@ -242,13 +242,24 @@ const PanelScene = ({
       ? { background: 'transparent', border: 'none' }
       : { background: PANEL_COLORS[index], border: '1px dashed rgba(0,0,0,0.25)' };
 
+    // panel 2 (index 1, preview 모드) 에서 iOS WebKit CATransformLayer coverage-rect
+    // degenerate 회피용 center-origin + translate3d 보정 — GameKitchenView 와 동기화.
+    const h = panelPxHeights[index];
+    const useCenterCompensation = isPreview && index === 1;
+    const panelTransformOrigin = index === 0 || useCenterCompensation
+      ? 'center center'
+      : 'top center';
+    const panelTransform = useCenterCompensation
+      ? `translate3d(0, ${-h / 2}px, ${h / 2}px) rotateX(${rotateX})`
+      : `rotateX(${rotateX})`;
+
     return (
       <div
         className={styles.panelWrapper}
         style={{
-          height: panelPxHeights[index],
-          transformOrigin: index === 0 ? 'center center' : 'top center',
-          transform: `rotateX(${rotateX})`,
+          height: h,
+          transformOrigin: panelTransformOrigin,
+          transform: panelTransform,
         }}
       >
         <div
