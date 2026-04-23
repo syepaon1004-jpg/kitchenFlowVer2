@@ -175,7 +175,9 @@ function degToPerspectivePx(deg: number, h: number): number {
 }
 
 function getBasketCorrection(panelIndex: number): string {
-  if (panelIndex === 1) return 'none';
+  // iOS WebKit: explicit 'none' 은 3D 레이어로 승격되지 않아 preserve-3d 가
+  // 무시됨. translateZ(0) 은 identity 이지만 real 3D transform 으로 인식됨.
+  if (panelIndex === 1) return 'translateZ(0)';
   return 'translateZ(1px) rotateX(90deg)';
 }
 
