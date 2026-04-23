@@ -37,12 +37,6 @@
   height: 100%;
   will-change: transform;
   transition: transform 0.3s ease-out;
-  /* iOS WebKit: will-change: transform + default(flat) 조합은 imageWorld 를
-     2D 비트맵 합성 레이어로 격리시켜 내부 scene 의 3D 장면을 flatten 함.
-     패널 2 같은 edge-on 요소가 sub-pixel 로 붕괴되어 렌더 누락되는 회귀.
-     preserve-3d 로 3D 컨텍스트 유지 (벤더 prefix 포함). */
-  transform-style: preserve-3d;
-  -webkit-transform-style: preserve-3d;
 }
 
 .imageWorldNatural {
@@ -89,9 +83,6 @@
   width: 100%;
   height: 100%;
   pointer-events: none;
-  /* imageWorld → panelOverlay → scene 체인에서 3D 컨텍스트 유지 보장 */
-  transform-style: preserve-3d;
-  -webkit-transform-style: preserve-3d;
 }
 
 /* CSS 3D scene */
@@ -483,27 +474,6 @@
 }
 .guideButton:hover {
   filter: brightness(1.15);
-}
-
-/* 모바일: 그릇이 2배(8vh→16vh)가 되므로 내부 UI도 비례 확대.
-   가이드 ? 버튼은 사용자 요청에 따라 그대로 유지. */
-@media (max-width: 768px) {
-  .placedContainerLabel {
-    font-size: 28px;
-  }
-  .placedContainerContents {
-    font-size: 24px;
-  }
-  .placedContainerCheck {
-    font-size: 28px;
-    top: 4px;
-    right: 8px;
-  }
-  .serveButton {
-    padding: 8px 24px;
-    font-size: 28px;
-    bottom: 8px;
-  }
 }
 
 /* 폴드냉장고 내부 패널 */
