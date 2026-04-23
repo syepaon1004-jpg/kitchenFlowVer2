@@ -234,7 +234,8 @@ const PanelScene = ({
     let rotateX = '0deg';
     if (isPreview) {
       if (index === 0) rotateX = '-20deg';
-      else if (index === 1) rotateX = '90deg';
+      // iOS WebKit degenerate compound rotation 회피용 미세 offset. GameKitchenView 와 동기화.
+      else if (index === 1) rotateX = '89.999deg';
       else rotateX = '-90deg';
     }
 
