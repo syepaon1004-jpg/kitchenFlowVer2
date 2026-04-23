@@ -64,3 +64,54 @@
 .cancelButton:hover {
   background: rgba(0, 0, 0, 0.04);
 }
+
+.directBlock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-lg);
+}
+
+.directInputRow {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.directInput {
+  flex: 1;
+  min-width: 0;
+  padding: 10px var(--spacing-md);
+  border: 1px solid var(--game-border);
+  border-radius: 6px;
+  font-size: var(--font-md);
+  background: var(--game-input-bg, #fff);
+  color: var(--game-text-primary);
+}
+
+.directUnit {
+  font-size: var(--font-md);
+  color: var(--game-text-secondary);
+  min-width: 2.5em;
+  text-align: left;
+}
+
+.presetButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.defaultButton {
+  width: 100%;
+  background: transparent;
+  border: 1px solid var(--game-border);
+  border-radius: 6px;
+  padding: var(--spacing-sm);
+  color: var(--game-text-secondary);
+  font-size: var(--font-base);
+  cursor: pointer;
+}
+
+.defaultButton:hover {
+  background: rgba(0, 0, 0, 0.04);
+}

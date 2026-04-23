@@ -51,6 +51,8 @@ export function useClickInteraction(options: UseClickInteractionOptions = {}) {
 
       case 'toggle-equipment':
         // toggle-equipment는 GameKitchenView 내부에서 자체 처리
+        // 선택 상태에서 토글 버튼을 누르면 기존 선택 해제 + 토글이 동시에 일어나야 함
+        if (selection) deselect();
         break;
 
       case 'add-ingredient':

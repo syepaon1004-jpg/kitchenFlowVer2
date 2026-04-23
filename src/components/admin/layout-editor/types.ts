@@ -1,9 +1,9 @@
-import type { PanelLayout, PanelEquipment, PanelEquipmentType, PanelItem, PanelItemType } from '../../../types/db';
+import type { PanelLayout, PanelEquipment, PanelEquipmentType, PanelItem, PanelItemType, ImageFitMode } from '../../../types/db';
 import type { PanelMode } from '../../../types/game';
 import { normalizeOversizedY, clampEquipmentHeight } from '../../../lib/equipment-position';
 
 // Re-export for convenience within layout-editor components
-export type { PanelLayout, PanelEquipment, PanelEquipmentType, PanelMode, PanelItem, PanelItemType };
+export type { PanelLayout, PanelEquipment, PanelEquipmentType, PanelMode, PanelItem, PanelItemType, ImageFitMode };
 
 // 편집기 로컬 상태
 export interface LayoutEditorState {
@@ -18,6 +18,15 @@ export interface LayoutEditorState {
 export const DEFAULT_PANEL_HEIGHTS: number[] = [0.3, 0.4, 0.3];
 export const DEFAULT_PERSPECTIVE_DEG = 45;
 export const DEFAULT_PREVIEW_Y_OFFSET = 0.5;
+/**
+ * 신규 행 레이아웃의 기본 핏 모드. 'natural' = 원본 비율 유지 + 방향키 스크롤.
+ * (DB 컬럼 DEFAULT는 'cover'로 두어 기존 매장의 시각 회귀를 방지하고,
+ *  신규 레코드는 애플리케이션에서 이 값을 명시적으로 전송한다.)
+ */
+export const DEFAULT_IMAGE_FIT_MODE: ImageFitMode = 'natural';
+
+/** 기존 매장(마이그레이션) 폴백값 — fetch 시점에 image_fit_mode가 빠져있을 때 사용 */
+export const LEGACY_IMAGE_FIT_MODE: ImageFitMode = 'cover';
 
 // ——— 장비 편집 로컬 타입 ———
 

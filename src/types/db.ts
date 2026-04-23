@@ -55,6 +55,7 @@ export interface StoreIngredient {
   unit: 'g' | 'ml' | 'ea' | 'spoon' | 'portion' | 'pinch' | 'handful' | 'ladle' | 'spatula';
   default_quantity: number;
   image_url: string | null;
+  allow_direct_input: boolean;
 }
 
 export interface Container {
@@ -266,6 +267,14 @@ export interface GameAiFeedback {
 
 export type PanelEquipmentType = 'drawer' | 'fold_fridge' | 'four_box_fridge' | 'basket' | 'burner' | 'sink' | 'worktop' | 'shelf' | 'filler_panel';
 
+/**
+ * 배경 이미지 표시 모드.
+ * - natural: 원본 비율 유지 (높이=뷰포트 100%, 폭은 비율대로). 넘치면 카메라 좌우 스크롤.
+ * - cover:   뷰포트 꽉 채움 + 세로 잘림 (기존 동작).
+ * - stretch: 뷰포트 꽉 채움 + 비율 왜곡.
+ */
+export type ImageFitMode = 'natural' | 'cover' | 'stretch';
+
 export interface PanelLayout {
   id: string;
   store_id: string;
@@ -274,6 +283,7 @@ export interface PanelLayout {
   panel_heights: number[];
   perspective_deg: number;
   preview_y_offset: number;
+  image_fit_mode: ImageFitMode;
   created_at: string;
   updated_at: string;
 }

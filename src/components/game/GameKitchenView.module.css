@@ -15,16 +15,50 @@
   flex: 1;
   position: relative;
   min-height: 0;
+  overflow: hidden;            /* imageWorld가 뷰포트를 넘길 때 잘라냄 */
+  background: #000;            /* natural 모드에서 이미지가 뷰포트보다 좁을 때 보일 letterbox */
 }
 
-/* 배경 이미지 */
+/* 이미지 월드: 배경 이미지와 패널 오버레이의 공통 부모.
+   natural 모드에서는 원본 비율 폭을, cover/stretch에서는 viewport 폭을 갖는다.
+   translateX(px)로 섹션 카메라 슬라이드. */
+.imageWorld {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  will-change: transform;
+  transition: transform 0.3s ease-out;
+}
+
+.imageWorldNatural {
+  /* width는 인라인 style로 자연 비율에 따라 주입 */
+}
+
+.imageWorldCover,
+.imageWorldStretch {
+  width: 100%;
+}
+
+/* 배경 이미지 — imageWorld를 완전히 채우고, object-fit만 핏 모드별 분기 */
 .backgroundImage {
   width: 100%;
   height: 100%;
-  object-fit: cover;
   display: block;
   user-select: none;
   pointer-events: none;
+}
+
+.imageWorldNatural .backgroundImage {
+  object-fit: fill;    /* imageWorld 폭이 이미 이미지 비율이므로 왜곡 없음 */
+}
+
+.imageWorldCover .backgroundImage {
+  object-fit: cover;   /* 기존 동작: 세로 채우고 좌우 잘림 */
+}
+
+.imageWorldStretch .backgroundImage {
+  object-fit: fill;    /* 비율 왜곡 허용 */
 }
 
 .placeholderBg {
@@ -33,7 +67,7 @@
   background: #333;
 }
 
-/* 패널 오버레이 */
+/* 패널 오버레이 — imageWorld 내부에 귀속되어 장비 %가 이미지 기준이 됨 */
 .panelOverlay {
   position: absolute;
   top: 0;
@@ -168,6 +202,10 @@
   position: relative;
   z-index: 1;
 }
+.drawerCell.gameSelected::before {
+  background: var(--color-primary-light, #e8f0fe);
+  border-color: var(--color-primary, #1976d2);
+}
 
 /* 서랍/폴드냉장고 3D 컨테이너 */
 .drawerContainer,
@@ -216,6 +254,24 @@
   align-items: center;
   justify-content: center;
 }
+.basketCell.gameSelected .basketCellFace {
+  background: var(--color-primary-light, #e8f0fe);
+  border-color: var(--color-primary, #1976d2);
+}
+
+/* 폴드/4box 냉장고 내부 재료 아이템 — 인라인 style에서 이전 */
+.fridgeItem {
+  position: absolute;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-game-cell);
+  color: #555;
+  overflow: hidden;
+}
 
 /* 인터랙션 버튼 */
 .eqInteractionBtn {
@@ -242,8 +298,8 @@
 /* 홀로그램 */
 .hologram {
   position: absolute;
-  background: rgba(255, 255, 255, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.6);
   pointer-events: none;
   z-index: 1;
 }
@@ -260,7 +316,7 @@
 }
 
 .hologramItem {
-  color: rgba(255, 255, 255, 0.9);
+  color: #111;
   font-size: var(--font-game-cell);
   line-height: 1.3;
   white-space: nowrap;
@@ -386,10 +442,11 @@
   transform-style: preserve-3d;
 }
 
-/* 선택된 요소 시각 강조: 테두리 + 외곽 그림자 (배경 변경 없음) */
+/* 선택된 요소 시각 강조: 테두리 + 외곽 그림자 + 연한 하늘색 배경 */
 .gameSelected {
   outline: 2px solid var(--color-primary, #1976d2);
   box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.45);
+  background-color: var(--color-primary-light, #e8f0fe);
   z-index: 8;
 }
 

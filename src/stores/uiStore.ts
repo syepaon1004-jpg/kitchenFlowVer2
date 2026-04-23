@@ -10,7 +10,7 @@ import {
   getTargetCell,
   isSameRowMove,
 } from '../lib/sections/navigation';
-import { getSectionCenterX, getCameraTranslateRatio } from '../lib/sections/camera';
+import { getSectionCenterX } from '../lib/sections/camera';
 import type { PanelEquipment } from '../types/db';
 
 interface UiState {
@@ -25,8 +25,8 @@ interface UiState {
   currentSection: number;
   /** 현재 행 인덱스 */
   currentRow: number;
-  /** 카메라 X offset 비율 (-0.5 ~ 0.5) — scene translateX에 사용 */
-  cameraOffsetX: number;
+  /** 카메라 중심 X (이미지 월드 기준 0~1) — 뷰에서 이미지 폭과 결합해 translateX(px) 계산 */
+  cameraCenterX: number;
   /** 4방향 이동 가능 여부 (파생값, 셀/그리드 변경 시 갱신) */
   movableDirections: MovableDirections;
 
@@ -55,6 +55,9 @@ interface UiState {
   quantityModalUnit: string | null;
   quantityModalPresets: number[];
   quantityModalCallback: ((qty: number) => void) | null;
+  quantityModalMode: 'preset' | 'direct';
+  quantityModalDefaultQty: number | null;
+  quantityModalMaxQty: number | null;
 
   // Zone 프리로드 ��시
   zoneCacheMap: Map<string, KitchenZone>;
@@ -81,7 +84,12 @@ interface UiState {
   openOrderSelectModal: (containerInstanceId: string) => void;
   closeOrderSelectModal: () => void;
   setBillQueueAreas: (areas: BillQueueArea[] | null) => void;
-  openQuantityModal: (unit: string, presets: number[], callback: (qty: number) => void) => void;
+  openQuantityModal: (
+    unit: string,
+    presets: number[],
+    callback: (qty: number) => void,
+    options?: { mode?: 'preset' | 'direct'; defaultQty?: number; maxQty?: number },
+  ) => void;
   closeQuantityModal: () => void;
   openRejectionPopup: (info: RejectionInfo) => void;
   closeRejectionPopup: () => void;
@@ -93,14 +101,13 @@ interface UiState {
 
 const NO_MOVE: MovableDirections = { up: false, down: false, left: false, right: false };
 
-/** 현재 셀 기준 카메라 offset 계산 헬퍼 */
-function computeCameraOffset(
+/** 현재 셀 기준 카메라 centerX (이미지 월드 0~1) 계산 헬퍼 */
+function computeCameraCenterX(
   cell: SectionCell,
   equipmentByRow: Map<number, PanelEquipment[]>,
 ): number {
   const rowEq = equipmentByRow.get(cell.row_index) ?? [];
-  const centerX = getSectionCenterX(cell, rowEq);
-  return getCameraTranslateRatio(centerX);
+  return getSectionCenterX(cell, rowEq);
 }
 
 export const useUiStore = create<UiState>((set, get) => ({
@@ -109,7 +116,7 @@ export const useUiStore = create<UiState>((set, get) => ({
   sectionCells: [],
   currentSection: 1,
   currentRow: 0,
-  cameraOffsetX: 0,
+  cameraCenterX: 0.5,
   movableDirections: NO_MOVE,
 
   billQueueAreas: null,
@@ -122,6 +129,9 @@ export const useUiStore = create<UiState>((set, get) => ({
   quantityModalUnit: null,
   quantityModalPresets: [],
   quantityModalCallback: null,
+  quantityModalMode: 'preset',
+  quantityModalDefaultQty: null,
+  quantityModalMaxQty: null,
   rejectionPopupOpen: false,
   rejectionInfo: null,
   wokBlockedPopupOpen: false,
@@ -138,20 +148,20 @@ export const useUiStore = create<UiState>((set, get) => ({
         sectionCells: cells,
         currentSection: 1,
         currentRow: 0,
-        cameraOffsetX: 0,
+        cameraCenterX: 0.5,
         movableDirections: NO_MOVE,
       });
       return;
     }
     const directions = getMovableDirections(startCell, cells, gridRows, gridCols);
-    const offset = computeCameraOffset(startCell, equipmentByRow);
+    const centerX = computeCameraCenterX(startCell, equipmentByRow);
     set({
       gridRows,
       gridCols,
       sectionCells: cells,
       currentSection: startCell.section_number,
       currentRow: startCell.row_index,
-      cameraOffsetX: offset,
+      cameraCenterX: centerX,
       movableDirections: directions,
     });
   },
@@ -166,12 +176,12 @@ export const useUiStore = create<UiState>((set, get) => ({
 
     const sameRow = isSameRowMove(currentCell, target);
     const directions = getMovableDirections(target, sectionCells, gridRows, gridCols);
-    const offset = computeCameraOffset(target, equipmentByRow);
+    const centerX = computeCameraCenterX(target, equipmentByRow);
 
     set({
       currentSection: target.section_number,
       currentRow: target.row_index,
-      cameraOffsetX: offset,
+      cameraCenterX: centerX,
       movableDirections: directions,
     });
 
@@ -192,10 +202,26 @@ export const useUiStore = create<UiState>((set, get) => ({
     set({ orderSelectModalOpen: true, orderSelectContainerInstanceId: containerInstanceId }),
   closeOrderSelectModal: () =>
     set({ orderSelectModalOpen: false, orderSelectContainerInstanceId: null }),
-  openQuantityModal: (unit, presets, callback) =>
-    set({ quantityModalOpen: true, quantityModalUnit: unit, quantityModalPresets: presets, quantityModalCallback: callback }),
+  openQuantityModal: (unit, presets, callback, options) =>
+    set({
+      quantityModalOpen: true,
+      quantityModalUnit: unit,
+      quantityModalPresets: presets,
+      quantityModalCallback: callback,
+      quantityModalMode: options?.mode ?? 'preset',
+      quantityModalDefaultQty: options?.defaultQty ?? null,
+      quantityModalMaxQty: options?.maxQty ?? null,
+    }),
   closeQuantityModal: () =>
-    set({ quantityModalOpen: false, quantityModalUnit: null, quantityModalPresets: [], quantityModalCallback: null }),
+    set({
+      quantityModalOpen: false,
+      quantityModalUnit: null,
+      quantityModalPresets: [],
+      quantityModalCallback: null,
+      quantityModalMode: 'preset',
+      quantityModalDefaultQty: null,
+      quantityModalMaxQty: null,
+    }),
   openRejectionPopup: (info) => set({ rejectionPopupOpen: true, rejectionInfo: info }),
   closeRejectionPopup: () => set({ rejectionPopupOpen: false, rejectionInfo: null }),
   openWokBlockedPopup: (reason) => set({ wokBlockedPopupOpen: true, wokBlockedReason: reason }),

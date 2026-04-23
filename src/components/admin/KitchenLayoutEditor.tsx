@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState, useMemo } from 'react';
 import { supabase } from '../../lib/supabase';
 import { uploadToStorage } from '../../lib/storage';
-import type { PanelLayout, PanelEquipment, PanelItem, PanelMode, PanelEquipmentType, LocalEquipment, LocalItem } from './layout-editor/types';
+import type { PanelLayout, PanelEquipment, PanelItem, PanelMode, PanelEquipmentType, LocalEquipment, LocalItem, ImageFitMode } from './layout-editor/types';
 import type { PanelItemType } from './layout-editor/types';
 import type { EquipmentInteractionState } from '../../types/game';
 import type { StoreIngredient, Container, SectionGrid, SectionCell } from '../../types/db';
@@ -10,6 +10,8 @@ import {
   DEFAULT_PANEL_HEIGHTS,
   DEFAULT_PERSPECTIVE_DEG,
   DEFAULT_PREVIEW_Y_OFFSET,
+  DEFAULT_IMAGE_FIT_MODE,
+  LEGACY_IMAGE_FIT_MODE,
   EQUIPMENT_DEFAULTS,
   dbToLocalEquipment,
   localToDbPayload,
@@ -24,7 +26,7 @@ import EquipmentPalette from './layout-editor/EquipmentPalette';
 import GridEditor from './layout-editor/GridEditor';
 import FridgeInternalEditor from './layout-editor/FridgeInternalEditor';
 import GridOverview from './layout-editor/GridOverview';
-import SectionFocusEditor from './layout-editor/SectionFocusEditor';
+import SectionFocusEditor, { computeCenterX } from './layout-editor/SectionFocusEditor';
 import '../../styles/adminVariables.css';
 import styles from './KitchenLayoutEditor.module.css';
 
@@ -37,6 +39,7 @@ interface RowData {
   backgroundImageUrl: string | null;
   previewYOffset: number;
   perspectiveDeg: number;
+  imageFitMode: ImageFitMode;
   equipment: LocalEquipment[];
   items: LocalItem[];
   dbEquipmentSnapshot: string;
@@ -50,6 +53,7 @@ function createDefaultRowData(): RowData {
     backgroundImageUrl: null,
     previewYOffset: DEFAULT_PREVIEW_Y_OFFSET,
     perspectiveDeg: DEFAULT_PERSPECTIVE_DEG,
+    imageFitMode: DEFAULT_IMAGE_FIT_MODE,
     equipment: [],
     items: [],
     dbEquipmentSnapshot: '[]',
@@ -126,11 +130,13 @@ const KitchenLayoutEditor = ({ storeId, ingredients, containers }: Props) => {
         continue;
       }
       const dbHeights = rd.layout.panel_heights ?? DEFAULT_PANEL_HEIGHTS;
+      const dbFitMode = rd.layout.image_fit_mode ?? LEGACY_IMAGE_FIT_MODE;
       if (
         rd.backgroundImageUrl !== rd.layout.background_image_url ||
         rd.panelHeights.some((h, i) => Math.abs(h - dbHeights[i]) > 0.001) ||
         Math.abs(rd.previewYOffset - (rd.layout.preview_y_offset ?? DEFAULT_PREVIEW_Y_OFFSET)) > 0.001 ||
         Math.abs(rd.perspectiveDeg - (rd.layout.perspective_deg ?? DEFAULT_PERSPECTIVE_DEG)) > 0.001 ||
+        rd.imageFitMode !== dbFitMode ||
         JSON.stringify(rd.equipment) !== rd.dbEquipmentSnapshot ||
         JSON.stringify(rd.items) !== rd.dbItemsSnapshot
       ) return true;
@@ -190,6 +196,7 @@ const KitchenLayoutEditor = ({ storeId, ingredients, containers }: Props) => {
         rd.backgroundImageUrl = ld.background_image_url;
         rd.previewYOffset = ld.preview_y_offset ?? DEFAULT_PREVIEW_Y_OFFSET;
         rd.perspectiveDeg = ld.perspective_deg ?? DEFAULT_PERSPECTIVE_DEG;
+        rd.imageFitMode = ld.image_fit_mode ?? LEGACY_IMAGE_FIT_MODE;
 
         // 장비 로드
         const { data: eqData } = await supabase
@@ -538,6 +545,7 @@ const KitchenLayoutEditor = ({ storeId, ingredients, containers }: Props) => {
   const backgroundImageUrl = currentRowData?.backgroundImageUrl ?? null;
   const localPreviewYOffset = currentRowData?.previewYOffset ?? DEFAULT_PREVIEW_Y_OFFSET;
   const localPerspectiveDeg = currentRowData?.perspectiveDeg ?? DEFAULT_PERSPECTIVE_DEG;
+  const localImageFitMode = currentRowData?.imageFitMode ?? DEFAULT_IMAGE_FIT_MODE;
   const localEquipment = currentRowData?.equipment ?? [];
   const localItems = currentRowData?.items ?? [];
 
@@ -555,6 +563,11 @@ const KitchenLayoutEditor = ({ storeId, ingredients, containers }: Props) => {
   const setLocalPerspectiveDeg = useCallback((deg: number) => {
     if (activeRowIndex === null) return;
     updateRowData(activeRowIndex, (rd) => ({ ...rd, perspectiveDeg: deg }));
+  }, [activeRowIndex, updateRowData]);
+
+  const setLocalImageFitMode = useCallback((fitMode: ImageFitMode) => {
+    if (activeRowIndex === null) return;
+    updateRowData(activeRowIndex, (rd) => ({ ...rd, imageFitMode: fitMode }));
   }, [activeRowIndex, updateRowData]);
 
   const handleBackgroundUpload = useCallback(async (file: File) => {
@@ -609,6 +622,7 @@ const KitchenLayoutEditor = ({ storeId, ingredients, containers }: Props) => {
           panel_heights: rd.panelHeights,
           perspective_deg: rd.perspectiveDeg,
           preview_y_offset: rd.previewYOffset,
+          image_fit_mode: rd.imageFitMode,
         };
 
         const { data: upserted, error: upsertErr } = await supabase
@@ -714,6 +728,7 @@ const KitchenLayoutEditor = ({ storeId, ingredients, containers }: Props) => {
                   panel_heights: rd.panelHeights,
                   perspective_deg: rd.perspectiveDeg,
                   preview_y_offset: rd.previewYOffset,
+                  image_fit_mode: rd.imageFitMode,
                   created_at: rd.layout?.created_at ?? new Date().toISOString(),
                   updated_at: new Date().toISOString(),
                 },
@@ -817,6 +832,9 @@ const KitchenLayoutEditor = ({ storeId, ingredients, containers }: Props) => {
                 backgroundImageUrl={backgroundImageUrl}
                 onBackgroundUpload={handleBackgroundUpload}
                 uploading={uploading}
+                imageFitMode={localImageFitMode}
+                onImageFitModeChange={setLocalImageFitMode}
+                gridCols={gridCols}
                 equipment={localEquipment}
                 selectedEquipmentId={selectedEquipmentId}
                 activePanelIndex={activePanelIndex}
@@ -902,7 +920,7 @@ const KitchenLayoutEditor = ({ storeId, ingredients, containers }: Props) => {
             </>
           )}
 
-          {/* Section Focus Editor — Row Scene 확대 편집 + 대표 장비 선택 */}
+          {/* Section Focus Editor — Row Scene 편집 + 대표 장비 선택. scrollLeft는 focusCenterX로 제어 */}
           {editorView === 'section' && focusCell && activeRowIndex !== null && (
             <SectionFocusEditor
               cell={focusCell}
@@ -920,6 +938,10 @@ const KitchenLayoutEditor = ({ storeId, ingredients, containers }: Props) => {
                 backgroundImageUrl={backgroundImageUrl}
                 onBackgroundUpload={handleBackgroundUpload}
                 uploading={uploading}
+                imageFitMode={localImageFitMode}
+                onImageFitModeChange={setLocalImageFitMode}
+                gridCols={gridCols}
+                focusCenterX={computeCenterX(focusCell, localEquipment)}
                 equipment={localEquipment}
                 selectedEquipmentId={selectedEquipmentId}
                 activePanelIndex={activePanelIndex}

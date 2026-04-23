@@ -9,7 +9,8 @@ import styles from './FridgeInternalEditor.module.css';
 // ——— 상수 ———
 
 const SNAP_THRESHOLD_PX = 10;
-const MIN_SIZE = 0.05;
+const MIN_WIDTH = 0.02;
+const MIN_HEIGHT = 0.04;
 const DEFAULT_ITEM_SIZE = 0.3;
 
 const DEFAULT_CONFIG_FOLD: FoldFridgeConfig = {
@@ -281,7 +282,7 @@ const FridgeInternalEditor = ({
         let { x, y, width, height } = startItem;
 
         if (corner === 'se' || corner === 'ne') {
-          width = Math.max(MIN_SIZE, startItem.width + dx);
+          width = Math.max(MIN_WIDTH, startItem.width + dx);
           const right = snapValue(x + width, snapTargets.x, threshold.x);
           width = right - x;
         }
@@ -292,7 +293,7 @@ const FridgeInternalEditor = ({
           x = snappedX;
         }
         if (corner === 'se' || corner === 'sw') {
-          height = Math.max(MIN_SIZE, startItem.height + dy);
+          height = Math.max(MIN_HEIGHT, startItem.height + dy);
           const bottom = snapValue(y + height, snapTargets.y, threshold.y);
           height = bottom - y;
         }
@@ -303,8 +304,8 @@ const FridgeInternalEditor = ({
           y = snappedY;
         }
 
-        if (width < MIN_SIZE) width = MIN_SIZE;
-        if (height < MIN_SIZE) height = MIN_SIZE;
+        if (width < MIN_WIDTH) width = MIN_WIDTH;
+        if (height < MIN_HEIGHT) height = MIN_HEIGHT;
 
         x = Math.max(0, Math.min(1 - width, x));
         y = Math.max(0, Math.min(1 - height, y));

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import type { PanelEquipmentType } from '../../types/db';
+import type { PanelEquipmentType, ImageFitMode } from '../../types/db';
 import type { EquipmentInteractionState, FridgeInternalItem, ClickTarget, SelectionState, GridCell, GridConfig } from '../../types/game';
+import { computeWorldWidthPx, computeWorldTranslateX } from '../../lib/sections/camera';
 import { useEquipmentStore } from '../../stores/equipmentStore';
 import { useGameStore } from '../../stores/gameStore';
 import { useShallow } from 'zustand/react/shallow';
@@ -130,8 +131,10 @@ interface Props {
   perspectiveDeg: number;
   previewYOffset: number;
   backgroundImageUrl: string | null;
-  /** 카메라 X offset 비율 (-0.5 ~ 0.5) — 섹션 슬라이드용 */
-  cameraOffsetX?: number;
+  /** 카메라 중심 X (이미지 월드 기준 0~1) — 섹션 슬라이드용 */
+  cameraCenterX?: number;
+  /** 배경 이미지 핏 모드 (기본 cover) */
+  imageFitMode?: ImageFitMode;
   equipment: LocalEquipment[];
   items: LocalGameItem[];
   ingredientLabelsMap: Map<string, string>;
@@ -162,6 +165,11 @@ function isPlacedContainerSelected(selection: SelectionState | null | undefined,
   return selection.type === 'placed-container' && selection.containerInstanceId === instanceId;
 }
 
+function isWokContentSelected(selection: SelectionState | null | undefined, equipmentStateId: string | null | undefined): boolean {
+  if (!selection || !equipmentStateId) return false;
+  return selection.type === 'wok-content' && selection.equipmentStateId === equipmentStateId;
+}
+
 function degToPerspectivePx(deg: number, h: number): number {
   return h / (2 * Math.tan((deg * Math.PI) / 360));
 }
@@ -174,10 +182,14 @@ function getBasketCorrection(panelIndex: number): string {
 // ——— 컴포넌트 ———
 
 const GameKitchenView = ({
-  panelHeights, perspectiveDeg, previewYOffset, backgroundImageUrl, cameraOffsetX = 0, equipment, items, ingredientLabelsMap, wokContentsMap, placedContainers, hasSelection, selection, panelToStateIdMap, onSceneClick, onRegisterCollapseBaskets, children,
+  panelHeights, perspectiveDeg, previewYOffset, backgroundImageUrl, cameraCenterX = 0.5, imageFitMode = 'cover', equipment, items, ingredientLabelsMap, wokContentsMap, placedContainers, hasSelection, selection, panelToStateIdMap, onSceneClick, onRegisterCollapseBaskets, children,
 }: Props) => {
   const sceneRef = useRef<HTMLDivElement>(null);
+  const sceneAreaRef = useRef<HTMLDivElement>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
   const [containerHeight, setContainerHeight] = useState(0);
+  const [viewportWidth, setViewportWidth] = useState(0);
+  const [imgNatural, setImgNatural] = useState<{ w: number; h: number } | null>(null);
   const [interactionState, setInteractionState] = useState<EquipmentInteractionState>(INITIAL_INTERACTION);
   const activeStirEquipmentIdRef = useRef<string | null>(null);
   const activeStirStopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -199,15 +211,35 @@ const GameKitchenView = ({
     }),
   );
 
+  // 배경 URL이 바뀔 때: 캐시 히트로 load 이벤트가 핸들러 부착 전 발생한 경우에도
+  // img.complete로 결정적 세팅. onLoad와의 race 제거.
   useEffect(() => {
-    const el = sceneRef.current?.parentElement;
+    const img = imgRef.current;
+    if (img && img.complete && img.naturalWidth > 0 && img.naturalHeight > 0) {
+      setImgNatural({ w: img.naturalWidth, h: img.naturalHeight });
+    } else {
+      setImgNatural(null);
+    }
+  }, [backgroundImageUrl]);
+
+  // kitchenSceneArea (viewport) 크기 관찰 — 이미지 월드 폭과 카메라 translate 계산의 기준
+  useEffect(() => {
+    const el = sceneAreaRef.current;
     if (!el) return;
-    const measure = () => setContainerHeight(el.clientHeight);
+    const measure = () => {
+      setContainerHeight(el.clientHeight);
+      setViewportWidth(el.clientWidth);
+    };
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
+
+  const worldWidthPx = computeWorldWidthPx(imageFitMode, viewportWidth || 0, containerHeight || 0, imgNatural);
+  const worldTranslateX = viewportWidth > 0 && worldWidthPx > 0
+    ? computeWorldTranslateX(cameraCenterX, worldWidthPx, viewportWidth)
+    : 0;
 
   const panelPxHeights = panelHeights.map((r) => Math.max(0, containerHeight * r));
   const perspectivePx = containerHeight > 0 ? degToPerspectivePx(perspectiveDeg, containerHeight) : 800;
@@ -758,12 +790,14 @@ const GameKitchenView = ({
             .filter((eq) => eq.equipmentType === 'burner')
             .map((burner) => {
               const contents = wokContentsMap?.get(burner.id) ?? [];
+              const stateId = panelToStateIdMap?.get(burner.id);
+              const wokSelected = isWokContentSelected(selection, stateId);
               return (
                 <div
                   key={`holo-${burner.id}`}
-                  className={styles.hologram}
+                  className={wokSelected ? `${styles.hologram} ${styles.gameSelected}` : styles.hologram}
                   data-click-target="hologram"
-                  data-click-meta={JSON.stringify({ equipmentId: burner.id, equipmentStateId: panelToStateIdMap?.get(burner.id) })}
+                  data-click-meta={JSON.stringify({ equipmentId: burner.id, equipmentStateId: stateId })}
                   style={{
                     left: `${burner.x * 100}%`,
                     bottom: 0,
@@ -794,37 +828,56 @@ const GameKitchenView = ({
     );
   };
 
+  const worldClassName = imageFitMode === 'natural'
+    ? `${styles.imageWorld} ${styles.imageWorldNatural}`
+    : imageFitMode === 'stretch'
+      ? `${styles.imageWorld} ${styles.imageWorldStretch}`
+      : `${styles.imageWorld} ${styles.imageWorldCover}`;
+
+  const worldStyle: React.CSSProperties = {
+    transform: `translateX(${worldTranslateX}px)`,
+    ...(imageFitMode === 'natural' && worldWidthPx > 0 ? { width: `${worldWidthPx}px` } : {}),
+  };
+
   return (
     <div className={styles.kitchenViewRoot}>
       {/* BillQueue: 일반 flow, 크기 고정 */}
       {children && <div className={styles.billQueueArea}>{children}</div>}
 
-      {/* 3D scene 영역 — cameraOffsetX로 같은 행 슬라이드 */}
-      <div
-        className={styles.kitchenSceneArea}
-        style={{
-          transform: cameraOffsetX !== 0 ? `translateX(${cameraOffsetX * 100}%)` : undefined,
-          transition: 'transform 0.3s ease-out',
-        }}
-      >
-        {backgroundImageUrl ? (
-          <img src={backgroundImageUrl} alt="주방 배경" className={styles.backgroundImage} draggable={false} />
-        ) : (
-          <div className={styles.placeholderBg} />
-        )}
+      {/* viewport — overflow hidden. imageWorld가 내부에서 슬라이드/letterbox 처리 */}
+      <div ref={sceneAreaRef} className={styles.kitchenSceneArea}>
+        <div className={worldClassName} style={worldStyle}>
+          {backgroundImageUrl ? (
+            <img
+              ref={imgRef}
+              src={backgroundImageUrl}
+              alt="주방 배경"
+              className={styles.backgroundImage}
+              draggable={false}
+              onLoad={(e) => {
+                const t = e.currentTarget;
+                if (t.naturalWidth > 0 && t.naturalHeight > 0) {
+                  setImgNatural({ w: t.naturalWidth, h: t.naturalHeight });
+                }
+              }}
+            />
+          ) : (
+            <div className={styles.placeholderBg} />
+          )}
 
-        <div className={styles.panelOverlay}>
-          <div
-            ref={sceneRef}
-            className={styles.scene}
-            style={{ perspective: `${perspectivePx}px`, cursor: 'pointer' }}
-            onPointerDown={handleScenePointerDown}
-            onPointerUp={handleScenePointerUp}
-            onPointerCancel={handleScenePointerUp}
-            onPointerLeave={handleScenePointerUp}
-          >
-            <div className={styles.panelGroup} style={{ transform: `translateY(${translateY}px)` }}>
-              {renderPanel(0)}
+          <div className={styles.panelOverlay}>
+            <div
+              ref={sceneRef}
+              className={styles.scene}
+              style={{ perspective: `${perspectivePx}px`, cursor: 'pointer' }}
+              onPointerDown={handleScenePointerDown}
+              onPointerUp={handleScenePointerUp}
+              onPointerCancel={handleScenePointerUp}
+              onPointerLeave={handleScenePointerUp}
+            >
+              <div className={styles.panelGroup} style={{ transform: `translateY(${translateY}px)` }}>
+                {renderPanel(0)}
+              </div>
             </div>
           </div>
         </div>
@@ -1183,7 +1236,7 @@ function renderFridgeItem(
     return (
       <div
         key={`ing-${idx}`}
-        className={isSel ? styles.gameSelected : undefined}
+        className={`${styles.fridgeItem} ${isSel ? styles.gameSelected : ''}`}
         {...(item.ingredientId ? {
           'data-click-target': 'ingredient-source',
           'data-click-meta': JSON.stringify({ ingredientId: item.ingredientId }),
@@ -1192,22 +1245,12 @@ function renderFridgeItem(
           ...(doorPart ? { 'data-parent-door-part': doorPart } : {}),
         } : {})}
         style={{
-          position: 'absolute',
           left: `${item.x * 100}%`,
           top: `${item.y * 100}%`,
           width: `${item.width * 100}%`,
           height: `${item.height * 100}%`,
           transformOrigin: 'bottom center',
           transform: 'rotateX(-90deg)',
-          background: '#fff',
-          border: '1px solid rgba(0,0,0,0.15)',
-          boxSizing: 'border-box' as const,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: 'var(--font-game-cell)',
-          color: '#555',
-          overflow: 'hidden',
         }}
       >
         {label}

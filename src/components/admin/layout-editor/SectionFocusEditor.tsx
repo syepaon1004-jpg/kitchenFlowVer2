@@ -14,12 +14,13 @@ interface SectionFocusEditorProps {
     repIndex: number | null,
   ) => void;
   onBack: () => void;
-  /** PanelEditor를 children으로 받아 확대 렌더링 */
+  /** PanelEditor를 children으로 받아 렌더 (scrollLeft 제어는 PanelEditor가 focusCenterX로 처리) */
   children: React.ReactNode;
 }
 
-/** 대표 장비 기반 카메라 중심 X (LocalEquipment camelCase 필드용) */
-function computeCenterX(
+/** 대표 장비 기반 카메라 중심 X (LocalEquipment camelCase 필드용).
+ *  섹션 포커스 / row 뷰 scrollLeft 제어 / 뷰포트 바 미리보기에서 공유. */
+export function computeCenterX(
   cell: SectionCell,
   rowEquipment: LocalEquipment[],
 ): number {
@@ -45,11 +46,6 @@ const SectionFocusEditor: React.FC<SectionFocusEditorProps> = ({
   const centerX = computeCenterX(cell, rowEquipment);
   const halfViewport = SECTION_VIEWPORT_RATIO / 2;
 
-  // 확대 배율: 1 / SECTION_VIEWPORT_RATIO (= 1/0.8 = 1.25)
-  const scale = 1 / SECTION_VIEWPORT_RATIO;
-  // translateX: 뷰포트 중심을 centerX에 맞추기 위한 이동량 (%)
-  const translateXPercent = (0.5 - centerX) * 100 * scale;
-
   const vpLeft = Math.max(0, centerX - halfViewport);
   const vpRight = Math.min(1, centerX + halfViewport);
 
@@ -62,7 +58,7 @@ const SectionFocusEditor: React.FC<SectionFocusEditorProps> = ({
 
   return (
     <div className={styles.root}>
-      {/* 좌측: 확대된 Row Scene */}
+      {/* 좌측: Row Scene. PanelEditor가 focusCenterX로 scrollLeft 제어 */}
       <div className={styles.sceneArea}>
         <div className={styles.sceneHeader}>
           <button type="button" className={styles.backBtn} onClick={onBack}>
@@ -72,19 +68,8 @@ const SectionFocusEditor: React.FC<SectionFocusEditorProps> = ({
             섹션 {cell.section_number} 포커스 (행 {cell.row_index}, 열 {cell.col_index})
           </span>
         </div>
-        {/* 클리핑 컨테이너: overflow hidden, 내부 scale + translateX */}
-        <div className={styles.clipContainer}>
-          <div
-            className={styles.zoomedScene}
-            style={{
-              transform: `scale(${scale}) translateX(${translateXPercent}%)`,
-              transformOrigin: 'top center',
-            }}
-          >
-            {children}
-          </div>
-        </div>
-        {/* 뷰포트 바 미리보기 */}
+        {children}
+        {/* 뷰포트 바 미리보기: 이미지 월드 내 현재 섹션 위치 시각화 */}
         <div className={styles.viewportBar}>
           <div
             className={styles.viewportWindow}

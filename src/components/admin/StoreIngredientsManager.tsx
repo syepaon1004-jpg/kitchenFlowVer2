@@ -39,6 +39,7 @@ const StoreIngredientsManager = ({ storeId, ingredients, setIngredients, masterL
   const [stateLabel, setStateLabel] = useState('');
   const [unit, setUnit] = useState<UnitType>('g');
   const [defaultQty, setDefaultQty] = useState(1);
+  const [allowDirectInput, setAllowDirectInput] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [adding, setAdding] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
@@ -51,6 +52,7 @@ const StoreIngredientsManager = ({ storeId, ingredients, setIngredients, masterL
     state_label: '',
     unit: 'g' as UnitType,
     default_quantity: 1,
+    allow_direct_input: false,
   });
   const [editError, setEditError] = useState<string | null>(null);
 
@@ -154,6 +156,7 @@ const StoreIngredientsManager = ({ storeId, ingredients, setIngredients, masterL
     setStateLabel('');
     setUnit('g');
     setDefaultQty(1);
+    setAllowDirectInput(false);
     setImageFile(null);
     setAddError(null);
     if (fileRef.current) fileRef.current.value = '';
@@ -179,6 +182,7 @@ const StoreIngredientsManager = ({ storeId, ingredients, setIngredients, masterL
           state_label: stateLabel.trim() || null,
           unit,
           default_quantity: defaultQty,
+          allow_direct_input: allowDirectInput,
           image_url: imageUrl,
         })
         .select()
@@ -207,6 +211,7 @@ const StoreIngredientsManager = ({ storeId, ingredients, setIngredients, masterL
       state_label: ing.state_label ?? '',
       unit: ing.unit,
       default_quantity: ing.default_quantity,
+      allow_direct_input: ing.allow_direct_input ?? false,
     });
     setEditError(null);
   };
@@ -227,6 +232,7 @@ const StoreIngredientsManager = ({ storeId, ingredients, setIngredients, masterL
         state_label: editFields.state_label.trim() || null,
         unit: editFields.unit,
         default_quantity: editFields.default_quantity,
+        allow_direct_input: editFields.allow_direct_input,
       })
       .eq('id', editingId)
       .select()
@@ -315,6 +321,15 @@ const StoreIngredientsManager = ({ storeId, ingredients, setIngredients, masterL
               }
             />
           </td>
+          <td style={{ textAlign: 'center' }}>
+            <input
+              type="checkbox"
+              checked={editFields.allow_direct_input}
+              onChange={(e) =>
+                setEditFields((f) => ({ ...f, allow_direct_input: e.target.checked }))
+              }
+            />
+          </td>
           <td>
             <div className={styles.actions}>
               <button className={styles.saveBtn} onClick={saveEdit}>저장</button>
@@ -332,6 +347,7 @@ const StoreIngredientsManager = ({ storeId, ingredients, setIngredients, masterL
         <td>{ing.state_label ?? '—'}</td>
         <td>{ing.unit}</td>
         <td>{ing.default_quantity}</td>
+        <td style={{ textAlign: 'center' }}>{ing.allow_direct_input ? '✓' : ''}</td>
         <td>
           <div className={styles.actions}>
             <button className={styles.editBtn} onClick={() => startEdit(ing)}>편집</button>
@@ -409,6 +425,17 @@ const StoreIngredientsManager = ({ storeId, ingredients, setIngredients, masterL
                   value={defaultQty}
                   onChange={(e) => setDefaultQty(Number(e.target.value))}
                 />
+              </div>
+
+              <div className={`${styles.formField} ${styles.full}`}>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={allowDirectInput}
+                    onChange={(e) => setAllowDirectInput(e.target.checked)}
+                  />
+                  {' '}투입 시 직접 입력 허용 (체크하면 0.5 같은 분수도 입력 가능)
+                </label>
               </div>
 
               <div className={`${styles.formField} ${styles.full}`}>
@@ -550,6 +577,7 @@ const StoreIngredientsManager = ({ storeId, ingredients, setIngredients, masterL
               >
                 기본량{sortIndicator('default_quantity')}
               </th>
+              <th>직접입력</th>
               <th>관리</th>
             </tr>
           </thead>
@@ -558,7 +586,7 @@ const StoreIngredientsManager = ({ storeId, ingredients, setIngredients, masterL
               <Fragment key={group.label || '__all'}>
                 {group.label && (
                   <tr>
-                    <td colSpan={5} className={styles.groupHeaderCell}>
+                    <td colSpan={6} className={styles.groupHeaderCell}>
                       {group.label} ({group.items.length})
                     </td>
                   </tr>

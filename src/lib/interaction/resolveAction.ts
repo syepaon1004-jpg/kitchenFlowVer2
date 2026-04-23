@@ -109,7 +109,7 @@ export function resolveAction(
           destination: { locationType: 'hand' },
         };
       }
-      return { type: 'deselect' };
+      return fallbackForNewTarget(target);
 
     case 'container':
       if (target.type === 'worktop' || target.type === 'burner') {
@@ -120,7 +120,7 @@ export function resolveAction(
           localRatio: target.localRatio,
         };
       }
-      return { type: 'deselect' };
+      return fallbackForNewTarget(target);
 
     case 'wok-content':
       if (target.type === 'placed-container') {
@@ -144,7 +144,7 @@ export function resolveAction(
           equipmentId: target.equipmentId,
         };
       }
-      return { type: 'deselect' };
+      return fallbackForNewTarget(target);
 
     case 'placed-container':
       if (target.type === 'hologram') {
@@ -187,8 +187,47 @@ export function resolveAction(
           containerInstanceId: currentSelection.containerInstanceId,
         };
       }
-      return { type: 'deselect' };
+      return fallbackForNewTarget(target);
 
+    default:
+      return { type: 'deselect' };
+  }
+}
+
+/**
+ * 선택 상태 + 매트릭스 비매칭 타겟일 때의 fallback.
+ * 타겟이 선택 가능한 타입이면 새 선택으로 전환, 아니면 해제.
+ */
+function fallbackForNewTarget(target: ClickTarget): ResolvedAction {
+  switch (target.type) {
+    case 'ingredient-source':
+      return {
+        type: 'select',
+        selectionType: 'ingredient',
+        ingredientId: target.ingredientId,
+        sourceEquipmentId: target.equipmentId,
+        sourceLabel: target.ingredientId,
+      };
+    case 'container-source':
+      return {
+        type: 'select',
+        selectionType: 'container',
+        containerId: target.containerId,
+        sourceLabel: target.containerId,
+      };
+    case 'hologram':
+      return {
+        type: 'select',
+        selectionType: 'wok-content',
+        equipmentStateId: target.equipmentStateId,
+        sourceEquipmentId: target.equipmentId,
+      };
+    case 'placed-container':
+      return {
+        type: 'select',
+        selectionType: 'placed-container',
+        containerInstanceId: target.containerInstanceId,
+      };
     default:
       return { type: 'deselect' };
   }

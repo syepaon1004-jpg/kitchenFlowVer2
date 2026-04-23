@@ -5,7 +5,8 @@ import { getEquipmentPositionStyle, normalizeOversizedY } from '../../../lib/equ
 import styles from '../KitchenLayoutEditor.module.css';
 
 const SNAP_THRESHOLD_PX = 10;
-const MIN_SIZE = 0.05;
+const MIN_WIDTH = 0.02;
+const MIN_HEIGHT = 0.04;
 
 interface Props {
   equipment: LocalEquipment[];
@@ -202,7 +203,7 @@ const EquipmentOnPanel = ({
         let { x, y, width, height } = startEq;
 
         if (corner === 'se' || corner === 'ne') {
-          width = Math.max(MIN_SIZE, startEq.width + dx);
+          width = Math.max(MIN_WIDTH, startEq.width + dx);
           const right = snapValue(x + width, snapTargets.x, threshold.x);
           width = right - x;
         }
@@ -213,7 +214,7 @@ const EquipmentOnPanel = ({
           x = snappedX;
         }
         if (corner === 'se' || corner === 'sw') {
-          height = Math.max(MIN_SIZE, startEq.height + dy);
+          height = Math.max(MIN_HEIGHT, startEq.height + dy);
           const bottom = snapValue(y + height, snapTargets.y, threshold.y);
           height = bottom - y;
         }
@@ -225,8 +226,8 @@ const EquipmentOnPanel = ({
         }
 
         // 최소 크기
-        if (width < MIN_SIZE) width = MIN_SIZE;
-        if (height < MIN_SIZE) height = MIN_SIZE;
+        if (width < MIN_WIDTH) width = MIN_WIDTH;
+        if (height < MIN_HEIGHT) height = MIN_HEIGHT;
 
         // 클램프
         x = Math.max(0, Math.min(1 - width, x));

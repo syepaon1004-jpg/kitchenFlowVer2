@@ -178,7 +178,7 @@ const GamePage = () => {
 
   // 현재 행 기준 패널 데이터 (uiStore.currentRow에서 파생)
   const currentRow = useUiStore((s) => s.currentRow);
-  const cameraOffsetX = useUiStore((s) => s.cameraOffsetX);
+  const cameraCenterX = useUiStore((s) => s.cameraCenterX);
   const movableDirections = useUiStore((s) => s.movableDirections);
   const currentSection = useUiStore((s) => s.currentSection);
   const initSectionGrid = useUiStore((s) => s.initSectionGrid);
@@ -313,7 +313,13 @@ const GamePage = () => {
           }
         };
 
-        if (INSTANT_UNITS.has(unit ?? '')) {
+        if (si?.allow_direct_input) {
+          openQuantityModal(unit ?? 'g', [], doTransfer, {
+            mode: 'direct',
+            defaultQty: si?.default_quantity ?? 1,
+            maxQty: sourceInst.quantity,
+          });
+        } else if (INSTANT_UNITS.has(unit ?? '')) {
           doTransfer(1);
         } else {
           const presets = generatePresets(sourceInst.quantity);
@@ -346,7 +352,12 @@ const GamePage = () => {
           }
         };
 
-        if (INSTANT_UNITS.has(unit ?? '')) {
+        if (si?.allow_direct_input) {
+          openQuantityModal(unit ?? 'g', [], createOrIncrement, {
+            mode: 'direct',
+            defaultQty,
+          });
+        } else if (INSTANT_UNITS.has(unit ?? '')) {
           createOrIncrement(1);
         } else {
           const recipeQty = findRecipeQuantity(ingredientId);
@@ -1113,7 +1124,8 @@ const GamePage = () => {
               perspectiveDeg={panelLayout?.perspective_deg ?? 45}
               previewYOffset={panelLayout?.preview_y_offset ?? 0.5}
               backgroundImageUrl={panelLayout?.background_image_url ?? null}
-              cameraOffsetX={cameraOffsetX}
+              cameraCenterX={cameraCenterX}
+              imageFitMode={panelLayout?.image_fit_mode ?? 'cover'}
               equipment={panelEquipmentList.map((eq) => ({
                 id: eq.id,
                 panelIndex: eq.panel_number - 1,
