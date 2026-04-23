@@ -175,9 +175,7 @@ function degToPerspectivePx(deg: number, h: number): number {
 }
 
 function getBasketCorrection(panelIndex: number): string {
-  // iOS WebKit: 'none' / 'translateZ(0)' 은 3D 레이어 승격 트리거로 인식되지 않음.
-  // translate3d 형식 + 극소 논-제로 Z 로 강제 승격 (시각적 identity).
-  if (panelIndex === 1) return 'translate3d(0, 0, 0.01px)';
+  if (panelIndex === 1) return 'none';
   return 'translateZ(1px) rotateX(90deg)';
 }
 

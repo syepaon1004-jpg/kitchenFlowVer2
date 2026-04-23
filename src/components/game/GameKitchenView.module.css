@@ -228,14 +228,6 @@
 
 .basketContainer {
   cursor: pointer;
-  /* iOS WebKit 3D 렌더링 방어막 (패널 2 basket 대응):
-     - preserve-3d vendor prefix: 구버전 iOS 호환
-     - backface-visibility: normal vector 오판정 컬링 차단 (.placedContainer 선례)
-     - will-change: GPU 레이어 강제 승격 힌트 */
-  -webkit-transform-style: preserve-3d;
-  backface-visibility: visible;
-  -webkit-backface-visibility: visible;
-  will-change: transform;
 }
 
 .drawerFace,
