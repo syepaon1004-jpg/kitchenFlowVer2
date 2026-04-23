@@ -27,8 +27,16 @@ export default function OrderSelectModal({ getRecipeName }: Props) {
     closeModal();
   };
 
+  // Galaxy Chrome 등에서 pointerdown 중 마운트된 overlay에 합성 click이 떨어져
+  // 팝업이 즉시 닫히는 현상 방지: 열린 직후 250ms 동안 외부 클릭 무시
+  const handleOverlayClick = () => {
+    const openedAt = useUiStore.getState().orderSelectModalOpenedAt;
+    if (openedAt !== null && performance.now() - openedAt < 250) return;
+    closeModal();
+  };
+
   return (
-    <div className={styles.overlay} onClick={closeModal}>
+    <div className={styles.overlay} onClick={handleOverlayClick}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <h3 className={styles.title}>주문 선택</h3>
         <div className={styles.orderList}>

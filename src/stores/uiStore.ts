@@ -52,6 +52,7 @@ interface UiState {
   // 모달
   orderSelectModalOpen: boolean;
   orderSelectContainerInstanceId: string | null;
+  orderSelectModalOpenedAt: number | null;
 
   // 액션 거부 팝업
   rejectionPopupOpen: boolean;
@@ -66,6 +67,7 @@ interface UiState {
   containerGuideAnchor: { x: number; y: number; w: number; h: number } | null;
   containerGuideData: ContainerGuideData | null;
   containerGuideInstanceId: string | null;
+  containerGuideOpenedAt: number | null;
 
   // 수량 입력 모달
   quantityModalOpen: boolean;
@@ -155,6 +157,7 @@ export const useUiStore = create<UiState>((set, get) => ({
   leftSidebarAnchor: null,
   orderSelectModalOpen: false,
   orderSelectContainerInstanceId: null,
+  orderSelectModalOpenedAt: null,
   quantityModalOpen: false,
   quantityModalUnit: null,
   quantityModalPresets: [],
@@ -170,6 +173,7 @@ export const useUiStore = create<UiState>((set, get) => ({
   containerGuideAnchor: null,
   containerGuideData: null,
   containerGuideInstanceId: null,
+  containerGuideOpenedAt: null,
   actionToasts: [],
   zoneCacheMap: new Map(),
   _prefetchingIds: new Set(),
@@ -234,9 +238,17 @@ export const useUiStore = create<UiState>((set, get) => ({
   clearLeftSidebarAnchor: () => set({ leftSidebarAnchor: null }),
   setBillQueueAreas: (areas) => set({ billQueueAreas: areas }),
   openOrderSelectModal: (containerInstanceId) =>
-    set({ orderSelectModalOpen: true, orderSelectContainerInstanceId: containerInstanceId }),
+    set({
+      orderSelectModalOpen: true,
+      orderSelectContainerInstanceId: containerInstanceId,
+      orderSelectModalOpenedAt: performance.now(),
+    }),
   closeOrderSelectModal: () =>
-    set({ orderSelectModalOpen: false, orderSelectContainerInstanceId: null }),
+    set({
+      orderSelectModalOpen: false,
+      orderSelectContainerInstanceId: null,
+      orderSelectModalOpenedAt: null,
+    }),
   openQuantityModal: (unit, presets, callback, options) =>
     set({
       quantityModalOpen: true,
@@ -267,6 +279,7 @@ export const useUiStore = create<UiState>((set, get) => ({
       containerGuideAnchor: anchor,
       containerGuideData: data,
       containerGuideInstanceId: containerInstanceId,
+      containerGuideOpenedAt: performance.now(),
     }),
   closeContainerGuide: () =>
     set({
@@ -274,6 +287,7 @@ export const useUiStore = create<UiState>((set, get) => ({
       containerGuideAnchor: null,
       containerGuideData: null,
       containerGuideInstanceId: null,
+      containerGuideOpenedAt: null,
     }),
   prefetchZones: async (zoneIds) => {
     const { zoneCacheMap, _prefetchingIds } = get();

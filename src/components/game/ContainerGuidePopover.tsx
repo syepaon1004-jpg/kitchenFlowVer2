@@ -64,9 +64,17 @@ export default function ContainerGuidePopover({ storeIngredientsMap }: Props) {
 
   const getName = (id: string) => storeIngredientsMap.get(id)?.display_name ?? '재료';
 
+  // Galaxy Chrome 등에서 pointerdown 중 마운트된 backdrop에 합성 click이 떨어져
+  // 팝업이 즉시 닫히는 현상 방지: 열린 직후 250ms 동안 외부 클릭 무시
+  const handleBackdropClick = () => {
+    const openedAt = useUiStore.getState().containerGuideOpenedAt;
+    if (openedAt !== null && performance.now() - openedAt < 250) return;
+    close();
+  };
+
   return (
     <>
-      <div className={styles.backdrop} onClick={close} />
+      <div className={styles.backdrop} onClick={handleBackdropClick} />
       <div
         className={styles.popover}
         style={{ left: `${position.left}px`, top: `${position.top}px`, width: `${POPOVER_W}px` }}
