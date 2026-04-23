@@ -68,7 +68,9 @@ const PreviewEquipment = ({ equipment, panelIndex, interactionState, ingredients
 
 /** 바구니 패널별 수평 보정 (패널 2 기준) */
 function getBasketCorrection(panelIndex: number): string {
-  if (panelIndex === 1) return 'none'; // 패널 2: 보정 없음
+  // iOS WebKit: 'none' / 'translateZ(0)' 은 3D 레이어 승격 트리거로 인식되지 않음.
+  // translate3d 형식 + 극소 논-제로 Z 로 강제 승격 (시각적 identity).
+  if (panelIndex === 1) return 'translate3d(0, 0, 0.01px)'; // 패널 2: identity 3D transform
   // 패널 1, 3: 패널 2와의 누적 rotateX 차이(90deg)를 상쇄
   return 'translateZ(1px) rotateX(90deg)';
 }
