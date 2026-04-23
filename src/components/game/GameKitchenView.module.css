@@ -228,6 +228,8 @@
 
 .basketContainer {
   cursor: pointer;
+  /* DIAGNOSTIC (임시): panel 2 basket 위치·가시성 확인용 반투명 빨강 */
+  background: rgba(255, 0, 0, 0.5);
 }
 
 .drawerFace,
@@ -378,7 +380,8 @@
 /* 올려놓인 그릇 */
 .placedContainer {
   pointer-events: none;
-  background: rgba(255, 255, 255, 0.9);
+  /* DIAGNOSTIC (임시): panel 2 placedContainer 위치·가시성 확인용 밝은 초록 */
+  background: rgba(0, 255, 0, 0.8);
   border: 2px solid var(--game-border);
   border-radius: 4px;
   display: flex;

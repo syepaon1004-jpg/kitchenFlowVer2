@@ -724,7 +724,12 @@ const GameKitchenView = ({
           transform: `rotateX(${rotateX})`,
         }}
       >
-        <div className={styles.panelFace} style={{ background: 'transparent', border: 'none' }}>
+        <div className={styles.panelFace} style={{
+          background: 'transparent',
+          border: 'none',
+          // DIAGNOSTIC (임시): panel 2 경계 확인용 청록 점선 outline
+          ...(index === 1 ? { outline: '2px dashed cyan', outlineOffset: '-2px' } : {}),
+        }}>
           {/* 장비 렌더링 */}
           <div className={styles.equipmentLayer}>
             {panelEquipment.map((eq) => {
