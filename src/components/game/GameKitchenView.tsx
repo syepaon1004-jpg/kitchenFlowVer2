@@ -78,6 +78,18 @@ const INITIAL_INTERACTION: EquipmentInteractionState = {
   drawers: {}, burners: {}, baskets: {}, foldFridges: {}, fourBoxFridges: {},
 };
 
+/** Ghost drawer용 빈 라벨 맵. 매 렌더마다 새 Map 생성을 막기 위해 모듈 레벨 상수. */
+const EMPTY_INGREDIENT_MAP = new Map<string, string>();
+/** Ghost drawer용 최소 config (1×1 grid, depth 0.03). */
+const GHOST_DRAWER_CONFIG = {
+  depth: 0.03,
+  grid: {
+    rows: 1,
+    cols: 1,
+    cells: [{ row: 0, col: 0, rowSpan: 1, colSpan: 1, ingredientId: null }],
+  },
+};
+
 /** 장비 타입 → data-click-target 값 (shelf은 null → 부착하지 않음) */
 function getEquipmentClickTarget(eqType: PanelEquipmentType): string | null {
   switch (eqType) {
@@ -295,6 +307,18 @@ const GameKitchenView = ({
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
+
+  // iOS WebKit 패널 2 렌더 워크어라운드 (v16 Ghost Drawer):
+  // 실제 사용자가 Panel 2 drawer를 여는 것이 Panel 2 basket/placedContainer 복구의
+  // 유일한 트리거. 마운트 직후 ghost drawer를 자동 open→close 하여 drawer 열기 이벤트의
+  // 전체 DOM/CSS transition/React 경로를 100% 재현.
+  const [ghostDrawerOpen, setGhostDrawerOpen] = useState(false);
+  useEffect(() => {
+    if (!containerHeight) return;
+    const t1 = setTimeout(() => setGhostDrawerOpen(true), 50);
+    const t2 = setTimeout(() => setGhostDrawerOpen(false), 500);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, [containerHeight]);
 
   const worldWidthPx = computeWorldWidthPx(imageFitMode, viewportWidth || 0, containerHeight || 0, imgNatural);
   const worldTranslateX = viewportWidth > 0 && worldWidthPx > 0
@@ -727,6 +751,29 @@ const GameKitchenView = ({
         <div className={styles.panelFace} style={{ background: 'transparent', border: 'none' }}>
           {/* 장비 렌더링 */}
           <div className={styles.equipmentLayer}>
+            {/* Ghost Drawer (Panel 2 한정): 마운트 직후 자동 open→close로 Panel 2 subtree의
+                basket/placedContainer 초기 paint skip 해제. 4×4%, opacity 0.01, pointer-events none
+                으로 시각/인터랙션 영향 실질 0. data-* 속성 없어 hit-test에서도 제외됨. */}
+            {index === 1 && (
+              <div
+                className={styles.eqItem}
+                style={{
+                  left: '0%', top: '0%', width: '4%', height: '4%',
+                  pointerEvents: 'none',
+                  opacity: 0.01,
+                }}
+                aria-hidden
+              >
+                <GameDrawerVisual
+                  eqId="__panel2_ghost_drawer__"
+                  isOpen={ghostDrawerOpen}
+                  config={GHOST_DRAWER_CONFIG}
+                  eqHeight={0.04}
+                  ingredientLabelsMap={EMPTY_INGREDIENT_MAP}
+                  isGhost
+                />
+              </div>
+            )}
             {panelEquipment.map((eq) => {
               // 장비 타입별 data-click-target 분기
               // 선택 없음 → burner는 scene hit-test 제외 (local 버튼으로만 동작)
@@ -1149,9 +1196,11 @@ interface GameDrawerVisualProps {
   eqHeight: number;
   ingredientLabelsMap: Map<string, string>;
   selection?: SelectionState | null;
+  /** ghost drawer: hit-test 제외를 위해 drawerFace data-* 속성을 렌더하지 않음 */
+  isGhost?: boolean;
 }
 
-function GameDrawerVisual({ eqId, isOpen, config, eqHeight, ingredientLabelsMap, selection }: GameDrawerVisualProps) {
+function GameDrawerVisual({ eqId, isOpen, config, eqHeight, ingredientLabelsMap, selection, isGhost }: GameDrawerVisualProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [measuredH, setMeasuredH] = useState(0);
 
@@ -1218,10 +1267,12 @@ function GameDrawerVisual({ eqId, isOpen, config, eqHeight, ingredientLabelsMap,
       </div>
       <div
         className={styles.drawerFace}
-        data-equipment-id={eqId}
-        data-equipment-type="drawer"
-        data-click-target="equipment-toggle"
-        data-click-meta={JSON.stringify({ equipmentId: eqId, equipmentType: 'drawer' })}
+        {...(isGhost ? {} : {
+          'data-equipment-id': eqId,
+          'data-equipment-type': 'drawer',
+          'data-click-target': 'equipment-toggle',
+          'data-click-meta': JSON.stringify({ equipmentId: eqId, equipmentType: 'drawer' }),
+        })}
         style={{
           transform: `translateZ(${openZ}px)`, background: EQUIPMENT_COLORS.drawer,
         }}
