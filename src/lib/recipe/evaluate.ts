@@ -1,5 +1,13 @@
 import type { GameIngredientInstance, RecipeIngredient, Recipe, ActionHistoryEntry } from '../../types/db';
 import type { RecipeEvaluationResult, RecipeError } from '../../types/game';
+import { resolveRecipeIngredientId } from './resolveRecipeIngredientId';
+
+/** 재료 인스턴스 ↔ 레시피 행 매칭.
+ * 인스턴스에 `recipe_ingredient_id` FK가 있으므로 단일 키 1:1 매칭.
+ * null FK(주문 미할당 container 등)는 어떤 ri와도 매칭되지 않음 → unexpected 루프에서 처리. */
+function matchInstanceToRi(inst: GameIngredientInstance, ri: RecipeIngredient): boolean {
+  return inst.recipe_ingredient_id != null && inst.recipe_ingredient_id === ri.id;
+}
 
 /** 액션에서 옮겨지려는 가상 재료 (dry-run 입력) */
 export interface AttemptingItem {
@@ -58,29 +66,52 @@ export function evaluateActionAttempt(
   }
 
   // 2. 가상 인스턴스 생성 (검증용 임시 객체, store에 추가 안 됨)
-  const virtualInstances: GameIngredientInstance[] = attemptingItems.map((item, idx) => ({
-    id: `__attempt_${idx}__`,
-    session_id: '',
-    ingredient_id: item.ingredientId,
-    quantity: item.quantity,
-    location_type: 'container',
-    equipment_state_id: null,
-    container_instance_id: null,
-    zone_id: null,
-    plate_order: attemptPlateOrder,
-    action_history: item.actionHistory,
-  }));
+  // 각 virtual inst에 대해 resolveRecipeIngredientId로 귀속될 ri 결정 — 실제 저장 시와 동일 로직.
+  const pendingBindings = new Map<string, number>();
+  const virtualInstances: GameIngredientInstance[] = attemptingItems.map((item, idx) => {
+    const resolvedRiId = resolveRecipeIngredientId({
+      ingredientId: item.ingredientId,
+      containerTypeId,
+      recipe,
+      recipeIngredients: filtered,
+      inContainer,
+      pendingBindings,
+    });
+    if (resolvedRiId) {
+      pendingBindings.set(resolvedRiId, (pendingBindings.get(resolvedRiId) ?? 0) + item.quantity);
+    }
+    return {
+      id: `__attempt_${idx}__`,
+      session_id: '',
+      ingredient_id: item.ingredientId,
+      quantity: item.quantity,
+      location_type: 'container',
+      equipment_state_id: null,
+      container_instance_id: null,
+      zone_id: null,
+      plate_order: attemptPlateOrder,
+      action_history: item.actionHistory,
+      recipe_ingredient_id: resolvedRiId,
+    };
+  });
 
   // 3. 합성 후 evaluateContainer 재사용
   const merged = [...inContainer, ...virtualInstances];
   const result = evaluateContainer(merged, filtered, recipe, containerTypeId);
 
   // 4. 오류 분류 (missing은 콜아웃으로 별도, 그 외 ingredient_id 키로 그룹)
+  // 같은 재료가 여러 plate_order에 있는 레시피를 지원하기 위해, attempt와 무관한 plate_order의
+  // 기존 step 에러는 이번 거부 팝업에 포함시키지 않는다.
+  // plate_order_mismatch는 이번 투입과 직접 관련이므로 예외적으로 항상 포함.
   const attemptingIds = new Set(attemptingItems.map((it) => it.ingredientId));
   const errorsByIngredientId = new Map<string, RecipeError[]>();
   for (const err of result.errors) {
     if (!err.ingredient_id) continue;
     if (err.type === 'missing_ingredient') continue;
+    if (err.type !== 'plate_order_mismatch') {
+      const errPlateOrder = (err.details as { plate_order?: number | null }).plate_order;
+      if (errPlateOrder != null && errPlateOrder !== attemptPlateOrder) continue;
+    }
     const arr = errorsByIngredientId.get(err.ingredient_id) ?? [];
     arr.push(err);
     errorsByIngredientId.set(err.ingredient_id, arr);
@@ -153,13 +184,14 @@ export function evaluateContainer(
   const nonDeco = filtered.filter((r) => !r.is_deco);
 
   // currentMaxPlateOrder: 그릇 안 비데코 재료 중 가장 높은 plate_order
+  // 같은 재료가 여러 plate_order에 등재될 수 있으므로 복합키로 ri 조회
   const currentMaxPlateOrder =
     inContainer.length > 0
       ? Math.max(
           0,
           ...inContainer
             .filter((i) => {
-              const ri = filtered.find((r) => r.ingredient_id === i.ingredient_id);
+              const ri = filtered.find((r) => matchInstanceToRi(i, r));
               return !ri?.is_deco;
             })
             .map((i) => i.plate_order ?? 0),
@@ -184,14 +216,26 @@ export function evaluateContainer(
     }
   }
 
-  // 3. plate_order_mismatch 검사 (즉시 — 데코 재료는 면제)
+  // 3. plate_order_mismatch 검사
+  // inst가 레시피 소속 재료인데 recipe_ingredient_id가 null이거나 filtered에 없는 id면 잘못된 단계 투입.
   for (const inst of inContainer) {
-    const ri = filtered.find((r) => r.ingredient_id === inst.ingredient_id);
-    if (ri && !ri.is_deco && inst.plate_order !== ri.plate_order) {
+    const inRecipe = filtered.some((r) => r.ingredient_id === inst.ingredient_id);
+    if (!inRecipe) continue; // 레시피 외 재료는 unexpected 루프에서 처리
+    const boundRi = inst.recipe_ingredient_id != null
+      ? filtered.find((r) => r.id === inst.recipe_ingredient_id)
+      : null;
+    if (!boundRi) {
+      const candidates = filtered.filter(
+        (r) => r.ingredient_id === inst.ingredient_id && !r.is_deco,
+      );
       errors.push({
         type: 'plate_order_mismatch',
         ingredient_id: inst.ingredient_id,
-        details: { got: inst.plate_order, expected: ri.plate_order },
+        details: {
+          got: inst.plate_order,
+          expected: candidates.map((r) => r.plate_order),
+          plate_order: inst.plate_order,
+        },
       });
     }
   }
@@ -214,10 +258,11 @@ export function evaluateContainer(
   });
 
   for (const ri of expectedByNow) {
-    const found = inContainer.find((inst) => inst.ingredient_id === ri.ingredient_id);
+    // FK 기반 매칭: 같은 ri에 귀속된 모든 인스턴스(merge 분리 케이스 대비)
+    const matched = inContainer.filter((inst) => matchInstanceToRi(inst, ri));
 
     // 4. missing_ingredient 검사 (confirmedPlateOrder까지만)
-    if (!found) {
+    if (matched.length === 0) {
       errors.push({
         type: 'missing_ingredient',
         ingredient_id: ri.ingredient_id,
@@ -226,42 +271,45 @@ export function evaluateContainer(
       continue;
     }
 
-    // 5. quantity 검사 (부동소수점 안전장치: Math.abs < 0.001)
-    if (Math.abs(found.quantity - ri.quantity) >= 0.001) {
+    const totalQty = matched.reduce((sum, inst) => sum + inst.quantity, 0);
+
+    // 5. quantity 검사 (부동소수점 안전장치: Math.abs < 0.001) — 귀속된 inst qty 합산 비교
+    if (Math.abs(totalQty - ri.quantity) >= 0.001) {
       errors.push({
         type: 'quantity_error',
         ingredient_id: ri.ingredient_id,
-        details: { got: found.quantity, expected: ri.quantity },
+        details: { got: totalQty, expected: ri.quantity, plate_order: ri.plate_order },
       });
     }
 
-    // 6. action 검사 (다중 액션)
+    // 6. action 검사 (다중 액션) — 같은 ri에 귀속된 모든 inst 중 action_type별 max(seconds)로 판정
     if (ri.required_actions && ri.required_actions.length > 0) {
       for (const req of ri.required_actions) {
-        const action = found.action_history.find(
-          (a) => a.actionType === req.action_type,
-        );
-        if (!action) {
+        const candidateSeconds = matched
+          .map((inst) => inst.action_history.find((a) => a.actionType === req.action_type)?.seconds)
+          .filter((s): s is number => typeof s === 'number');
+        if (candidateSeconds.length === 0) {
           errors.push({
             type: 'action_insufficient',
             ingredient_id: ri.ingredient_id,
-            details: { action_type: req.action_type, required: req.action_type },
+            details: { action_type: req.action_type, required: req.action_type, plate_order: ri.plate_order },
           });
-        } else {
-          if (req.duration_min != null && action.seconds < req.duration_min) {
-            errors.push({
-              type: 'action_insufficient',
-              ingredient_id: ri.ingredient_id,
-              details: { action_type: req.action_type, seconds: action.seconds, min: req.duration_min },
-            });
-          }
-          if (req.duration_max != null && action.seconds > req.duration_max) {
-            errors.push({
-              type: 'action_excessive',
-              ingredient_id: ri.ingredient_id,
-              details: { action_type: req.action_type, seconds: action.seconds, max: req.duration_max },
-            });
-          }
+          continue;
+        }
+        const effectiveSeconds = Math.max(...candidateSeconds);
+        if (req.duration_min != null && effectiveSeconds < req.duration_min) {
+          errors.push({
+            type: 'action_insufficient',
+            ingredient_id: ri.ingredient_id,
+            details: { action_type: req.action_type, seconds: effectiveSeconds, min: req.duration_min, plate_order: ri.plate_order },
+          });
+        }
+        if (req.duration_max != null && effectiveSeconds > req.duration_max) {
+          errors.push({
+            type: 'action_excessive',
+            ingredient_id: ri.ingredient_id,
+            details: { action_type: req.action_type, seconds: effectiveSeconds, max: req.duration_max, plate_order: ri.plate_order },
+          });
         }
       }
     }
@@ -269,8 +317,9 @@ export function evaluateContainer(
 
   // 7. 전체 완성 판정
   // 모든 recipeIngredients(데코 포함)가 매칭되고 오류가 0개여야 isComplete
+  // 같은 재료가 여러 plate_order에 있으면 각 plate_order마다 인스턴스가 존재해야 함
   const allIngredientsPresent = filtered.every((ri) =>
-    inContainer.some((inst) => inst.ingredient_id === ri.ingredient_id),
+    inContainer.some((inst) => matchInstanceToRi(inst, ri)),
   );
   const isComplete =
     confirmedPlateOrder >= maxRecipePlateOrder &&

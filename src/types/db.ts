@@ -171,6 +171,8 @@ export interface GameIngredientInstance {
   container_instance_id: string | null;
   action_history: ActionHistoryEntry[];
   plate_order: number | null;
+  /** recipe_ingredients.id FK. container 투입 시 자동 할당, equipment/hand/disposed면 null. */
+  recipe_ingredient_id: string | null;
 }
 
 export interface GameContainerInstance {

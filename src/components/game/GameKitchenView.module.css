@@ -335,6 +335,36 @@
   text-align: center;
 }
 
+/* 덮어쓰기 상태(dirty/burned/overheating) 전체 라벨 */
+.hologramOverrideLabel {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  text-align: center;
+  line-height: 1.2;
+  color: #fff;
+  font-weight: 700;
+  font-size: var(--font-game-cell);
+  z-index: 2;
+}
+
+/* 끓는 중/모두 끓었다: 하단 고정 라벨 (재료 리스트 위에 얹지 않고, 늘어난 높이 영역을 차지) */
+.hologramBottomLabel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  text-align: center;
+  padding: 1px 4px;
+  font-size: var(--font-game-cell);
+  font-weight: 700;
+  background: rgba(0, 0, 0, 0.25);
+  z-index: 2;
+}
+
 /* 볶는 중: 홀로그램 배경 붉은 계열 */
 .hologramStirring {
   background: rgba(220, 60, 40, 0.55);

@@ -21,6 +21,7 @@ import type {
 } from '../types/db';
 import type { ResolvedAction } from '../types/game';
 import type { AttemptingItem } from '../lib/recipe/evaluate';
+import { resolveRecipeIngredientId } from '../lib/recipe/resolveRecipeIngredientId';
 import RejectionPopup from '../components/game/RejectionPopup';
 import WokBlockedPopup from '../components/game/WokBlockedPopup';
 import ContainerGuidePopover from '../components/game/ContainerGuidePopover';
@@ -93,6 +94,7 @@ const GamePage = () => {
   const removeContainerInstance = useGameStore((s) => s.removeContainerInstance);
   const setContainerDirty = useGameStore((s) => s.setContainerDirty);
   const bulkMoveIngredients = useGameStore((s) => s.bulkMoveIngredients);
+  const moveIngredient = useGameStore((s) => s.moveIngredient);
   const openQuantityModal = useUiStore((s) => s.openQuantityModal);
   const openRejectionPopup = useUiStore((s) => s.openRejectionPopup);
   const openContainerGuide = useUiStore((s) => s.openContainerGuide);
@@ -293,12 +295,39 @@ const GamePage = () => {
       const si = storeIngredientsMap.get(ingredientId);
       const unit = si?.unit;
 
-      // 같은 재료 기존 인스턴스 검색
+      // container 경로: 이번 투입이 귀속될 recipe_ingredients row 결정.
+      // equipment/hand 경로는 null (용기에 담기기 전까지 ri 귀속 미정).
+      let resolvedRiId: string | null = null;
+      if (locationType === 'container' && containerInstanceId) {
+        const ci = useGameStore.getState().containerInstances.find((c) => c.id === containerInstanceId);
+        if (ci?.assigned_order_id) {
+          const order = useGameStore.getState().orders.find((o) => o.id === ci.assigned_order_id);
+          if (order) {
+            const recipe = getRecipe(order.recipe_id);
+            if (recipe) {
+              const ris = getRecipeIngredients(order.recipe_id);
+              const inContainerNow = useGameStore.getState().ingredientInstances.filter(
+                (i) => i.location_type === 'container' && i.container_instance_id === containerInstanceId,
+              );
+              resolvedRiId = resolveRecipeIngredientId({
+                ingredientId,
+                containerTypeId: ci.container_id,
+                recipe,
+                recipeIngredients: ris,
+                inContainer: inContainerNow,
+              });
+            }
+          }
+        }
+      }
+
+      // 같은 재료 기존 인스턴스 검색 (같은 ri에 귀속된 것만 merge 대상)
       const existing = useGameStore.getState().ingredientInstances.find(
         (i) => i.ingredient_id === ingredientId
           && i.location_type === locationType
           && i.equipment_state_id === equipmentStateId
-          && i.container_instance_id === containerInstanceId,
+          && i.container_instance_id === containerInstanceId
+          && (locationType !== 'container' || i.recipe_ingredient_id === resolvedRiId),
       );
 
       if (instanceId) {
@@ -326,6 +355,7 @@ const GamePage = () => {
               container_instance_id: containerInstanceId,
               action_history: [],
               plate_order: newPlateOrder,
+              recipe_ingredient_id: resolvedRiId,
             });
           }
           decrementIngredientQuantity(instanceId, clamped);
@@ -372,6 +402,7 @@ const GamePage = () => {
               container_instance_id: containerInstanceId,
               action_history: [],
               plate_order: newPlateOrder,
+              recipe_ingredient_id: resolvedRiId,
             });
           }
           emitToast(qty);
@@ -514,33 +545,59 @@ const GamePage = () => {
         if (rejected) return;
       }
 
-      // 2. destination 업데이트 구성
-      const instanceIds = sourceIngredients.map((i) => i.id);
-      let updates: Partial<GameIngredientInstance>;
-
+      // 2. destination 업데이트 구성 및 적용
       if (destination.locationType === 'container') {
         const newPlateOrder = incrementContainerPlateOrder(destination.containerInstanceId!);
-        updates = {
-          location_type: 'container',
-          equipment_state_id: null,
-          container_instance_id: destination.containerInstanceId!,
-          zone_id: null,
-          plate_order: newPlateOrder,
-        };
+        // 각 source inst별로 recipe_ingredient_id를 재평가해서 개별 이동
+        const destCi = useGameStore.getState().containerInstances.find((c) => c.id === destination.containerInstanceId);
+        const assignedOrder = destCi?.assigned_order_id
+          ? useGameStore.getState().orders.find((o) => o.id === destCi.assigned_order_id)
+          : null;
+        const recipe = assignedOrder ? getRecipe(assignedOrder.recipe_id) : null;
+        const ris = assignedOrder ? getRecipeIngredients(assignedOrder.recipe_id) : [];
+        // pour 직전의 container 상태 (이미 들어있는 인스턴스들)
+        const existingInContainer = useGameStore.getState().ingredientInstances.filter(
+          (i) => i.location_type === 'container' && i.container_instance_id === destination.containerInstanceId,
+        );
+        // 이번 pour에서 각 ri에 새로 배정되는 qty 누적 (동일 재료 여러 inst 분배용)
+        const pendingBindings = new Map<string, number>();
+        for (const src of sourceIngredients) {
+          let resolvedRiId: string | null = null;
+          if (recipe && destCi) {
+            resolvedRiId = resolveRecipeIngredientId({
+              ingredientId: src.ingredient_id,
+              containerTypeId: destCi.container_id,
+              recipe,
+              recipeIngredients: ris,
+              inContainer: existingInContainer,
+              pendingBindings,
+            });
+            if (resolvedRiId) {
+              pendingBindings.set(resolvedRiId, (pendingBindings.get(resolvedRiId) ?? 0) + src.quantity);
+            }
+          }
+          moveIngredient(src.id, {
+            location_type: 'container',
+            equipment_state_id: null,
+            container_instance_id: destination.containerInstanceId!,
+            zone_id: null,
+            plate_order: newPlateOrder,
+            recipe_ingredient_id: resolvedRiId,
+          });
+        }
       } else {
         const destStateId = panelToStateIdMap.get(destination.equipmentId!) ?? null;
         if (!destStateId) return;
-        updates = {
+        const instanceIds = sourceIngredients.map((i) => i.id);
+        bulkMoveIngredients(instanceIds, {
           location_type: 'equipment',
           equipment_state_id: destStateId,
           container_instance_id: null,
           zone_id: null,
           plate_order: null,
-        };
+          recipe_ingredient_id: null,
+        });
       }
-
-      // 3. bulk 이동
-      bulkMoveIngredients(instanceIds, updates);
       emitToast();
 
       // 4. dirty 처리
@@ -572,13 +629,6 @@ const GamePage = () => {
       const { containerInstanceId } = action;
       if (!containerInstanceId) return;
 
-      // 빈 그릇만 dispose 허용 (resolveAction은 순수함수라 여기서 체크)
-      const containerIngs = useGameStore.getState().ingredientInstances.filter(
-        (i) => i.container_instance_id === containerInstanceId && i.location_type === 'container',
-      );
-      if (containerIngs.length > 0) return;
-
-      // 방어적: 혹시 남은 ingredient 참조 정리
       const allRelated = useGameStore.getState().ingredientInstances.filter(
         (i) => i.container_instance_id === containerInstanceId,
       );
@@ -589,6 +639,7 @@ const GamePage = () => {
           container_instance_id: null,
           zone_id: null,
           plate_order: null,
+          recipe_ingredient_id: null,
         });
       }
 
@@ -619,6 +670,7 @@ const GamePage = () => {
           container_instance_id: null,
           zone_id: null,
           plate_order: null,
+          recipe_ingredient_id: null,
         });
       }
 
@@ -729,7 +781,7 @@ const GamePage = () => {
         guide,
       );
     }
-  }, [sessionId, addIngredientInstance, incrementIngredientQuantity, decrementIngredientQuantity, addContainerInstance, moveContainer, openQuantityModal, addActionLog, findRecipeQuantity, bulkMoveIngredients, incrementContainerPlateOrder, updateEquipment, setContainerDirty, removeContainerInstance, panelToStateIdMap, tryRejectAndShowPopup, openOrderSelectModal, openWokBlockedPopup, setWokAtSink, markContainerServed, updateOrderStatus, addScoreEvent, addRecipeResult, storeIngredientsMap, getContainerGuide, openContainerGuide, containersMap, containerInstancesMap, pushActionToast]);
+  }, [sessionId, addIngredientInstance, incrementIngredientQuantity, decrementIngredientQuantity, addContainerInstance, moveContainer, openQuantityModal, addActionLog, findRecipeQuantity, bulkMoveIngredients, moveIngredient, incrementContainerPlateOrder, updateEquipment, setContainerDirty, removeContainerInstance, panelToStateIdMap, tryRejectAndShowPopup, openOrderSelectModal, openWokBlockedPopup, setWokAtSink, markContainerServed, updateOrderStatus, addScoreEvent, addRecipeResult, storeIngredientsMap, getContainerGuide, openContainerGuide, containersMap, containerInstancesMap, pushActionToast, getRecipe, getRecipeIngredients]);
 
   // 클릭/선택 인터랙션 시스템
   const { selection, handleSceneClick, deselect } = useClickInteraction({

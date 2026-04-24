@@ -15,6 +15,10 @@ const REASON_TEXT: Record<WokBlockedReason, { title: string; body: string }> = {
     title: '웍이 탔습니다',
     body: '웍이 타서 사용할 수 없습니다. 싱크대로 옮겨 씻어 주세요.',
   },
+  too_cold: {
+    title: '웍이 충분히 달궈지지 않았습니다',
+    body: '웍 온도가 낮아 재료를 볶을 수 없습니다. 120°C 이상으로 예열한 뒤 다시 시도해 주세요.',
+  },
 };
 
 export default function WokBlockedPopup() {

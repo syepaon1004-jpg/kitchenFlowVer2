@@ -89,6 +89,9 @@
   --equip-input-bg: #333;
   --equip-input-border: #666;
   --color-filler-panel: #D0C8B8;
+
+  /* === 올려놓인 그릇 크기 === */
+  --placed-container-size: 8vh;
 }
 
 /* ===== Tablet (≤1500px) ===== */
@@ -139,7 +142,11 @@
 @media (max-width: 768px) {
   :root {
     --game-header-height: 32px;
-    --handbar-height: 50px;
+    --handbar-height: 22px;
+    --handbar-min-height: 16px;
+    --handbar-max-width: 115px;
+    --billqueue-left: 36px;
+    --billqueue-right-reserve: 140px;
     --font-2xs: 8px;
     --font-xs: 9px;
     --font-sm: 10px;
@@ -163,5 +170,6 @@
     --toggle-button-padding-h: 2px;
     --game-nav-size: 44px;
     --equip-btn-min-size: 44px;
+    --placed-container-size: 16vh;
   }
 }

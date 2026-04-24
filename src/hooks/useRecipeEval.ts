@@ -77,15 +77,17 @@ export function useRecipeEval(storeId: string) {
       const sessionId = useGameStore.getState().sessionId;
 
       for (const error of result.errors) {
-        // 중복 판별: order_id + error_type + ingredient_id 조합
-        const isDuplicate = recipeErrors.some(
-          (existing) =>
-            existing.order_id === ci.assigned_order_id &&
-            existing.error_type === error.type &&
-            (error.ingredient_id
-              ? existing.details.ingredient_id === error.ingredient_id
-              : true),
-        );
+        // 중복 판별: order_id + error_type + ingredient_id + plate_order 조합
+        // 같은 재료가 여러 plate_order에 있는 레시피에서 단계별로 독립된 에러를 보존하기 위함
+        const errPlateOrder = (error.details as { plate_order?: number | null }).plate_order;
+        const isDuplicate = recipeErrors.some((existing) => {
+          if (existing.order_id !== ci.assigned_order_id) return false;
+          if (existing.error_type !== error.type) return false;
+          if (error.ingredient_id && existing.details.ingredient_id !== error.ingredient_id) return false;
+          const ep = (existing.details as { plate_order?: number | null }).plate_order;
+          if (errPlateOrder != null && ep != null && errPlateOrder !== ep) return false;
+          return true;
+        });
         if (!isDuplicate) {
           addRecipeError({
             session_id: sessionId!,

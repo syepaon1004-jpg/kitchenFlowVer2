@@ -46,8 +46,10 @@ export function buildContainerGuide(
           0,
           ...inContainer
             .filter((i) => {
-              const ri = filtered.find((r) => r.ingredient_id === i.ingredient_id);
-              return !ri?.is_deco;
+              // FK 기반 매칭: inst가 비데코 ri에 귀속된 경우만 currentMax에 반영.
+              if (i.recipe_ingredient_id == null) return false;
+              const ri = filtered.find((r) => r.id === i.recipe_ingredient_id);
+              return !!ri && !ri.is_deco;
             })
             .map((i) => i.plate_order ?? 0),
         )
@@ -77,8 +79,9 @@ export function buildContainerGuide(
   }
 
   if (decoIngredients.length > 0) {
+    // FK 기반: 해당 데코 ri에 귀속된 inst가 있어야 인정
     const allDecoPresent = decoIngredients.every((ri) =>
-      inContainer.some((i) => i.ingredient_id === ri.ingredient_id),
+      inContainer.some((i) => i.recipe_ingredient_id === ri.id),
     );
     const decoStatus: ContainerGuideStep['status'] =
       confirmedPlateOrder >= maxRecipePlateOrder
@@ -114,8 +117,9 @@ export function buildContainerGuide(
   }
 
   if (confirmedPlateOrder >= maxRecipePlateOrder && decoIngredients.length > 0) {
+    // FK 기반: 해당 데코 ri에 귀속된 inst가 없으면 missing
     const missingDeco = decoIngredients
-      .filter((ri) => !inContainer.some((i) => i.ingredient_id === ri.ingredient_id))
+      .filter((ri) => !inContainer.some((i) => i.recipe_ingredient_id === ri.id))
       .map((ri) => ri.ingredient_id);
     if (missingDeco.length > 0) {
       blockers.push({ kind: 'deco_missing', ingredientIds: missingDeco });
@@ -140,13 +144,24 @@ function buildIngredientEntry(
   errors: RecipeError[],
   isDeco: boolean,
 ) {
-  const inst = inContainer.find((i) => i.ingredient_id === ri.ingredient_id);
+  // FK 기반: 이 ri에 귀속된 인스턴스들의 qty 합산을 현재값으로 표시
+  const matched = inContainer.filter((i) => i.recipe_ingredient_id === ri.id);
+  const currentQuantity = matched.length > 0
+    ? matched.reduce((sum, i) => sum + i.quantity, 0)
+    : null;
   return {
     ingredientId: ri.ingredient_id,
     requiredQuantity: ri.quantity,
-    currentQuantity: inst ? inst.quantity : null,
+    currentQuantity,
     isDeco,
-    errors: errors.filter((e) => e.ingredient_id === ri.ingredient_id && isInstanceError(e)),
+    errors: errors.filter((e) => {
+      if (e.ingredient_id !== ri.ingredient_id) return false;
+      if (!isInstanceError(e)) return false;
+      if (isDeco) return true;
+      const ep = (e.details as { plate_order?: number | null }).plate_order;
+      // plate_order 정보가 있는 에러는 해당 단계 행만, 없으면 통과
+      return ep == null || ep === ri.plate_order;
+    }),
   };
 }
 

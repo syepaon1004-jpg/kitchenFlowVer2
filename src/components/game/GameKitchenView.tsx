@@ -4,6 +4,8 @@ import type { EquipmentInteractionState, FridgeInternalItem, ClickTarget, Select
 import { computeWorldWidthPx, computeWorldTranslateX } from '../../lib/sections/camera';
 import { useEquipmentStore } from '../../stores/equipmentStore';
 import { useGameStore } from '../../stores/gameStore';
+import { useUiStore } from '../../stores/uiStore';
+import { MIN_STIR_TEMP } from '../../lib/physics/wok';
 import { useShallow } from 'zustand/react/shallow';
 import { PLACED_CONTAINER_SIZE_VH } from '../../lib/interaction/constants';
 import { resolveAction } from '../../lib/interaction/resolveAction';
@@ -211,29 +213,99 @@ function BurnerHologram({ burner, stateId, contents, selection, styleProps }: Bu
   const isStirring = useEquipmentStore(
     (s) => (stateId ? s.stirring_equipment_ids.has(stateId) : false),
   );
+  const atSink = useEquipmentStore(
+    (s) => (stateId ? s.wok_at_sink.has(stateId) : false),
+  );
+  const wokStatus = useEquipmentStore((s) => {
+    if (!stateId) return null;
+    return s.equipments.find((e) => e.id === stateId)?.wok_status ?? null;
+  });
+  const wokTemp = useEquipmentStore((s) => {
+    if (!stateId) return null;
+    return s.equipments.find((e) => e.id === stateId)?.wok_temp ?? null;
+  });
+  const ingredientInstances = useGameStore((s) => s.ingredientInstances);
+  const waterIngredientIds = useGameStore((s) => s.waterIngredientIds);
+  const wokIngredients = useMemo(
+    () => stateId
+      ? ingredientInstances.filter((i) => i.equipment_state_id === stateId && i.location_type === 'equipment')
+      : [],
+    [ingredientInstances, stateId],
+  );
+  const hasWaterInWok = useMemo(
+    () => wokIngredients.some((i) => waterIngredientIds.has(i.ingredient_id)),
+    [wokIngredients, waterIngredientIds],
+  );
+  const allBoiled = useMemo(() => {
+    if (wokIngredients.length === 0) return false;
+    return wokIngredients.every((i) => {
+      const boil = i.action_history.find((h) => h.actionType === 'boil');
+      return !!boil && boil.seconds >= 10;
+    });
+  }, [wokIngredients]);
+
+  if (atSink) return null;
+
+  const overrideMessage = wokStatus === 'dirty' ? '씽크대로 옮겨 주세요'
+    : wokStatus === 'burned' ? 'BURNED'
+    : wokStatus === 'overheating' ? '과열'
+    : null;
+  const overrideBg = wokStatus === 'dirty' ? 'rgba(121, 85, 72, 0.85)'
+    : wokStatus === 'burned' ? 'var(--color-error)'
+    : wokStatus === 'overheating' ? 'var(--color-warning)'
+    : null;
+  const bottomLabel = overrideMessage == null && !isStirring
+    ? (allBoiled
+      ? { text: '모두 끓었다', color: 'var(--color-success)' }
+      : (hasWaterInWok && wokTemp === 100)
+        ? { text: '끓는 중', color: '#fff' }
+        : null)
+    : null;
+
   const wokSelected = isWokContentSelected(selection, stateId);
   const classNames = [styles.hologram];
   if (wokSelected) classNames.push(styles.gameSelected);
   if (isStirring) classNames.push(styles.hologramStirring);
+
+  const finalStyle: React.CSSProperties = {
+    ...styleProps,
+    ...(bottomLabel && typeof styleProps.height === 'string'
+      ? { height: `calc(${styleProps.height} + 1.6em)` }
+      : {}),
+    ...(overrideBg ? { background: overrideBg } : {}),
+  };
+
   return (
     <div
       className={classNames.join(' ')}
       data-click-target="hologram"
       data-click-meta={JSON.stringify({ equipmentId: burner.id, equipmentStateId: stateId })}
-      style={styleProps}
+      style={finalStyle}
     >
       {isStirring ? (
         <StirProgressOverlay totalSec={STIR_DURATION / 1000} />
+      ) : overrideMessage ? (
+        <div className={styles.hologramOverrideLabel}>{overrideMessage}</div>
       ) : (
-        contents.length > 0 && (
-          <div className={styles.hologramContents}>
-            {contents.map((c) => (
-              <span key={c.ingredientId} className={styles.hologramItem}>
-                {c.displayName} {c.quantity}{c.unit}
-              </span>
-            ))}
-          </div>
-        )
+        <>
+          {contents.length > 0 && (
+            <div
+              className={styles.hologramContents}
+              style={bottomLabel ? { paddingBottom: '1.6em' } : undefined}
+            >
+              {contents.map((c) => (
+                <span key={c.ingredientId} className={styles.hologramItem}>
+                  {c.displayName} {c.quantity}{c.unit}
+                </span>
+              ))}
+            </div>
+          )}
+          {bottomLabel && (
+            <div className={styles.hologramBottomLabel} style={{ color: bottomLabel.color }}>
+              {bottomLabel.text}
+            </div>
+          )}
+        </>
       )}
     </div>
   );
@@ -251,8 +323,8 @@ const GameKitchenView = ({
   const [viewportWidth, setViewportWidth] = useState(0);
   const [imgNatural, setImgNatural] = useState<{ w: number; h: number } | null>(null);
   const [interactionState, setInteractionState] = useState<EquipmentInteractionState>(INITIAL_INTERACTION);
-  const activeStirEquipmentIdRef = useRef<string | null>(null);
-  const activeStirStopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // pointerId당 개별 stir 홀드 추적 — 멀티터치로 여러 웍을 동시에 웍질할 수 있게 함
+  const activeStirMapRef = useRef<Map<number, { stateId: string; timer: ReturnType<typeof setTimeout> }>>(new Map());
   const activeWashEquipmentIdRef = useRef<string | null>(null);
   const activeWashCompletionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -334,21 +406,20 @@ const GameKitchenView = ({
   const perspectivePx = containerHeight > 0 ? degToPerspectivePx(perspectiveDeg, containerHeight) : 800;
   const translateY = (previewYOffset - 0.5) * containerHeight;
 
-  // scene-level stir hold: ref + timeout 기반 (setState 없이 hold 유지 → iOS pointercancel 방지)
-  const stopSceneStir = useCallback(() => {
-    const stateId = activeStirEquipmentIdRef.current;
-    if (!stateId) return;
-    activeStirEquipmentIdRef.current = null;
-    if (activeStirStopTimerRef.current) {
-      clearTimeout(activeStirStopTimerRef.current);
-      activeStirStopTimerRef.current = null;
-    }
-    useEquipmentStore.getState().removeStirring(stateId);
+  // scene-level stir hold: pointerId-keyed Map 기반 (여러 웍 동시 홀드 지원)
+  const stopSceneStirByPointer = useCallback((pointerId: number) => {
+    const entry = activeStirMapRef.current.get(pointerId);
+    if (!entry) return;
+    activeStirMapRef.current.delete(pointerId);
+    clearTimeout(entry.timer);
+    useEquipmentStore.getState().removeStirring(entry.stateId);
   }, []);
 
-  const startSceneStir = useCallback((stateId: string) => {
-    // 이미 stirring 중이면 무시
-    if (activeStirEquipmentIdRef.current) return;
+  const startSceneStir = useCallback((stateId: string, pointerId: number) => {
+    // 같은 웍이 이미 다른 포인터로 stir 중이면 무시 (중복 방지)
+    for (const v of activeStirMapRef.current.values()) {
+      if (v.stateId === stateId) return;
+    }
     // canStir 조건 검증 (imperative)
     const equip = useEquipmentStore.getState().equipments.find((e) => e.id === stateId);
     if (!equip) return;
@@ -359,13 +430,18 @@ const GameKitchenView = ({
       (i) => i.equipment_state_id === stateId && i.location_type === 'equipment',
     );
     if (wokIngredients.some((i) => waterIngredientIds.has(i.ingredient_id))) return;
+    // 최소 온도 미달 → too_cold 팝업
+    if ((equip.wok_temp ?? 0) < MIN_STIR_TEMP) {
+      useUiStore.getState().openWokBlockedPopup('too_cold');
+      return;
+    }
 
-    activeStirEquipmentIdRef.current = stateId;
     useEquipmentStore.getState().addStirring(stateId);
-    activeStirStopTimerRef.current = setTimeout(() => {
-      stopSceneStir();
+    const timer = setTimeout(() => {
+      stopSceneStirByPointer(pointerId);
     }, STIR_DURATION);
-  }, [stopSceneStir]);
+    activeStirMapRef.current.set(pointerId, { stateId, timer });
+  }, [stopSceneStirByPointer]);
 
   // scene-level wash hold: ref + timeout 기반 (stir 패턴 동일)
   const stopSceneWash = useCallback(() => {
@@ -404,16 +480,13 @@ const GameKitchenView = ({
 
   // unmount 시 stir + wash cleanup
   useEffect(() => {
+    const stirMap = activeStirMapRef.current;
     return () => {
-      if (activeStirStopTimerRef.current) {
-        clearTimeout(activeStirStopTimerRef.current);
-        activeStirStopTimerRef.current = null;
-      }
-      const stateId = activeStirEquipmentIdRef.current;
-      if (stateId) {
-        useEquipmentStore.getState().removeStirring(stateId);
-        activeStirEquipmentIdRef.current = null;
-      }
+      stirMap.forEach((v) => {
+        clearTimeout(v.timer);
+        useEquipmentStore.getState().removeStirring(v.stateId);
+      });
+      stirMap.clear();
       if (activeWashCompletionTimerRef.current) {
         clearTimeout(activeWashCompletionTimerRef.current);
         activeWashCompletionTimerRef.current = null;
@@ -635,10 +708,10 @@ const GameKitchenView = ({
             }
           }
         } else {
-          // 하단 절반 → 볶기 hold 시작
+          // 하단 절반 → 볶기 hold 시작 (pointerId별 독립 추적)
           const stateId = panelToStateIdMap?.get(eqId);
           if (stateId) {
-            startSceneStir(stateId);
+            startSceneStir(stateId, e.pointerId);
           }
         }
         // no-selection 경로: onSceneClick 미호출
@@ -731,9 +804,9 @@ const GameKitchenView = ({
     if (e.currentTarget.hasPointerCapture(e.pointerId)) {
       e.currentTarget.releasePointerCapture(e.pointerId);
     }
-    stopSceneStir();
+    stopSceneStirByPointer(e.pointerId);
     stopSceneWash();
-  }, [stopSceneStir, stopSceneWash]);
+  }, [stopSceneStirByPointer, stopSceneWash]);
 
   // 패널 렌더링 (부모-자식 중첩)
   const renderPanel = (index: number): React.ReactNode => {
@@ -1026,11 +1099,14 @@ function BurnerPanel({ panelId, stateId, fireLevel }: BurnerPanelProps) {
   );
   const canStir = !!burnerLevel
     && (wokStatus === 'clean' || wokStatus === 'overheating')
-    && !hasWaterInWok;
+    && !hasWaterInWok
+    && (wokTemp ?? 0) >= MIN_STIR_TEMP;
+  const isTooCold = !!burnerLevel
+    && (wokStatus === 'clean' || wokStatus === 'overheating')
+    && !hasWaterInWok
+    && (wokTemp ?? 0) < MIN_STIR_TEMP;
 
-  const statusBg = wokStatus === 'burned' ? 'var(--color-error)'
-    : wokStatus === 'overheating' ? 'var(--color-warning)'
-    : BURNER_COLORS[fireLevel];
+  const statusBg = BURNER_COLORS[fireLevel];
 
   return (
     <div
@@ -1046,14 +1122,8 @@ function BurnerPanel({ panelId, stateId, fireLevel }: BurnerPanelProps) {
     >
       {/* 온도 오버레이 */}
       {wokTemp !== null && (
-        <span style={{ position: 'absolute', top: 1, right: 3, fontSize: 'var(--font-game-cell)', color: 'rgba(255,255,255,0.8)', pointerEvents: 'none', zIndex: 3 }}>
+        <span style={{ position: 'absolute', top: 1, right: 3, fontSize: 'calc(var(--font-game-cell) * 2)', lineHeight: 1, color: 'rgba(255,255,255,0.9)', pointerEvents: 'none', zIndex: 3 }}>
           {wokTemp}°C
-        </span>
-      )}
-      {/* BURNED 오버레이 */}
-      {wokStatus === 'burned' && (
-        <span style={{ position: 'absolute', bottom: 1, left: 0, width: '100%', textAlign: 'center', fontSize: 'var(--font-game-cell)', color: '#fff', fontWeight: 'bold', pointerEvents: 'none', zIndex: 3 }}>
-          BURNED
         </span>
       )}
       {/* 불 표시: 상단 절반 (순수 시각) */}
@@ -1081,7 +1151,7 @@ function BurnerPanel({ panelId, stateId, fireLevel }: BurnerPanelProps) {
         data-action="stir"
       >
         <span className={styles.stirProgressLabel}>
-          {isStirring ? '볶는 중...' : '볶기'}
+          {isStirring ? '볶는 중...' : isTooCold ? '온도가 너무 낮음' : '볶기'}
         </span>
       </div>
     </div>

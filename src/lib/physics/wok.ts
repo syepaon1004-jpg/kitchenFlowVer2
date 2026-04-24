@@ -6,6 +6,7 @@ export interface WokState {
   burner_level: 0 | 1 | 2 | 3;
   hasWater: boolean;
   pre_overheat_status: WokStatus | null;
+  isStirring: boolean;
 }
 
 export interface WokTickResult {
@@ -21,18 +22,22 @@ const BURNER_HEAT_RATE: Record<0 | 1 | 2 | 3, number> = {
   3: 20,
 };
 const NATURAL_COOLING = 3;
+export const STIR_COOLING = 5;
+export const MIN_STIR_TEMP = 120;
 const OVERHEAT_THRESHOLD = 250;
 const BURNED_THRESHOLD = 350;
 
 export function tickWokPhysics(state: WokState): WokTickResult {
-  const { wok_temp, wok_status, burner_level, hasWater, pre_overheat_status } = state;
+  const { wok_temp, wok_status, burner_level, hasWater, pre_overheat_status, isStirring } = state;
 
   // burned는 터미널 상태 — 온도 변화 없음
   if (wok_status === 'burned') {
     return { wok_temp, wok_status: 'burned', pre_overheat_status: null };
   }
 
-  let newTemp = Math.max(0, wok_temp + BURNER_HEAT_RATE[burner_level] - NATURAL_COOLING);
+  const heat = isStirring ? 0 : BURNER_HEAT_RATE[burner_level];
+  const cooling = isStirring ? STIR_COOLING : NATURAL_COOLING;
+  let newTemp = Math.max(0, wok_temp + heat - cooling);
 
   if (hasWater) {
     // 물이 있으면 100도 상한, overheating/burned 전환 없음
@@ -58,10 +63,13 @@ export function tickWokPhysics(state: WokState): WokTickResult {
   return { wok_temp: newTemp, wok_status, pre_overheat_status };
 }
 
-/** clean 또는 overheating + burner_level > 0일 때 stir 누적 */
+/** clean 또는 overheating + burner_level > 0 + wok_temp >= MIN_STIR_TEMP일 때 stir 누적 */
 export function canAccumulateStir(
   wok_status: WokStatus,
   burner_level: 0 | 1 | 2 | 3,
+  wok_temp: number,
 ): boolean {
-  return (wok_status === 'clean' || wok_status === 'overheating') && burner_level > 0;
+  return (wok_status === 'clean' || wok_status === 'overheating')
+    && burner_level > 0
+    && wok_temp >= MIN_STIR_TEMP;
 }

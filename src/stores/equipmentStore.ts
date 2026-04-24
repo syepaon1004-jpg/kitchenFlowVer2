@@ -112,12 +112,14 @@ export const useEquipmentStore = create<EquipmentStoreState>((set, get) => ({
 
     const prevStatus = equip.wok_status;
     const preOverheatStatus = get().pre_overheat_status_map.get(id) ?? null;
+    const isStirring = get().stirring_equipment_ids.has(id);
     const result = tickWokPhysics({
       wok_temp: equip.wok_temp,
       wok_status: equip.wok_status,
       burner_level: equip.burner_level,
       hasWater,
       pre_overheat_status: preOverheatStatus,
+      isStirring,
     });
 
     // pre_overheat_status 맵 업데이트
@@ -162,8 +164,8 @@ export const useEquipmentStore = create<EquipmentStoreState>((set, get) => ({
         }
       }
     } else {
-      // stir 누적: clean + burner_level > 0 + 볶기 버튼 홀드 중
-      if (canAccumulateStir(result.wok_status, equip.burner_level) && get().stirring_equipment_ids.has(id)) {
+      // stir 누적: clean/overheating + burner_level > 0 + wok_temp >= MIN_STIR_TEMP + 볶기 버튼 홀드 중
+      if (canAccumulateStir(result.wok_status, equip.burner_level, result.wok_temp) && isStirring) {
         for (const inst of wokIngredients) {
           appendActionHistory(inst.id, 'stir');
         }

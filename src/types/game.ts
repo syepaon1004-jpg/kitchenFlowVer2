@@ -16,8 +16,8 @@ export interface RecipeError {
   details: Record<string, unknown>;
 }
 
-/** 웍 사용 차단 사유 (sink/dirty/burned) */
-export type WokBlockedReason = 'at_sink' | 'dirty' | 'burned';
+/** 웍 사용 차단 사유 (sink/dirty/burned/too_cold) */
+export type WokBlockedReason = 'at_sink' | 'dirty' | 'burned' | 'too_cold';
 
 /** 그릇 가이드 팝오버: 단계별 상태 */
 export interface ContainerGuideStep {
