@@ -296,6 +296,35 @@ const GameKitchenView = ({
     return () => ro.disconnect();
   }, []);
 
+  // iOS WebKit 패널 2 렌더 워크어라운드 (v17 real drawer auto open/close):
+  // Panel 2에 배치된 실제 drawer를 마운트 직후 자동 open → 1초 후 close.
+  // drawer 애니메이션이 사용자에게 보이며, Panel 2 basket/placedContainer 초기
+  // 투명 증상이 복구되는지 시각으로 확인 가능.
+  const autoDrawerDoneRef = useRef(false);
+  useEffect(() => {
+    if (!containerHeight || autoDrawerDoneRef.current) return;
+    const panel2Drawer = equipment.find((eq) => eq.panelIndex === 1 && eq.equipmentType === 'drawer');
+    if (!panel2Drawer) return;
+    autoDrawerDoneRef.current = true;
+    const drawerId = panel2Drawer.id;
+    const openTimer = setTimeout(() => {
+      setInteractionState((prev) => ({
+        ...prev,
+        drawers: { ...prev.drawers, [drawerId]: { isOpen: true } },
+      }));
+    }, 200);
+    const closeTimer = setTimeout(() => {
+      setInteractionState((prev) => ({
+        ...prev,
+        drawers: { ...prev.drawers, [drawerId]: { isOpen: false } },
+      }));
+    }, 1200);
+    return () => {
+      clearTimeout(openTimer);
+      clearTimeout(closeTimer);
+    };
+  }, [containerHeight, equipment]);
+
   const worldWidthPx = computeWorldWidthPx(imageFitMode, viewportWidth || 0, containerHeight || 0, imgNatural);
   const worldTranslateX = viewportWidth > 0 && worldWidthPx > 0
     ? computeWorldTranslateX(cameraCenterX, worldWidthPx, viewportWidth)
