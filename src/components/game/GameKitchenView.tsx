@@ -397,17 +397,6 @@ const GameKitchenView = ({
     };
   }, []);
 
-  // iOS WebKit 패널 2 렌더 워크어라운드:
-  // 마운트 후 0.5초에 interactionState 레퍼런스를 같은 값으로 교체해 GameKitchenView
-  // 전체 리렌더 1회 강제. drawer 열기와 동일한 React 경로(setInteractionState)를 타며
-  // Panel 2 subtree의 inline style이 전부 재평가됨.
-  useEffect(() => {
-    const t = setTimeout(() => {
-      setInteractionState((prev) => ({ ...prev }));
-    }, 500);
-    return () => clearTimeout(t);
-  }, []);
-
   // hit-test 인터랙션
   const handleInteraction = useCallback((eqId: string, eqType: string, doorPart?: string) => {
     setInteractionState((prev) => {
